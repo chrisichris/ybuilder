@@ -1,0 +1,24 @@
+load ybt.core.base;
+load ybt.core.yetibase;
+
+import junit.framework.TestCase;
+import java.lang.Thread;
+
+projectArtifactId := "yourname";
+projectGroupId :="yourname";
+projectVersion := "0.1-alpha";
+projectDescription := "update desription here";
+
+			
+
+dependency "junit" "junit" "3.8.2" [TestScope ()];
+
+println ("Cl: " ^ string ());
+
+var cl = Thread#currentThread()#getContextClassLoader();
+(not nullptr? cl) loop (
+	println cl;
+	cl := cl#getParent());
+
+//_ = new TestCase("Hier");
+load ybt.core.run;

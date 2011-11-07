@@ -1,0 +1,65 @@
+module ybuilder.core.javabase;
+
+load ybuilder.core.base;
+load ybuilder.core.build;
+
+targetClassesDir = targetDir ^ "/classes";
+targetTestClassesDir = targetDir ^"/testclasses";
+
+javaDir = mainDir ^ "/java";
+javaTestDir = testDir ^"/java";
+resourcesDir = mainDir ^ "/resources";
+resourcesTestDir = testDir ^ "/resources";
+javadocDir = docDir ^"/javadoc";
+
+javacAttributes = ["srcdir" : javaDir, "destdir":targetClassesDir, "classpathref":"compilePath", "debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+var javacCompilerarg = "";
+
+javacTestAttributes = ["srcdir" : javaTestDir, "destdir":targetTestClassesDir, "classpathref":"testPath", "debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+var javacTestCompilerarg = "";
+
+javadocAttributes = ["sourcepath" : javaDir, "destdir":javadocDir, "classpathref":"compilePath"];
+
+push runtimePath (Location targetClassesDir);
+push testPath (Location targetTestClassesDir);
+
+{
+	javaDir, javaTestDir, resourcesDir, resourcesTestDir, javadocDir,
+	targetClassesDir,
+	targetTestClassesDir,
+	javacAttributes,
+	javacCompilerarg,
+	javacTestAttributes,
+	javacTestCompilerarg,
+	
+	copyResources = target "copyResources" [InLivecycle processResources,Description "Copies resources from \(resourcesDir) to \(targetClassesDir)"]
+		(antTask "copy" ["todir":targetClassesDir] [
+				el "fileset" ["dir":resourcesDir] []]),
+
+	copyTestResources = target "copyTestResources" [InLivecycle processTestResources, Description "Copies test resources to test classes dir"]
+		(antTask "copy" ["todir":targetTestClassesDir] [
+				el "fileset" ["dir":resourcesTestDir] []]),
+
+	compileJava = target "compileJava" [InLivecycle compile, Description "Compiles java sources"]
+		(antTask "javac" javacAttributes [
+			el "compilerarg" ["line":javacCompilerarg] []]),
+
+	testCompileJava = target "testCompileJava" [InLivecycle testCompile, Description "compiles java test sources"]
+		(antTask "javac" javacTestAttributes [
+			el "compilerarg" ["line":javacTestCompilerarg] []]),
+	
+	javadoc = target "javadoc" [InLivecycle doc, Description "create javadocs from [\(javaDir)] to [\(javadocDir)]"] do p:
+			antTask "delete" ["dir":javadocDir] [] p;
+			antTask "javadoc" javadocAttributes [] p;
+		done,
+
+	junitTest = target "junitTest" [InLivecycle test] 
+		(antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] [
+			el "classpath" [:] [
+				el "pathelement" ["path":"testPath"] []],
+			el "formatter" ["type":"plain"] [],
+			el "batchtest" ["fork":"yes", "todir":(reportsDir ^ "/tests")] [
+				el "fileset" ["dir":javaTestDir] [ 
+					el "include" ["name":"**/*Test.java"] []]]]);
+				
+}

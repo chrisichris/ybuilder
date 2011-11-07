@@ -1,0 +1,68 @@
+module ybuilder.core.run;
+
+load ybuilder.core.build;
+
+import java.lang:ClassLoader, Thread;
+import org.apache.tools.ant:AntClassLoader;
+import org.apache.tools.ant.types:Path;
+
+withCl cl fn =(
+	oldCl = Thread#currentThread()#getContextClassLoader();
+	Thread#currentThread()#setContextClassLoader(cl);
+	try fn() finally Thread#currentThread()#setContextClassLoader(oldCl); yrt);
+
+repl eval = 
+	(print "ybuilder> ";
+	line = readln();
+	if defined? line then
+		ls = if strStarts? line "#" then [line] else list (strSplit " " line) fi;
+		print (eval ls);
+		repl eval;
+	else
+		println ""
+	fi);
+
+
+
+evalFun = (load yeti.lang.compiler.eval).evaluateYetiCode [] [Bind()];
+evaluate argv = 
+	if empty? argv then
+		"\n";
+	elif (head argv) == "-yeti" then
+		cl = (pat = createAntPath (load ybuilder.core.base).testRuntimePath;
+			  new AntClassLoader(ClassLoader#getSystemClassLoader(), pat#getProject(), pat, false));
+		_ = withCl cl \(
+			m = cl#loadClass("yeti.lang.compiler.yeti")#getMethod("main",array [classOf java.lang.String[]]);
+			m#invoke((),(array [(array (tail argv)) as ~String[] ]) as ~String[][]);
+		);
+		"\n";
+	else
+		if strStarts? (head argv) "#" then
+			code = strRight (strJoin " " argv) 1;
+			(evalFun code).str;
+		else
+			(strJoin "\n" (map do n:
+				if not n in targets then
+					"Error: target [\(n)] does not exist";
+				else
+					t = targets.[n];
+					runTarget t;
+					"target run \(n)";
+				fi 
+			done argv)) ^ "\n";
+		fi;
+	fi;
+
+argvL = list _argv;
+
+if empty? argvL then
+	repl evaluate;
+else
+	println (evaluate argvL)
+fi;
+	
+System#exit(0);
+();
+
+
+

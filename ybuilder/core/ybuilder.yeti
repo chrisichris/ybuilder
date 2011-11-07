@@ -1,0 +1,66 @@
+program ybuilder.core.ybuilder;
+
+import java.lang.Thread;
+import java.io:File;
+import java.net:URLClassLoader;
+import yeti.lang.compiler.yeti;
+
+file n = new File(n is string);
+args = list _argv;
+
+buildDependenciesProg = "ybuilder/buildDependencies.yeti"; 
+
+if (file buildDependenciesProg)#exists() and (not (file "ybuilder/extlib_managed")#exists()) then
+	yeti#main(array(buildDependenciesProg :: args));
+fi;	
+
+if (not empty? args) and ((head args) == "cleanBuildLibs") then
+	load ybuilder.core.build;
+	antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
+elif (not empty? args) and ((head args) == "buildLibs") then
+	if (file buildDependenciesProg)#exists() then
+		yeti#main(array(buildDependenciesProg :: args));
+	else
+		failWith "There is no \(buildDependenciesProg) file";
+	fi
+elif (not empty? args) and ((head args) == "newProject") then
+	load ybuilder.core.yetibase;
+	load ybuilder.core.build;
+	projectName = if not empty? (tail args) then head (tail args) else "." fi;
+	createNewYetiProject projectName (createProject ()); 
+	yeti#main(array [buildDependenciesProg]);
+elif (not (file "project.yeti")#exists()) then
+	failWith "There is no 'project.yeti' file. You must first create a project use 'newProject' command";
+else
+	load ybuilder.core.build;
+	import org.apache.tools.ant.AntClassLoader;
+	oL = Thread#currentThread()#getContextClassLoader();
+	
+	flUrl = (classOf AntClassLoader)#getProtectionDomain()#getCodeSource()#getLocation();
+		
+	antFiles = (createAntFileSet [Include "ybuilder/extlib/*.jar", Include "ybuilder/extlib_managed/*.jar"])#getDirectoryScanner();
+	antFiles#scan();
+	urls = map do n: (new File(string n))#toURL() done (array antFiles#getIncludedFiles());
+//	println ("urls" ^ urls);
+	ctxtLoader = if empty? urls then
+			oL
+		else
+	//		println "urls \(urls)";
+			import java.lang.ClassLoader;
+			new URLClassLoader(array (flUrl::urls),ClassLoader#getSystemClassLoader()#getParent()); 
+		fi;
+	Thread#currentThread()#setContextClassLoader(ctxtLoader);
+	try
+		m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")#getMethod("main",array [classOf java.lang.String[]]);
+		m#invoke((),(array [(array ("project.yeti" :: args)) as ~String[] ]) as ~String[][]);
+		//yeti#main(array ("project.yeti" :: args));
+	finally 
+		Thread#currentThread()#setContextClassLoader(oL);
+	yrt;
+fi;
+		
+System#exit(0);
+();
+
+
+

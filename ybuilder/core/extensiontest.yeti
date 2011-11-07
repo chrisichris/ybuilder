@@ -1,0 +1,55 @@
+module ybuilder.core.extensiontest;
+
+import java.util.Properties;
+import java.io:FileInputStream, File;
+
+load ybuilder.core.build;
+load ybuilder.core.base;
+
+extensionTestDirName = "etprojects";
+
+extensionTestDirs = array ([] is list<string>);
+
+createExtensionTestDir name project = (
+	load ybuilder.core.yetibase;
+	baseDir = "\(mainDir)/\(extensionTestDirName)/\(name)";
+	createNewYetiProject baseDir project;
+	antTask "copy" ["todir":baseDir, "overwrite":"false"] [
+		el "javaresource" ["name":"ybuilder/core/targets.properties"][],
+		el "mapper" ["type":"flatten"][]] project;
+);
+
+createExtensionTestDirs = target "-createExtensionTestDirs" [] do p:
+	for extensionTestDirs do n: createExtensionTestDir n p done;
+	done;
+
+runExtensionTests project = (
+
+	antTask "copy" ["todir":"\(testDir)/\(extensionTestDirName)"] [
+		el "fileset" ["dir":"\(mainDir)/\(extensionTestDirName)"] []] project;
+
+	projectDirs = (fs = (file "\(testDir)/\(extensionTestDirName)")#listFiles();
+					if nullptr? fs then [] else list (array fs) fi);
+					
+	for projectDirs do dir:
+		args = (pf = new File(dir, "targets.properties");
+				if pf#isFile() then
+					props = new Properties();
+					fis = new FileInputStream(pf);
+					props#load(fis);
+					r = if props#contains("targets") then 
+						[string props#get("targets")];
+					else ["*integrationTest"] fi;
+					fis#close();
+					r;
+				else ["*integrationTest"] fi);
+					
+					
+		antTask "java" ["jar":"../../ybuilder.jar", "fork":"true", "dir":dir#getAbsolutePath()] (map do a: el "arg" ["line":string a] [] done args) project;
+	done;
+);
+
+extensionTests = target "extensionTests" [InLivecycle integrationTest] runExtensionTests;
+
+{extensionTests, runExtensionTests, extensionTestDirs, createExtensionTestDir, createExtensionTestDirs}				
+

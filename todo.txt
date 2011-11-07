@@ -1,0 +1,21 @@
+//todo
+* yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
+* add yebspec support
+* jar target
+* maven target
+* war target with jetty support
+* standard lib project
+* standard prog project
+* standard war project
+* continuses compilation
+* 
+
+
+//done
++ doc targets
++ yeti doc target
++ AntClassPath for loading buildlibs
++ update retrieve to not duplicate jars in differnt runtime dirs
++ add buildLibs loading to new Project
++ update scopes to have hard coded names
++ test targets
