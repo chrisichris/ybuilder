@@ -1,4 +1,5 @@
 //todo
+* add properties support
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * jar target

@@ -171,6 +171,7 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c= (
 				Exclude target: project.executedTargets.[target.name] := true;
 				ExcludeByName name: project.executedTargets.[name] := true;
 				TargetArgs args: targetArgs := args;
+				Properties h: insertHash project.properties h;
 			 esac done;
 	if runAlways or (not (target is targetType).name in project.executedTargets) then
 		project.executedTargets.[target.name] := true;
@@ -186,8 +187,8 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c= (
 	fi);
 		
 		
-runTarget target args =
-	executeTarget  target [TargetArgs args] (createProject ());
+runTarget target opts =
+	executeTarget  target opts (createProject ());
 
 
 antfact antElementHandler antXmlContext elem =
