@@ -32,7 +32,7 @@ init = target "ybuilderinit" [InLivecycle initialize] do p:
 
 jarFile = "ybuilder.jar";
 	
-jar = target "jar" [InLivecycle package] do p:
+jary = target "jary" [InLivecycle package] do p:
 	jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
 	
 	antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
