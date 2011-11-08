@@ -272,9 +272,9 @@ antPatterns patts =
 		esac done patts; 
 
 antFileset patts =  
-	el "fileset" ["dir" : "${basedir}"] (antPatterns patts);
+	el "fileset" ["dir" : "."] (antPatterns patts);
 antDirset patts =  
-	el "dirset" ["dir" : "${basedir}"] (antPatterns patts);
+	el "dirset" ["dir" : "."] (antPatterns patts);
 
 antPathElements patts = (
 	dirIncludes = array [];
