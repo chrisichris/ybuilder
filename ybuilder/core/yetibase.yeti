@@ -6,17 +6,17 @@ load ybuilder.core.base;
 load ybuilder.core.build;
 load ybuilder.core.javabase;
 
-yetiDirP = path mainDirP "yeti";
-yetiTestDirP = path testDirP "yeti";
-yetidocDirP = path docDirP "yetidoc";
+yetiDir = path mainDir "yeti";
+yetiTestDir = path testDir "yeti";
+yetidocDir = path docDir "yetidoc";
 
-yeticAttributes = ["srcdir":yetiDirP~, "destdir": targetClassesDirP~];
-yeticTestAttributes = ["srcdir":yetiTestDirP~, "destdir" : targetTestClassesDirP~];
+yeticAttributes = ["srcdir":yetiDir~, "destdir": targetClassesDir~];
+yeticTestAttributes = ["srcdir":yetiTestDir~, "destdir" : targetTestClassesDir~];
 
 createNewYetiProject projectDir project = (
-		for [libDirP, javaDirP,yetiDirP,resourcesDirP,javaTestDirP,yetiTestDirP,resourcesTestDirP, path basedir buildExtlibDir] 
+		for [libDir, javaDir,yetiDir,resourcesDir,javaTestDir,yetiTestDir,resourcesTestDir, path basedir buildExtlibDir] 
 			do d: antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project done;
-		antTask "copy" ["todir":(joinPath projectDir ybuilderDirP)~, "overwrite":"false"] [
+		antTask "copy" ["todir":(joinPath projectDir ybuilderDir)~, "overwrite":"false"] [
 			el "javaresource" ["name":"ybuilder/core/buildDependencies.yeti"][],
 			el "mapper" ["type":"flatten"] []] project;
 		antTask "copy" ["todir":projectDir~, "overwrite":"false"] [
@@ -32,7 +32,7 @@ yetiMainTask args project =
 
 {
 	yetiMainTask,
-	yetiDirP, yetiTestDirP, yetidocDirP,
+	yetiDir, yetiTestDir, yetidocDir,
 	yeticAttributes, yeticTestAttributes,
 
 	createNewYetiProject,
@@ -50,11 +50,11 @@ yetiMainTask args project =
 			el "classpath" [:] [
 				el "pathelement" ["path":"testPath"] []]]),
 	yetidoc = target "yetidoc" [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] do p:
-		antTask "delete" ["dir":yetidocDirP~] [] p;
-		antTask "mkdir" ["dir":yetidocDirP~] [] p;
-		fileSet = createAntFileSet [Include (yetiDirP||"**/*.yeti"), Exclude "**/ybuilder.yeti" ];
+		antTask "delete" ["dir":yetidocDir~] [] p;
+		antTask "mkdir" ["dir":yetidocDir~] [] p;
+		fileSet = createAntFileSet [Include (yetiDir||"**/*.yeti"), Exclude "**/ybuilder.yeti" ];
 		fs = map (strReplace File#pathSeparator "/" . string) (array fileSet#getDirectoryScanner()#getIncludedFiles());
-		args = ["-doc", yetidocDirP~] ++ fs;
+		args = ["-doc", yetidocDir~] ++ fs;
 		yetiMainTask args p;
 		done;
 }
