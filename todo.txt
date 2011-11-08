@@ -8,7 +8,7 @@
 * standard prog project
 * standard war project
 * continuses compilation
-
+* single test method
 
 
 //done

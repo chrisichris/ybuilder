@@ -18,7 +18,12 @@ typedef xmlelement = Text string | Element {name is string, attributes is map<st
 typedef filePatternType = array<Include string | Exclude string | Patterns (() -> filePatternType) >;
 typedef pathPatternType = array<Include string | Exclude string | FileInclude string | FileExclude string | DirInclude string | DirExclude string | Location string |
 							   Path string | Patterns ( () -> pathPatternType) >;
-typedef projectType = {antProject is ~Project, executedTargets is hash<string,boolean>, logger is string -> ()};
+typedef projectType = {antProject is ~Project, 
+					executedTargets is hash<string,boolean>, 
+					logger is string -> (),
+					properties is hash<string,string>,
+					var args is list<string>};
+					
 typedef targetType = {name is string, 
 						isLivecycle is boolean,
 						pos is number,
@@ -85,7 +90,7 @@ createProject () = (
 	antProject#init();
 	antProject#getBaseDir();
 
-	{antProject, executedTargets = [:], logger txt = println txt} is projectType);		
+	{antProject, executedTargets = [:], logger txt = println txt, var args = [], properties = [:]} is projectType);		
 
 na = {_no=""};	
 el name atts subelements is string -> hash<string,string>-> list<xmlelement> -> xmlelement =
@@ -158,7 +163,6 @@ cmdHelp = target "-help" [Description "Shows all the command targets"] \(
 	for (sortBy (on (<)(.pos)) (filter isCommandTarget? (list targets))) (println . targetToString); 
 	);
 
-targetArgsTH = threadLocal ([] is list<string>);
 	
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= ( 
 	var runAlways = false;
@@ -172,13 +176,13 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c= (
 	if runAlways or (not (target is targetType).name in project.executedTargets) then
 		project.executedTargets.[target.name] := true;
 		forTargetDependencies target [:] do t: executeTarget t[] project done;
-		oldArgs = targetArgsTH.value;
-		targetArgsTH.value := targetArgs;
+		oldArgs = project.args;
+		project.args := targetArgs;
 		try
 			println "Exectuing target \(target.name)";
 			target.preFn project; target.fn project; target.postFn project;
 		finally
-			targetArgsTH.value := oldArgs;
+			project.args := oldArgs;
 		yrt
 	fi);
 		
@@ -346,7 +350,6 @@ cmdLivecycles,
 cmdHelp,
 targets,
 target,
-get targetArgs () = targetArgsTH.value,
 runTarget,
 executeTarget,
 createProject,
