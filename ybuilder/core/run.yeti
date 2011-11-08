@@ -42,25 +42,40 @@ evaluate argv =
 			(evalFun code).str;
 		else
 			nargs = fold do als s:
-						a = head als;
+						addStr str =
+							(a = head als;
+							if strStarts? str "-"then
+								cut= strIndexOf str "=" 0;
+								if cut > 0 then
+									value = strRight str (cut+1);
+									key = strSlice str 1 cut;
+									a.properties.[key] := value;
+								else
+									a.properties.[strRight str 1] := "";
+								fi;
+							elif (strLength str) > 0 then
+								push a.params str
+							fi);
 						if strEnds? s "," then
 							sf = strLeft s ((strLength s) - 1);
-							if (strLength sf) > 0 then
-								push a sf fi;
-							(array [])::als;
+							addStr sf;
+							{properties = [:], params = array []}::als;
 						else
-							push a s;
+							addStr s;
 							als;
 						fi 
-					done [array []] argv;
-			nargs = reverse (map list (filter ((not) . empty?) nargs));
-			strJoin "\n" (map do ns:
+					done [{properties = [:], params = array []}] argv;
+			nargs = reverse (filter ((not) . empty? . 
+				(.params)) nargs);
+			println nargs;
+			strJoin "\n" (map do ps:
+				ns = list ps.params;
 				n = head ns;
 				if not n in targets then
 					"Error: target [\(n)] does not exist";
 				else
 					t = targets.[n];
-					runTarget t (tail ns);
+					runTarget t [Args (tail ns),Properties ps.properties];
 					"target run \(n)";
 				fi 
 			done nargs) ^ "\n";
