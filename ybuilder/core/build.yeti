@@ -28,6 +28,7 @@ typedef targetType = {name is string,
 						var preFn is projectType -> (), 
 						var fn is projectType -> (), 
 						var postFn is projectType -> ()};
+typedef pathType = Childdir {var parent is pathType, var component is string} | Basedir ();
 
 	
 
@@ -41,6 +42,38 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
+var basedirStr = ".";
+basedir = Basedir ();
+
+path parent component = (Childdir{var parent = parent is pathType, var component = component is string});
+setPathComponent comp path = case path of Childdir x: x.component := comp is string esac;
+setPathParent parent path = case path of Childdir x: x.parent := parent is string esac;
+
+pathComponent p = case p of
+			Basedir(): basedirStr;
+			Childdir{component} : component;
+			esac;
+
+pathList path ls = 
+	case path is pathType of 
+		Basedir (): (ls is list<Childdir {parent is pathType, var component is string}>);
+	    Childdir c: pathList c.parent (Childdir c :: ls);
+	esac;	
+
+joinPath parentPath childPath = 
+	(ls = pathList parentPath (pathList childPath []);
+	fold do parent p:
+			case p of 
+				Basedir(): parent; 
+				Childdir {component}: path parent component; 
+			esac
+		done basedir ls); 
+
+(~) path = 
+	(l = filter do p: ((strLength p) > 0) and (p != ".") done (basedirStr :: (map pathComponent (pathList path [])));
+	if empty? l then "." else strJoin "/" l fi);
+
+(||) parentPath component = (path parentPath component)~;
 
 createProject () = (
 	antProject = new Project();
@@ -124,31 +157,34 @@ cmdLivecycles = target "-livecycles" [Description "Shows all livecycles in curre
 cmdHelp = target "-help" [Description "Shows all the command targets"] \(
 	for (sortBy (on (<)(.pos)) (filter isCommandTarget? (list targets))) (println . targetToString); 
 	);
+
+targetArgsTH = threadLocal ([] is list<string>);
 	
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= ( 
 	var runAlways = false;
+	var targetArgs = [];
 	for opts do opt: case opt of
 				RunAlways v : runAlways := v;
 				Exclude target: project.executedTargets.[target.name] := true;
 				ExcludeByName name: project.executedTargets.[name] := true;
+				TargetArgs args: targetArgs := args;
 			 esac done;
-		
 	if runAlways or (not (target is targetType).name in project.executedTargets) then
 		project.executedTargets.[target.name] := true;
 		forTargetDependencies target [:] do t: executeTarget t[] project done;
-		for target.livecycles do lc: 
-						for (filter isLivecycleTarget? lc.depends) do t: executeTarget t [] project done 
-				  done;
-		for (filter isLivecycleTarget? target.depends) do t: executeTarget t [] project done;
-		for (filter do t: not (isLivecycleTarget? t) done target.depends) do t: executeTarget t [] project done;
-		
-		println "Exectuing target \(target.name)";
-		target.preFn project; target.fn project; target.postFn project;	
+		oldArgs = targetArgsTH.value;
+		targetArgsTH.value := targetArgs;
+		try
+			println "Exectuing target \(target.name)";
+			target.preFn project; target.fn project; target.postFn project;
+		finally
+			targetArgsTH.value := oldArgs;
+		yrt
 	fi);
 		
 		
-runTarget target =
-	executeTarget  target [] (createProject ());
+runTarget target args =
+	executeTarget  target [TargetArgs args] (createProject ());
 
 
 antfact antElementHandler antXmlContext elem =
@@ -223,20 +259,20 @@ antTask name atts subelements project = (
 	_ = antTaskWithElement (el name atts subelements) project;
 	());
 
-patterns patts = 
+antPatterns patts = 
 	concatMap do pat: 
 		case pat of
 			Include name: [el "include" ["name":name][]];
 			Exclude name: [el "exclude" ["name":name][]];
-			Patterns pa: patterns (pa ());
+			Patterns pa: antPatterns (pa ());
 		esac done patts; 
 
-fileset patts =  
-	el "fileset" ["dir" : "${basedir}"] (patterns patts);
-dirset patts =  
-	el "dirset" ["dir" : "${basedir}"] (patterns patts);
+antFileset patts =  
+	el "fileset" ["dir" : "${basedir}"] (antPatterns patts);
+antDirset patts =  
+	el "dirset" ["dir" : "${basedir}"] (antPatterns patts);
 
-pathElements patts = (
+antPathElements patts = (
 	dirIncludes = array [];
 	fileIncludes = array [];
 	root = array[];
@@ -253,26 +289,26 @@ pathElements patts = (
 				Location str: push root (el "pathelement" ["location" : str] []);
 				Patterns pa: withPatts ( pa ());
 			esac; done;
-	list (root ++ [fileset fileIncludes, dirset dirIncludes])
+	list (root ++ [antFileset fileIncludes, antDirset dirIncludes])
 	); 
 	
 
 createAntPath patts	= (
 	name="foox";
 	project = createProject();
-	antTask "path" ["id" : name] (pathElements patts) project;
+	antTask "path" ["id" : name] (antPathElements patts) project;
 	(project.antProject#getReference(name)) unsafely_as ~Path);
 	
 createAntFileSet patts	= (
 	name="foox";
 	project = createProject();
-	antTask "fileset" ["dir":".", "id" : name] (patterns patts) project;
+	antTask "fileset" ["dir":".", "id" : name] (antPatterns patts) project;
 	((project.antProject#getReference(name)) unsafely_as ~FileSet));
 
 createAntDirSet patts	= (
 	name="foox";
 	project = createProject();
-	antTask "dirset" ["dir":".", "id" : name] (patterns patts) project;
+	antTask "dirset" ["dir":".", "id" : name] (antPatterns patts) project;
 	((project.antProject#getReference(name)) unsafely_as ~DirSet));
 	
 	
@@ -297,6 +333,7 @@ ybuilderVersion = "0.1-alpha";
 cmdYbuilderVersion = target "-ybuilderVersion" [Description "The verstion of ybuilder: \(ybuilderVersion)"] (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
 
 {
+basedir, path, (~), (||), (|) p c = path p c,pathList, joinPath,pathComponent, setPathParent, setPathComponent,
 assert,
 ybuilderVersion,
 cmdYbuilderVersion,
@@ -309,6 +346,7 @@ cmdLivecycles,
 cmdHelp,
 targets,
 target,
+get targetArgs () = targetArgsTH.value,
 runTarget,
 executeTarget,
 createProject,
@@ -317,10 +355,10 @@ na,
 tel,
 antTaskWithElement,
 antTask,
-patterns,
-fileset,
-dirset,
-pathElements,
+antPatterns,
+antFileset,
+antDirset,
+antPathElements,
 file,
 }
 

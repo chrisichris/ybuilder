@@ -3,42 +3,44 @@ module ybuilder.core.javabase;
 load ybuilder.core.base;
 load ybuilder.core.build;
 
-targetClassesDir = targetDir ^ "/classes";
-targetTestClassesDir = targetDir ^"/testclasses";
+targetClassesDirP = path targetDirP "classes";
+targetTestClassesDirP = path targetDirP "testclasses";
 
-javaDir = mainDir ^ "/java";
-javaTestDir = testDir ^"/java";
-resourcesDir = mainDir ^ "/resources";
-resourcesTestDir = testDir ^ "/resources";
-javadocDir = docDir ^"/javadoc";
+javaDirP = path mainDirP "java";
+javaTestDirP = path testDirP "java";
+resourcesDirP = path mainDirP "resources";
+resourcesTestDirP = path testDirP "resources";
+javadocDirP = path docDirP "javadoc";
 
-javacAttributes = ["srcdir" : javaDir, "destdir":targetClassesDir, "classpathref":"compilePath", "debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+javacAttributes = ["srcdir" : javaDirP~, "destdir":targetClassesDirP~, "classpathref":"compilePath", "debug": "on", 
+					"debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
 var javacCompilerarg = "";
 
-javacTestAttributes = ["srcdir" : javaTestDir, "destdir":targetTestClassesDir, "classpathref":"testPath", "debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+javacTestAttributes = ["srcdir" : javaTestDirP~, "destdir":targetTestClassesDirP~, "classpathref":"testPath", 
+						"debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
 var javacTestCompilerarg = "";
 
-javadocAttributes = ["sourcepath" : javaDir, "destdir":javadocDir, "classpathref":"compilePath"];
+javadocAttributes = ["sourcepath" : javaDirP~, "destdir":javadocDirP~, "classpathref":"compilePath"];
 
-push runtimePath (Location targetClassesDir);
-push testPath (Location targetTestClassesDir);
+push runtimePath (Location (targetClassesDirP~));
+push testPath (Location (targetTestClassesDirP~));
 
 {
-	javaDir, javaTestDir, resourcesDir, resourcesTestDir, javadocDir,
-	targetClassesDir,
-	targetTestClassesDir,
+	javaDirP, javaTestDirP, resourcesDirP, resourcesTestDirP, javadocDirP,
+	targetClassesDirP,
+	targetTestClassesDirP,
 	javacAttributes,
 	javacCompilerarg,
 	javacTestAttributes,
 	javacTestCompilerarg,
 	
-	copyResources = target "copyResources" [InLivecycle processResources,Description "Copies resources from \(resourcesDir) to \(targetClassesDir)"]
-		(antTask "copy" ["todir":targetClassesDir] [
-				el "fileset" ["dir":resourcesDir] []]),
+	copyResources = target "copyResources" [InLivecycle processResources,Description "Copies resources from \(resourcesDirP~) to \(targetClassesDirP~)"]
+		(antTask "copy" ["todir":targetClassesDirP~] [
+				el "fileset" ["dir":resourcesDirP~] []]),
 
 	copyTestResources = target "copyTestResources" [InLivecycle processTestResources, Description "Copies test resources to test classes dir"]
-		(antTask "copy" ["todir":targetTestClassesDir] [
-				el "fileset" ["dir":resourcesTestDir] []]),
+		(antTask "copy" ["todir":targetTestClassesDirP~] [
+				el "fileset" ["dir":resourcesTestDirP~] []]),
 
 	compileJava = target "compileJava" [InLivecycle compile, Description "Compiles java sources"]
 		(antTask "javac" javacAttributes [
@@ -48,8 +50,8 @@ push testPath (Location targetTestClassesDir);
 		(antTask "javac" javacTestAttributes [
 			el "compilerarg" ["line":javacTestCompilerarg] []]),
 	
-	javadoc = target "javadoc" [InLivecycle doc, Description "create javadocs from [\(javaDir)] to [\(javadocDir)]"] do p:
-			antTask "delete" ["dir":javadocDir] [] p;
+	javadoc = target "javadoc" [InLivecycle doc, Description "create javadocs from [\(javaDirP~)] to [\(javadocDirP~)]"] do p:
+			antTask "delete" ["dir":javadocDirP~] [] p;
 			antTask "javadoc" javadocAttributes [] p;
 		done,
 
@@ -58,8 +60,8 @@ push testPath (Location targetTestClassesDir);
 			el "classpath" [:] [
 				el "pathelement" ["path":"testPath"] []],
 			el "formatter" ["type":"plain"] [],
-			el "batchtest" ["fork":"yes", "todir":(reportsDir ^ "/tests")] [
-				el "fileset" ["dir":javaTestDir] [ 
+			el "batchtest" ["fork":"yes", "todir":(reportsDirP || "tests")] [
+				el "fileset" ["dir":javaTestDirP~] [ 
 					el "include" ["name":"**/*Test.java"] []]]]);
 				
 }

@@ -1,4 +1,5 @@
 //todo
+* add arguments to target invoke
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * jar target
@@ -19,3 +20,4 @@
 + add buildLibs loading to new Project
 + update scopes to have hard coded names
 + test targets
++ change path to be dynamic

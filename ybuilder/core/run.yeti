@@ -30,7 +30,7 @@ evaluate argv =
 		"\n";
 	elif (head argv) == "-yeti" then
 		cl = (pat = createAntPath (load ybuilder.core.base).testRuntimePath;
-			  new AntClassLoader(ClassLoader#getSystemClassLoader(), pat#getProject(), pat, false));
+			  new AntClassLoader(ClassLoader#getSystemClassLoader()#getParent(), pat#getProject(), pat, false));
 		_ = withCl cl \(
 			m = cl#loadClass("yeti.lang.compiler.yeti")#getMethod("main",array [classOf java.lang.String[]]);
 			m#invoke((),(array [(array (tail argv)) as ~String[] ]) as ~String[][]);
@@ -41,15 +41,29 @@ evaluate argv =
 			code = strRight (strJoin " " argv) 1;
 			(evalFun code).str;
 		else
-			(strJoin "\n" (map do n:
+			nargs = fold do als s:
+						a = head als;
+						if strEnds? s "," then
+							sf = strLeft s ((strLength s) - 1);
+							if (strLength sf) > 0 then
+								push a sf fi;
+							(array [])::als;
+						else
+							push a s;
+							als;
+						fi 
+					done [array []] argv;
+			nargs = reverse (map list (filter ((not) . empty?) nargs));
+			strJoin "\n" (map do ns:
+				n = head ns;
 				if not n in targets then
 					"Error: target [\(n)] does not exist";
 				else
 					t = targets.[n];
-					runTarget t;
+					runTarget t (tail ns);
 					"target run \(n)";
 				fi 
-			done argv)) ^ "\n";
+			done nargs) ^ "\n";
 		fi;
 	fi;
 

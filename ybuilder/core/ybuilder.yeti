@@ -26,7 +26,7 @@ elif (not empty? args) and ((head args) == "buildLibs") then
 elif (not empty? args) and ((head args) == "newProject") then
 	load ybuilder.core.yetibase;
 	load ybuilder.core.build;
-	projectName = if not empty? (tail args) then head (tail args) else "." fi;
+	projectName = if not empty? (tail args) then path basedir (head (tail args)) else basedir fi;
 	createNewYetiProject projectName (createProject ()); 
 	yeti#main(array [buildDependenciesProg]);
 elif (not (file "project.yeti")#exists()) then

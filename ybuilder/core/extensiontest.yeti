@@ -6,15 +6,16 @@ import java.io:FileInputStream, File;
 load ybuilder.core.build;
 load ybuilder.core.base;
 
-extensionTestDirName = "etprojects";
+extensionTestDir = path mainDirP "etprojects";
+extensionTestTargetDir = path targetDirP "etprojects";
 
 extensionTestDirs = array ([] is list<string>);
 
 createExtensionTestDir name project = (
 	load ybuilder.core.yetibase;
-	baseDir = "\(mainDir)/\(extensionTestDirName)/\(name)";
+	baseDir = path extensionTestDir name;
 	createNewYetiProject baseDir project;
-	antTask "copy" ["todir":baseDir, "overwrite":"false"] [
+	antTask "copy" ["todir":baseDir~, "overwrite":"false"] [
 		el "javaresource" ["name":"ybuilder/core/targets.properties"][],
 		el "mapper" ["type":"flatten"][]] project;
 );
@@ -25,10 +26,10 @@ createExtensionTestDirs = target "-createExtensionTestDirs" [] do p:
 
 runExtensionTests project = (
 
-	antTask "copy" ["todir":"\(testDir)/\(extensionTestDirName)"] [
-		el "fileset" ["dir":"\(mainDir)/\(extensionTestDirName)"] []] project;
+	antTask "copy" ["todir":extensionTestTargetDir~] [
+		el "fileset" ["dir":extensionTestDir~] []] project;
 
-	projectDirs = (fs = (file "\(testDir)/\(extensionTestDirName)")#listFiles();
+	projectDirs = (fs = (file (extensionTestDir~))#listFiles();
 					if nullptr? fs then [] else list (array fs) fi);
 					
 	for projectDirs do dir:
