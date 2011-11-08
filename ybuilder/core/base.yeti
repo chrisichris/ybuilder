@@ -16,6 +16,10 @@ testDirP = path srcDirP "test";
 reportsDirP = path targetDirP "reports";
 docDirP = path targetDirP "doc";
 ybuilderDirP = path basedir "ybuilder";
+targetClassesDirP = path targetDirP "classes";
+targetTestClassesDirP = path targetDirP "testclasses";
+
+
 buildExtlibDir = "ybuilder/extlib";
 
 
@@ -144,6 +148,8 @@ testDirP,
 reportsDirP,
 docDirP,
 ybuilderDirP,
+targetClassesDirP,
+targetTestClassesDirP,
 buildExtlibDir,
 
 buildExtPath, initBuildPathes,
