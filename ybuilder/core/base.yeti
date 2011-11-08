@@ -4,7 +4,11 @@ load ybuilder.core.build;
 
 artifactDependencies = array[];					  
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
-localRepository = { var layout = "default", var path = "${user.home}/.m2/repository"}; 	
+localRepository = { 
+    var layout = "default", 
+    var path = "${user.home}/.m2/repository"
+};
+ 	
 remoteRepositories = array [];
 
 libManagedDir = path basedir "lib_managed";
@@ -22,18 +26,19 @@ targetTestClassesDir = path targetDir "testclasses";
 
 buildExtlibDir = "ybuilder/extlib";
 
-
-
-dependency groupId artifactId version opts = (
-    v = {groupId is string,
+dependency groupId artifactId version opts = 
+   (v = {
+        groupId is string,
         artifactId is string,
         var version = version is string,
         var type = "jar", 
         var classifier = undef_str,
         var scope = "compile",
         var systemPath = undef_str,
-        exclusions = array []};
-    for opts do opt: case opt of
+        exclusions = array []
+    };
+    for opts do opt: 
+        case opt of
         Type t: v.type := t;
         Classifier b: v.classifier := b;
         TestScope (): v.scope := "test";
@@ -44,67 +49,141 @@ dependency groupId artifactId version opts = (
         
         SystemPath b: v.systemPath := b; 
         Exclusion {groupId, artifactId} : push v.exclusions {groupId is string, artifactId is string}; 
-        esac;done;
+        esac;
+    done;
+    
     push artifactDependencies v;
     ());
 
-remoteRepository idstr url = push remoteRepositories {id = idstr is string, url is string, var layout = "default"};
-exclusion groupId artifactId = Exclusion {groupId is string, artifactId is string};
+remoteRepository idstr url = 
+    push remoteRepositories {
+            id = idstr is string, 
+            url is string, 
+            var layout = "default"
+        };
+        
+exclusion groupId artifactId = 
+    Exclusion {groupId is string, artifactId is string};
 
 
 //lifecycle targets
-preClean = target "preClean" [Livecycle true, Description "invoked befroe main clean"] \();
-clean = target "clean" [Depends preClean, Livecycle true, Description "cleans the build artifacts"] 
-    (antTask "delete" ["dir" : targetDir~] []);
+preClean = 
+    target "preClean" 
+           [Livecycle true, Description "invoked befroe main clean"] 
+           \();
+           
+clean = 
+    target "clean" 
+           [Depends preClean, Livecycle true, 
+                Description "cleans the build artifacts"] 
+           (antTask "delete" ["dir" : targetDir~] []);
 
-cleanLibs = target "cleanLibs" [Description "Cleans the retrieved dependencies in [\(libManagedDir~)] directory"] 
-                (antTask "delete" ["dir":libManagedDir~] []);
-cleanAll = target "cleanAll" [Livecycle true,Dependencies[cleanLibs, clean], Description "Cleans the project and all the libs"] \();
+cleanLibs = 
+    target "cleanLibs" 
+           [Description "Cleans the retrieved dependencies in [\(libManagedDir~)] directory"] 
+           (antTask "delete" ["dir":libManagedDir~] []);
+           
+cleanAll = 
+    target "cleanAll" 
+           [Livecycle true,Dependencies[cleanLibs, clean], 
+                    Description "Cleans the project and all the libs"] 
+           \();
 
 validate = target "validate" [Livecycle true] \();
-initializeBuild = target "initializeBuild" [Depends validate, Livecycle true] \();
-initialize = target "initialize" [Depends initializeBuild, Livecycle true] (antTask "mkdir" ["dir": targetDir~] []);
-generateResources = target "generateResources" [Depends initialize, Livecycle true] \();
-processResources = target "processResources" [Depends generateResources, Livecycle true] \();
-compile = target "compile" [Depends processResources, Livecycle true] \();
-processClasses = target "processClasses" [Depends compile, Livecycle true] \();
-generateTestResources = target "generateTestResources" [Depends processClasses, Livecycle true] \();
-processTestResources = target "processTestResources" [Depends generateTestResources, Livecycle true] \();
-testCompile = target "testCompile" [Depends processTestResources, Livecycle true] \();
-processTestClasses = target "processTestClasses" [Depends testCompile, Livecycle true] \();
-test = target "test" [Depends processTestClasses, Livecycle true] \();
-preparePackage = target "preparePackage" [Depends test, Livecycle true] \();
-package = target "package" [Depends preparePackage, Livecycle true] \();
-preIntegrationTest = target "preIntegrationTest" [Depends package, Livecycle true] \();
-integrationTest = target "integrationTest" [Depends preIntegrationTest, Livecycle true] \();
+
+initializeBuild = 
+    target "initializeBuild" [Depends validate, Livecycle true] \();
+    
+initialize = 
+    target "initialize" [Depends initializeBuild, Livecycle true] (antTask "mkdir" ["dir": targetDir~] []);
+
+generateResources = 
+    target "generateResources" [Depends initialize, Livecycle true] \();
+processResources = 
+    target "processResources" [Depends generateResources, Livecycle true] \();
+compile = 
+    target "compile" [Depends processResources, Livecycle true] \();
+processClasses = 
+    target "processClasses" [Depends compile, Livecycle true] \();
+generateTestResources = 
+    target "generateTestResources" [Depends processClasses, Livecycle true] \();
+processTestResources = 
+    target "processTestResources" 
+        [Depends generateTestResources, Livecycle true] \();
+testCompile = 
+    target "testCompile" [Depends processTestResources, Livecycle true] \();
+processTestClasses = 
+    target "processTestClasses" [Depends testCompile, Livecycle true] \();
+test = 
+    target "test" [Depends processTestClasses, Livecycle true] \();
+preparePackage = 
+    target "preparePackage" [Depends test, Livecycle true] \();
+package = 
+    target "package" [Depends preparePackage, Livecycle true] \();
+preIntegrationTest = 
+    target "preIntegrationTest" [Depends package, Livecycle true] \();
+integrationTest = 
+    target "integrationTest" [Depends preIntegrationTest, Livecycle true] \();
 
 build = target "build" [Dependencies [cleanAll,integrationTest]] \();
 
 preDoc = target "preDoc" [Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true] \();	
 
-buildExtPath is pathPatternType = array [FileInclude (buildExtlibDir ^ "/*.jar"), FileInclude "ybuilder/extlib_managed/*.jar"];
-runtimePath is pathPatternType = array [FileInclude (libManagedDir||"/compile/**/*.jar"),FileInclude (libManagedDir||"/runtime/**/*.jar"),FileInclude (libDir||"/**/*.jar")];
-compilePath is pathPatternType = array [FileInclude (libManagedDir||"/system/**/*.jar"),FileInclude (libManagedDir||"/provided/**/*.jar"), Patterns \runtimePath];
-testPath is pathPatternType = array [FileInclude (libManagedDir||"/test/**/*.jar"), Patterns \compilePath];
+buildExtPath is pathPatternType = 
+    array [FileInclude (buildExtlibDir ^ "/*.jar"), 
+           FileInclude "ybuilder/extlib_managed/*.jar"];
+           
+runtimePath is pathPatternType = 
+    array [FileInclude (libManagedDir||"/compile/**/*.jar"),
+           FileInclude (libManagedDir||"/runtime/**/*.jar"),
+           FileInclude (libDir||"/**/*.jar")];
+           
+compilePath is pathPatternType = 
+    array [FileInclude (libManagedDir||"/system/**/*.jar"),
+           FileInclude (libManagedDir||"/provided/**/*.jar"), 
+           Patterns \runtimePath];
+testPath is pathPatternType = 
+    array [FileInclude (libManagedDir||"/test/**/*.jar"), 
+           Patterns \compilePath];
 testRuntimePath is pathPatternType = array [Patterns \testPath];
 
 
-retrieveLibs = target "retrieveLibs" [InLivecycle initialize, Description "loads librararies in [\(libManagedDir~)]"] do project:
-        copyDeps scope project = 
-            if not empty? artifactDependencies then
-                antTask (maven "dependencies") ["filesetId" : "dependenciesFS-"^scope, "scopes":scope] (
-                        [el (maven "localRepository") ["layout":localRepository.layout, "path":localRepository.path] []] ++
-                        (map do rr: el (maven "remoteRepository") ["id":rr.id, "url":rr.url,"layout":rr.layout] [] done remoteRepositories) ++
-                        (map do dep: el (maven "dependency") ["groupId" : dep.groupId,
-                                                            "artifactId" : dep.artifactId,
-                                                            "version" : dep.version,
-                                                            "type" : dep.type,
-                                                            "classifier" : dep.classifier,
-                                                            "scope" : dep.scope,
-                                                            "systemPath": dep.systemPath]
-                                                (map do exc: el (maven "exclusion") ["groupId":exc.groupId, "artifactId":exc.artifactId] [] done dep.exclusions) 
-                            done artifactDependencies)) project;
+retrieveLibs = 
+    target "retrieveLibs" 
+        [InLivecycle initialize, Description "loads librararies in [\(libManagedDir~)]"] 
+        do project:
+            copyDeps scope project = 
+                if not empty? artifactDependencies then
+                    antTask (maven "dependencies") 
+                            ["filesetId" : "dependenciesFS-"^scope, 
+                             "scopes":scope] 
+                            ([el (maven "localRepository") 
+                                ["layout":localRepository.layout, 
+                                    "path":localRepository.path] []] 
+                            
+                             ++ (map do rr: 
+                                    el (maven "remoteRepository") 
+                                       ["id":rr.id, "url":rr.url,
+                                        "layout":rr.layout] 
+                                       [] 
+                                   done remoteRepositories) 
+                             ++ (map do dep: 
+                                    el (maven "dependency") 
+                                       ["groupId" : dep.groupId,
+                                        "artifactId" : dep.artifactId,
+                                        "version" : dep.version,
+                                        "type" : dep.type,
+                                        "classifier" : dep.classifier,
+                                        "scope" : dep.scope,
+                                        "systemPath": dep.systemPath]
+                                        (map do exc: 
+                                             el (maven "exclusion") 
+                                                ["groupId":exc.groupId, 
+                                                 "artifactId":exc.artifactId] [] 
+                                             done dep.exclusions) 
+                                    done artifactDependencies)) 
+                            project;
                             
                 antTask "copy" ["todir":libManagedDir||scope] [
                         el "fileset" ["refid":"dependenciesFS-" ^ scope][],
@@ -120,16 +199,18 @@ retrieveLibs = target "retrieveLibs" [InLivecycle initialize, Description "loads
         fi;
     done;
     
-initPathes = target "initPathes" [InLivecycle initialize,Depends retrieveLibs] do project:
-        antTask "path" ["id":"runtimePath"](antPathElements runtimePath) project;
-        antTask "path" ["id":"compilePath"](antPathElements compilePath) project;
-        antTask "path" ["id":"testPath"](antPathElements testPath) project;
-        antTask "path" ["id":"testRuntimePath"](antPathElements testRuntimePath) project;
-    done;
+initPathes = 
+    target "initPathes" [InLivecycle initialize,Depends retrieveLibs] 
+            do project:
+                antTask "path" ["id":"runtimePath"](antPathElements runtimePath) project;
+                antTask "path" ["id":"compilePath"](antPathElements compilePath) project;
+                antTask "path" ["id":"testPath"](antPathElements testPath) project;
+                antTask "path" ["id":"testRuntimePath"](antPathElements testRuntimePath) project;
+            done;
     
-initBuildPathes = target "initBuildPathes" [InLivecycle initializeBuild,Depends retrieveLibs] do project:
-        antTask "path" ["id":"buildExtPath"](antPathElements buildExtPath) project;
-    done;
+initBuildPathes = 
+    target "initBuildPathes" [InLivecycle initializeBuild,Depends retrieveLibs] 
+          (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
 
 {
 var projectVersion = "", 

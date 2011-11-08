@@ -9,31 +9,61 @@ import org.xml.sax.helpers.AttributesImpl;
 import yeti.lang:Struct;
 
 import org.apache.tools.ant.types: Path,AbstractFileSet, FileSet, DirSet;
-import org.apache.tools.ant.helper: AntXMLContext, ProjectHelper2,ProjectHelper2$ElementHandler;
+import org.apache.tools.ant.helper: AntXMLContext, ProjectHelper2,
+                                    ProjectHelper2$ElementHandler;
 import org.apache.tools.ant.input.DefaultInputHandler;
-import org.apache.tools.ant: BuildLogger, DemuxInputStream, NoBannerLogger, Project, RuntimeConfigurable, Target, Task, UnknownElement;
+import org.apache.tools.ant: BuildLogger, DemuxInputStream, NoBannerLogger, 
+                             Project, RuntimeConfigurable, Target, Task, 
+                             UnknownElement;
 
 
-typedef xmlelement = Text string | Element {name is string, attributes is map<string,string>, subelements is list<xmlelement>};
-typedef filePatternType = array<Include string | Exclude string | Patterns (() -> filePatternType) >;
-typedef pathPatternType = array<Include string | Exclude string | FileInclude string | FileExclude string | DirInclude string | DirExclude string | Location string |
-                               Path string | Patterns ( () -> pathPatternType) >;
-typedef projectType = {antProject is ~Project, 
-                    executedTargets is hash<string,boolean>, 
-                    logger is string -> (),
-                    properties is hash<string,string>,
-                    var args is list<string>};
+typedef xmlelement = Text string 
+                     | Element {
+                            name is string, 
+                            attributes is map<string,string>, 
+                            subelements is list<xmlelement>
+                        };
+                                
+typedef filePatternType = array<Include string 
+                                | Exclude string 
+                                | Patterns (() -> filePatternType) >;
+                                
+typedef pathPatternType = array<Include string 
+                                | Exclude string 
+                                | FileInclude string 
+                                | FileExclude string 
+                                | DirInclude string 
+                                | DirExclude string 
+                                | Location string 
+                                | Path string 
+                                | Patterns ( () -> pathPatternType) >;
+
+typedef projectType = {
+    antProject is ~Project, 
+    executedTargets is hash<string,boolean>, 
+    logger is string -> (),
+    properties is hash<string,string>,
+    var args is list<string>
+};
                     
-typedef targetType = {name is string, 
-                        isLivecycle is boolean,
-                        pos is number,
-                        depends is array<targetType>,
-                        livecycles is array<targetType>,
-                        var description is string,
-                        var preFn is projectType -> (), 
-                        var fn is projectType -> (), 
-                        var postFn is projectType -> ()};
-typedef pathType = Childdir {var parent is pathType, var component is string} | Basedir ();
+typedef targetType = {
+    name is string, 
+    isLivecycle is boolean,
+    pos is number,
+    depends is array<targetType>,
+    livecycles is array<targetType>,
+    var description is string,
+    var preFn is projectType -> (), 
+    var fn is projectType -> (), 
+    var postFn is projectType -> ()
+};
+
+typedef pathType = 
+    Childdir {
+        var parent is pathType, 
+        var component is string
+    } 
+    | Basedir ();
 
     
 
@@ -50,53 +80,75 @@ end;
 var basedirStr = ".";
 basedir = Basedir ();
 
-path parent component = (Childdir{var parent = parent is pathType, var component = component is string});
-setPathComponent comp path = case path of Childdir x: x.component := comp is string esac;
-setPathParent parent path = case path of Childdir x: x.parent := parent is string esac;
+path parent component = Childdir {
+                            var parent = parent is pathType, 
+                            var component = component is string
+                        };
+                        
+setPathComponent comp path = 
+    case path of 
+    Childdir x: x.component := comp is string 
+    esac;
+    
+setPathParent parent path = 
+    case path of 
+    Childdir x: x.parent := parent is string 
+    esac;
 
-pathComponent p = case p of
-            Basedir(): basedirStr;
-            Childdir{component} : component;
-            esac;
+pathComponent p = 
+    case p of
+    Basedir(): basedirStr;
+    Childdir{component} : component;
+    esac;
 
 pathList path ls = 
     case path is pathType of 
-        Basedir (): (ls is list<Childdir {parent is pathType, var component is string}>);
-        Childdir c: pathList c.parent (Childdir c :: ls);
+    Basedir (): (ls is list<Childdir {parent is pathType, var component is string}>);
+    Childdir c: pathList c.parent (Childdir c :: ls);
     esac;	
 
 joinPath parentPath childPath = 
     (ls = pathList parentPath (pathList childPath []);
-    fold do parent p:
+     fold do parent p:
             case p of 
-                Basedir(): parent; 
-                Childdir {component}: path parent component; 
+            Basedir(): parent; 
+            Childdir {component}: path parent component; 
             esac
-        done basedir ls); 
+          done basedir ls); 
 
 (~) path = 
-    (l = filter do p: ((strLength p) > 0) and (p != ".") done (basedirStr :: (map pathComponent (pathList path [])));
-    if empty? l then "." else strJoin "/" l fi);
+    (l = filter do p: 
+                    ((strLength p) > 0) and (p != ".") 
+                done 
+                (basedirStr :: (map pathComponent (pathList path [])));
+     if empty? l then "." else strJoin "/" l fi);
 
 (||) parentPath component = (path parentPath component)~;
 
-createProject () = (
-    antProject = new Project();
-    logger = new NoBannerLogger();
-    logger#setMessageOutputLevel(Project#MSG_INFO);
-    logger#setOutputPrintStream(System#out);
-    logger#setErrorPrintStream(System#err);
-    antProject#addBuildListener(logger);
-    antProject#init();
-    antProject#getBaseDir();
+createProject () = 
+    (antProject = new Project();
+     logger = new NoBannerLogger();
+     logger#setMessageOutputLevel(Project#MSG_INFO);
+     logger#setOutputPrintStream(System#out);
+     logger#setErrorPrintStream(System#err);
+     antProject#addBuildListener(logger);
+     antProject#init();
+     antProject#getBaseDir();
 
-    {antProject, executedTargets = [:], logger txt = println txt, var args = [], properties = [:]} is projectType);		
+     {
+        antProject, 
+        executedTargets = [:], 
+        logger txt = println txt, 
+        var args = [], 
+        properties = [:]
+     } is projectType);		
 
-el name atts subelements is string -> hash<string,string>-> list<xmlelement> -> xmlelement =
-    Element {name,
-            attributes = atts,
-            subelements,	
-            };
+el name atts subelements = 
+    Element {
+        name,
+        attributes = atts,
+        subelements,	
+    } is xmlelement;
             
 tel name atts text = el name atts [Text text];			
 
@@ -108,32 +160,38 @@ isCommandTarget? target = strStarts? (target is targetType).name "-";
 
 addTargetToLivecycle target livecycle = 
     (push target.livecycles livecycle;
-    push livecycle.depends target);
+     push livecycle.depends target);
 
 var _targetCounter = 0;
     
-target name opts fn1 is string -> 'a -> 'b -> targetType = (
-    if name in targets then 
-        failWith "\(name) already defined as target - use Redefine true option to set it anyway" fi;
+target name opts fn1 is string -> 'a -> 'b -> targetType = 
+   (if name in targets then 
+        failWith "\(name) already defined as target - use Redefine true option to set it anyway" 
+    fi;
     
-    t = {name, 
+    t = {
+        name, 
         depends = array [],
         isLivecycle = fold do v le: v or case le of Livecycle x:x; _:false esac done false opts,
         livecycles = array [],
-        pos = synchronized _targetCounter \(_targetCounter := _targetCounter +1; _targetCounter),
+        pos = synchronized _targetCounter 
+            \(_targetCounter := _targetCounter +1; _targetCounter),
         var description = "", 
         var preFn = \(), 
         var fn = fn1, 
-        var postFn = \()} is targetType;
+        var postFn = \()
+    } is targetType;
     
-    for opts do opt: case opt of
-                        Depends d : push t.depends d;
-                        Dependencies ds: for ds (push t.depends);
-                        Description d : t.description := d;
-                        DependencyOf target : push (target is targetType).depends t;
-                        InLivecycle lc: addTargetToLivecycle t lc;
-                        Livecycle x: (); //already set in target construciton
-            esac done;
+    for opts do opt: 
+        case opt of
+            Depends d : push t.depends d;
+            Dependencies ds: for ds (push t.depends);
+            Description d : t.description := d;
+            DependencyOf target : push (target is targetType).depends t;
+            InLivecycle lc: addTargetToLivecycle t lc;
+            Livecycle x: (); //already set in target construciton
+        esac 
+    done;
 
     
     targets.[t.name] := t;
@@ -155,29 +213,39 @@ targetToString t = (
     forTargetDependencies t [:] (push deps);
     "-----\n\(if isLivecycleTarget? t then "* " else "" fi)\(t.name)\n   description:\(t.description)\n   depends: \(strJoin ", " (map (.name) deps))");   
 
-cmdTargets = target "-targets" [Description "Shows all the available targets in current project"] \(
-    for (sortBy (on (<)(.pos)) (list targets)) (println . targetToString); 
-    );
+cmdTargets = 
+    target "-targets" 
+        [Description "Shows all the available targets in current project"] 
+        \(for (sortBy (on (<)(.pos)) (list targets)) 
+            (println . targetToString));
     
-cmdLivecycles = target "-livecycles" [Description "Shows all livecycles in current project"] \(
-    for (sortBy (on (<)(.pos)) (filter isLivecycleTarget? (list targets))) (println . targetToString); 
-    );
-cmdHelp = target "-help" [Description "Shows all the command targets"] \(
-    for (sortBy (on (<)(.pos)) (filter isCommandTarget? (list targets))) (println . targetToString); 
-    );
+cmdLivecycles = 
+    target "-livecycles" 
+        [Description "Shows all livecycles in current project"] 
+        \(for (sortBy (on (<)(.pos)) (filter isLivecycleTarget? (list targets))) 
+            (println . targetToString));
+            
+cmdHelp = 
+    target "-help" 
+        [Description "Shows all the command targets"] 
+        \(for (sortBy (on (<)(.pos)) (filter isCommandTarget? (list targets))) 
+            (println . targetToString));
 
     
-executeTarget target opts project is targetType -> 'a -> 'b -> 'c= ( 
-    var runAlways = false;
+executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
+   (var runAlways = false;
     var targetArgs = [];
-    for opts do opt: case opt of
+    for opts do opt: 
+                case opt of
                 RunAlways v : runAlways := v;
                 Exclude target: project.executedTargets.[target.name] := true;
                 ExcludeByName name: project.executedTargets.[name] := true;
                 Args args: targetArgs := args;
                 Properties h: insertHash project.properties h;
-             esac done;
-    if runAlways or (not (target is targetType).name in project.executedTargets) then
+                esac 
+             done;
+    if runAlways 
+       or (not (target is targetType).name in project.executedTargets) then
         project.executedTargets.[target.name] := true;
         forTargetDependencies target [:] do t: executeTarget t[] project done;
         oldArgs = project.args;
@@ -197,38 +265,46 @@ runTarget target opts =
 
 antfact antElementHandler antXmlContext elem =
     case (elem is xmlelement) of
-        Element {name, attributes, subelements}: (
-            {sname,ns} = (
-                inn = strTrim name;
-                cut = strIndexOf inn " " 0;
-                if cut == (-1) then {sname = inn, ns = ""}
-                else
-                    {sname = strTrim (strRight inn cut),
-                    ns = strTrim (strLeft inn cut)}
-                fi);
-                            
-            saxAtts = new AttributesImpl();
-            forHash attributes do key value:
-                saxAtts#addAttribute((), key, key, "CDATA", value) done;
+    Element {name, attributes, subelements}: 
+       ({sname,ns} = 
+           (inn = strTrim name;
+            cut = strIndexOf inn " " 0;
+            if cut == (-1) then {sname = inn, ns = ""}
+            else
+                {sname = strTrim (strRight inn cut),
+                ns = strTrim (strLeft inn cut)}
+            fi);
+                        
+        saxAtts = new AttributesImpl();
+        forHash attributes do key value:
+            saxAtts#addAttribute((), key, key, "CDATA", value) done;
 
-            (antElementHandler is ~ProjectHelper2$ElementHandler)#onStartElement(ns, sname,sname,saxAtts,(antXmlContext is ~AntXMLContext));
+        (antElementHandler is ~ProjectHelper2$ElementHandler)
+            #onStartElement(ns, sname, sname,
+                            saxAtts, (antXmlContext is ~AntXMLContext));
 
-            for subelements do ele: _ = antfact antElementHandler antXmlContext ele done;
-            
-            wrapper = (antXmlContext#getWrapperStack()#lastElement()) unsafely_as ~RuntimeConfigurable;
+        for subelements do ele: _ = 
+                            antfact antElementHandler antXmlContext ele 
+                        done;
+        
+        wrapper = (antXmlContext#getWrapperStack()#lastElement()) 
+                unsafely_as ~RuntimeConfigurable;
 
-            antElementHandler#onEndElement((),(),antXmlContext);
-            wrapper#getProxy();
-        );
+        antElementHandler#onEndElement((),(),antXmlContext);
+        wrapper#getProxy();
+    );
 
-        Text str : (
-            antElementHandler#characters(((str is string) unsafely_as ~String)#toCharArray(), 0, strLength str, antXmlContext);
-            () unsafely_as ~Object);
+    Text str : 
+        (antElementHandler#characters(
+                    ((str is string) unsafely_as ~String)#toCharArray(), 
+                    0, strLength str, antXmlContext);
+         () unsafely_as ~Object);
     esac;
 
 _antProjectElementHandler = new ProjectHelper2$ElementHandler();
-antTaskWithElement elem ybtProject = (
-    project is ~Project = ybtProject.antProject;
+
+antTaskWithElement elem ybtProject = 
+   (project is ~Project = ybtProject.antProject;
     collectorTarget = new Target();
     antXmlContext = new AntXMLContext(project is ~Project);
     collectorTarget#setProject(project);
@@ -245,7 +321,8 @@ antTaskWithElement elem ybtProject = (
                     ue#maybeConfigure();
                     ue#getRealThing();
                else
-                    node fi;
+                    node 
+               fi;
         if task instanceof Task then
             originalIn = System#in;
             projectDefaultStream = project#getDefaultInputStream();
@@ -261,32 +338,31 @@ antTaskWithElement elem ybtProject = (
     fi;
     node);
 
-    
-
-antTask name atts subelements project = (
-    _ = antTaskWithElement (el name atts subelements) project;
-    ());
+antTask name atts subelements project = 
+    (_ = antTaskWithElement (el name atts subelements) project;
+     ());
 
 antPatterns patts = 
     concatMap do pat: 
-        case pat of
+            case pat of
             Include name: [el "include" ["name":name][]];
             Exclude name: [el "exclude" ["name":name][]];
             Patterns pa: antPatterns (pa ());
-        esac done patts; 
+            esac 
+        done patts; 
 
 antFileset patts =  
     el "fileset" ["dir" : "."] (antPatterns patts);
 antDirset patts =  
     el "dirset" ["dir" : "."] (antPatterns patts);
 
-antPathElements patts = (
-    dirIncludes = array [];
+antPathElements patts = 
+   (dirIncludes = array [];
     fileIncludes = array [];
     root = array[];
     withPatts pattsI =
         for (pattsI is pathPatternType) do pat:
-            case pat of
+                case pat of
                 Include str: push fileIncludes (Include str);
                 Exclude str: push fileIncludes (Exclude str);
                 FileInclude str: push fileIncludes (Include str);
@@ -296,49 +372,59 @@ antPathElements patts = (
                 Path str : push root (el "pathelement" ["path" : str] []);
                 Location str: push root (el "pathelement" ["location" : str] []);
                 Patterns pa: withPatts ( pa ());
-            esac; done;
-    list (root ++ [antFileset fileIncludes, antDirset dirIncludes])
-    ); 
+                esac; 
+            done;
+    list (root ++ [antFileset fileIncludes, antDirset dirIncludes])); 
     
 
-createAntPath patts	= (
-    name="foox";
+createAntPath patts	= 
+   (name="foox";
     project = createProject();
     antTask "path" ["id" : name] (antPathElements patts) project;
     (project.antProject#getReference(name)) unsafely_as ~Path);
     
-createAntFileSet patts	= (
-    name="foox";
+createAntFileSet patts	= 
+   (name="foox";
     project = createProject();
     antTask "fileset" ["dir":".", "id" : name] (antPatterns patts) project;
     ((project.antProject#getReference(name)) unsafely_as ~FileSet));
 
-createAntDirSet patts	= (
-    name="foox";
+createAntDirSet patts	= 
+   (name="foox";
     project = createProject();
     antTask "dirset" ["dir":".", "id" : name] (antPatterns patts) project;
     ((project.antProject#getReference(name)) unsafely_as ~DirSet));
     
     
-getAntPathFromProject name project = (
-    var ref = (project is projectType).antProject#getReference(name is string);
-    if not defined? ref then none;
-    elif not ref instanceof Path then failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
-    else Some (ref unsafely_as ~Path) fi;
-    );
-getAntAbstractFileSetFromProject name project = (
-    var ref = (project is projectType).antProject#getReference(name is string);
-    if not defined? ref then none;
-    elif not ref instanceof AbstractFileSet then failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
-    else Some (ref unsafely_as ~AbstractFileSet) fi;
-    );
+getAntPathFromProject name project = 
+   (var ref = (project is projectType).antProject#getReference(name is string);
+    if not defined? ref then 
+        none;
+    elif not ref instanceof Path then 
+        failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
+    else 
+        Some (ref unsafely_as ~Path) 
+    fi;);
+    
+getAntAbstractFileSetFromProject name project = 
+   (var ref = (project is projectType).antProject#getReference(name is string);
+    if not defined? ref then 
+        none;
+    elif not ref instanceof AbstractFileSet then 
+        failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
+    else 
+        Some (ref unsafely_as ~AbstractFileSet) 
+    fi);
 
     
 file name = new File(name is string);
 assert cond text = if not cond then failWith text else () fi;
 
 ybuilderVersion = "0.1-alpha";
-cmdYbuilderVersion = target "-ybuilderVersion" [Description "The verstion of ybuilder: \(ybuilderVersion)"] (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
+cmdYbuilderVersion = 
+    target "-ybuilderVersion" 
+        [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
+        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
 
 {
 basedir, path, (~), (||), (|) p c = path p c,pathList, joinPath,pathComponent, setPathParent, setPathComponent,
