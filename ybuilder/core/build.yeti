@@ -105,8 +105,13 @@ targets is hash<string,targetType> = [:];
 isLivecycleTarget? target = (target is targetType).isLivecycle;
 isCommandTarget? target = strStarts? (target is targetType).name "-";
 	
-var _targetCounter = 0;
 
+addTargetToLivecycle target livecycle = 
+	(push target.livecycles livecycle;
+	push livecycle.depends target);
+
+var _targetCounter = 0;
+	
 target name opts fn1 is string -> 'a -> 'b -> targetType = (
 	if name in targets then 
 		failWith "\(name) already defined as target - use Redefine true option to set it anyway" fi;
@@ -126,15 +131,14 @@ target name opts fn1 is string -> 'a -> 'b -> targetType = (
 						Dependencies ds: for ds (push t.depends);
 						Description d : t.description := d;
 						DependencyOf target : push (target is targetType).depends t;
-						InLivecycle lc: (
-							push t.livecycles lc;
-							push lc.depends t);
-						Livecycle x: ();
+						InLivecycle lc: addTargetToLivecycle t lc;
+						Livecycle x: (); //already set in target construciton
 			esac done;
 
 	
 	targets.[t.name] := t;
 	t);
+
 	
 forTargetDependencies target cont resFn = (
 	pu ta = (cont.[ta.name] := true; resFn ta);
@@ -350,6 +354,7 @@ cmdLivecycles,
 cmdHelp,
 targets,
 target,
+addTargetToLivecycle,
 runTarget,
 executeTarget,
 createProject,
