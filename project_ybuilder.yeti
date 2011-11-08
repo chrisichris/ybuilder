@@ -13,38 +13,38 @@ for ["test1", "test2"] (push extensionTestDirs);
 
 init = target "ybuilderinit" [InLivecycle initialize] do p:
 
-	antTask "delete" ["dir":mainDir~] [] p;
-	
-	antTask "mkdir" ["dir":javaDir~] [] p;
-	
-	antTask "copy" ["todir":javaDir || "ybuilder"] [
-		el "fileset" ["dir":ybuilderDir~] [
-			el "include" ["name":"**/*.java"] []]] p;
+    antTask "delete" ["dir":mainDir~] [] p;
+    
+    antTask "mkdir" ["dir":javaDir~] [] p;
+    
+    antTask "copy" ["todir":javaDir || "ybuilder"] [
+        el "fileset" ["dir":ybuilderDir~] [
+            el "include" ["name":"**/*.java"] []]] p;
 
-	antTask "copy" ["todir":yetiDir || "ybuilder"] [
-		el "fileset" ["dir":ybuilderDir~] [
-			el "include" ["name":"core/*.yeti"] []]] p;
+    antTask "copy" ["todir":yetiDir || "ybuilder"] [
+        el "fileset" ["dir":ybuilderDir~] [
+            el "include" ["name":"core/*.yeti"] []]] p;
 
-	antTask "copy" ["todir":resourcesDir~] [
-		el "fileset" ["dir":ybuilderDir || "resources"] []] p;
+    antTask "copy" ["todir":resourcesDir~] [
+        el "fileset" ["dir":ybuilderDir || "resources"] []] p;
 
-	done;
+    done;
 
 jarFile = "ybuilder.jar";
-	
+    
 jary = target "jary" [InLivecycle package] do p:
-	jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
-	
-	antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
-		((map do j:	el "zipfileset" ["src":libDir || j,"excludes":"MANIFEST.MF"] [] done jars) ++
-		[el "manifest" [:] [
-			el "attribute" ["name":"Implementation-Vendor", "value":projectVendor] [],
-			el "attribute" ["name":"Implementation-Title", "value":"\(projectGroupId)-\(projectArtifactId)"] [],
-			el "attribute" ["name":"Implementation-Version", "value":projectVersion] [],
-			el "attribute" ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] [],
-		]]) p;	
-	done;
-			
+    jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
+    
+    antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
+        ((map do j:	el "zipfileset" ["src":libDir || j,"excludes":"MANIFEST.MF"] [] done jars) ++
+        [el "manifest" [:] [
+            el "attribute" ["name":"Implementation-Vendor", "value":projectVendor] [],
+            el "attribute" ["name":"Implementation-Title", "value":"\(projectGroupId)-\(projectArtifactId)"] [],
+            el "attribute" ["name":"Implementation-Version", "value":projectVersion] [],
+            el "attribute" ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] [],
+        ]]) p;	
+    done;
+            
 
 dependency "junit" "junit" "3.8.2" [TestScope()];
 dependency "org.apache.commons" "commons-io" "1.3.2" [];

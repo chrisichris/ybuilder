@@ -1,7 +1,6 @@
 //todo
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
-* jar target
 * maven target
 * war target with jetty support
 * standard lib project
@@ -22,3 +21,4 @@
 + change path to be dynamic
 + add arguments to target invoke
 + add properties support
++ jar target

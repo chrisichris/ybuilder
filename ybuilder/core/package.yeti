@@ -8,16 +8,16 @@ jarAttributes = ["destfile":targetDir || "\(projectGroupId)-\(projectVersion).ja
 jarFiles = array [Include (targetClassesDir || "**/*")];
 
 {
-	jarManifest,
-	jarAttributes,
-	jarFiles,
-	
-	jar = target "jar" [Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
-		(antTask "jar" jarAttributes 
-			((antFileset jarFiles) ::
-			(el "manifest" [:] 
-				(mapHash do k v: el "attribute" ["name":k, "value":v] [] done jarManifest)) ::[] )),
-	
-	packageType t = addTargetToLivecycle t package, 
-	
+    jarManifest,
+    jarAttributes,
+    jarFiles,
+    
+    jar = target "jar" [Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
+        (antTask "jar" jarAttributes 
+            ((antFileset jarFiles) ::
+            (el "manifest" [:] 
+                (mapHash do k v: el "attribute" ["name":k, "value":v] [] done jarManifest)) ::[] )),
+    
+    packageType t = addTargetToLivecycle t package, 
+    
 }
