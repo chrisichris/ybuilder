@@ -92,7 +92,6 @@ createProject () = (
 
 	{antProject, executedTargets = [:], logger txt = println txt, var args = [], properties = [:]} is projectType);		
 
-na = {_no=""};	
 el name atts subelements is string -> hash<string,string>-> list<xmlelement> -> xmlelement =
     Element {name,
             attributes = atts,
