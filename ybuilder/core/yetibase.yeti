@@ -6,9 +6,11 @@ load ybuilder.core.base;
 load ybuilder.core.build;
 load ybuilder.core.javabase;
 
-yetiDir = path mainDir "yeti";
-yetiTestDir = path testDir "yeti";
-yetidocDir = path docDir "yetidoc";
+
+
+var yetiDir = path mainDir "/yeti";
+var yetiTestDir = path testDir "/yeti";
+var yetidocDir = path docDir "/yetidoc";
 
 yeticAttributes = ["srcdir":yetiDir~, "destdir": targetClassesDir~];
 yeticTestAttributes = ["srcdir":yetiTestDir~, 
@@ -78,7 +80,7 @@ yetiMainTask args project =
                 antTask "delete" ["dir":yetidocDir~] [] p;
                 antTask "mkdir" ["dir":yetidocDir~] [] p;
                 fileSet = 
-                    createAntFileSet [Include (yetiDir||"**/*.yeti"), 
+                    createAntFileSet [Include (yetiDir||"/**/*.yeti"), 
                                       Exclude "**/ybuilder.yeti" ];
                 fs = map (strReplace File#pathSeparator "/" . string) 
                          (array fileSet#getDirectoryScanner()

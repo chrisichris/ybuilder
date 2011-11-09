@@ -4,6 +4,11 @@ load ybuilder.core.javabase;
 load ybuilder.core.yetibase;
 load ybuilder.core.extensiontest;
 
+//TODO: Remove
+(||) parentPath component = (path parentPath component)~;
+
+
+
 projectArtifactId := "ybuilder";
 projectGroupId :="ybuilder";
 projectVersion := ybuilderVersion;
@@ -17,16 +22,16 @@ init = target "ybuilderinit" [InLivecycle initialize] do p:
     
     antTask "mkdir" ["dir":javaDir~] [] p;
     
-    antTask "copy" ["todir":javaDir || "ybuilder"] [
+    antTask "copy" ["todir":javaDir || "/ybuilder"] [
         el "fileset" ["dir":ybuilderDir~] [
             el "include" ["name":"**/*.java"] []]] p;
 
-    antTask "copy" ["todir":yetiDir || "ybuilder"] [
+    antTask "copy" ["todir":yetiDir || "/ybuilder"] [
         el "fileset" ["dir":ybuilderDir~] [
             el "include" ["name":"core/*.yeti"] []]] p;
 
     antTask "copy" ["todir":resourcesDir~] [
-        el "fileset" ["dir":ybuilderDir || "resources"] []] p;
+        el "fileset" ["dir":ybuilderDir || "/resources"] []] p;
 
     done;
 
@@ -38,7 +43,7 @@ jary = target "jary" [InLivecycle package] do p:
     antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
             ((map do j:	
                     el "zipfileset" 
-                       ["src":libDir || j,"excludes":"MANIFEST.MF"] [] 
+                       ["src":libDir || "/\(j)","excludes":"MANIFEST.MF"] [] 
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 

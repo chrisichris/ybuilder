@@ -4,11 +4,12 @@ load ybuilder.core.base;
 load ybuilder.core.build;
 
 
-javaDir = path mainDir "java";
-javaTestDir = path testDir "java";
-resourcesDir = path mainDir "resources";
-resourcesTestDir = path testDir "resources";
-javadocDir = path docDir "javadoc";
+
+var javaDir = path mainDir "/java";
+var javaTestDir = path testDir "/java";
+var resourcesDir = path mainDir "/resources";
+var resourcesTestDir = path testDir "/resources";
+var javadocDir = path docDir "/javadoc";
 
 javacAttributes = 
     ["srcdir" : javaDir~, "destdir":targetClassesDir~, 
@@ -79,7 +80,7 @@ push testPath (Location (targetTestClassesDir~));
                            [el "pathelement" ["path":"testPath"] []],
                         el "formatter" ["type":"plain"] [],
                         el "batchtest" ["fork":"yes", 
-                                        "todir":(reportsDir || "tests")] 
+                                        "todir":(reportsDir || "/tests")] 
                            [el "fileset" ["dir":javaTestDir~] 
                                [el "include" ["name":"**/*Test.java"] []]]]);
                 

@@ -58,12 +58,6 @@ typedef targetType = {
     var postFn is projectType -> ()
 };
 
-typedef pathType = 
-    Childdir {
-        var parent is pathType, 
-        var component is string
-    } 
-    | Basedir ();
 
     
 
@@ -77,51 +71,31 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-var basedirStr = ".";
-basedir = Basedir ();
+var basedir = do (): "." done;
 
-path parent component = Childdir {
-                            var parent = parent is pathType, 
-                            var component = component is string
-                        };
-                        
-setPathComponent comp path = 
-    case path of 
-    Childdir x: x.component := comp is string 
-    esac;
+joinPath parent child  = 
+    do ():
+        cs = child ();
+        c= if strStarts? cs ((basedir ()) ^ "/") then
+            strRight cs (strLength (basedir()));
+        else
+            cs;
+        fi;
+        (parent ()) ^ c;
+    done;
     
-setPathParent parent path = 
-    case path of 
-    Childdir x: x.parent := parent is string 
-    esac;
-
+path parent component = 
+    do (): parent() ^component done;
+/*    
 pathComponent p = 
     case p of
     Basedir(): basedirStr;
     Childdir{component} : component;
     esac;
+*/
 
-pathList path ls = 
-    case path is pathType of 
-    Basedir (): (ls is list<Childdir {parent is pathType, var component is string}>);
-    Childdir c: pathList c.parent (Childdir c :: ls);
-    esac;	
 
-joinPath parentPath childPath = 
-    (ls = pathList parentPath (pathList childPath []);
-     fold do parent p:
-            case p of 
-            Basedir(): parent; 
-            Childdir {component}: path parent component; 
-            esac
-          done basedir ls); 
-
-(~) path = 
-    (l = filter do p: 
-                    ((strLength p) > 0) and (p != ".") 
-                done 
-                (basedirStr :: (map pathComponent (pathList path [])));
-     if empty? l then "." else strJoin "/" l fi);
+(~) path = path (); 
 
 (||) parentPath component = (path parentPath component)~;
 
@@ -434,10 +408,15 @@ cmdYbuilderVersion =
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
 
 {
-basedir, path, (~), (||), (|) p c = path p c,pathList, joinPath,pathComponent, setPathParent, setPathComponent,
+path, 
+joinPath,
+(~), 
+(||), 
+//(|) p c = path p c,
 assert,
 ybuilderVersion,
 cmdYbuilderVersion,
+basedir,
 
 createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, getAntAbstractFileSetFromProject,
 targetToString,

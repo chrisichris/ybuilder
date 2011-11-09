@@ -3,11 +3,12 @@ module ybuilder.core.package;
 load ybuilder.core.base;
 load ybuilder.core.build;
 
+
 jarManifest = [:] is hash<string,string>;
 jarAttributes = 
-    ["destfile":targetDir || "\(projectGroupId)-\(projectVersion).jar"];
+    ["destfile":targetDir || "/\(projectGroupId)-\(projectVersion).jar"];
 
-jarFiles = array [Include (targetClassesDir || "**/*")];
+jarFiles = array [Include (targetClassesDir || "/**/*")];
 
 {
     jarManifest,
