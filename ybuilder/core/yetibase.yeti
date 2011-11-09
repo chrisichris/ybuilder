@@ -2,9 +2,13 @@ module ybuilder.core.yetibase;
 
 import java.io.File;
 
+import org.apache.tools.ant.types: FileSet;
+
+
 load ybuilder.core.base;
 load ybuilder.core.build;
 load ybuilder.core.javabase;
+
 
 
 
@@ -42,10 +46,16 @@ yetiMainTask args project =
             (map do a: el "arg" ["value":a] [] done args) 
             project;
     
-    
+makeYetiDoc targetDir fileSet project=     
+   (fs = map (strReplace File#pathSeparator "/" . string) 
+             (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    #getIncludedFiles());
+    args = ["-doc", targetDir] ++ fs;
+    yetiMainTask args project);
 
 {
     yetiMainTask,
+    makeYetiDoc,
     yetiDir, yetiTestDir, yetidocDir,
     yeticAttributes, yeticTestAttributes,
 
@@ -80,13 +90,9 @@ yetiMainTask args project =
                 antTask "delete" ["dir":yetidocDir~] [] p;
                 antTask "mkdir" ["dir":yetidocDir~] [] p;
                 fileSet = 
-                    createAntFileSet [Include (yetiDir||"/**/*.yeti"), 
+                    createAntFileSet (yetiDir~) [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
-                fs = map (strReplace File#pathSeparator "/" . string) 
-                         (array fileSet#getDirectoryScanner()
-                                #getIncludedFiles());
-                args = ["-doc", yetidocDir~] ++ fs;
-                yetiMainTask args p;
+                makeYetiDoc (yetidocDir~) fileSet p;
             done;
 }
 
