@@ -369,6 +369,7 @@ antPathElements patts =
                 Patterns pa: withPatts ( pa ());
                 esac; 
             done;
+    withPatts patts;
     list (root ++ filesets ++ dirsets)); 
     
 

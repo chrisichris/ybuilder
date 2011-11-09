@@ -134,20 +134,20 @@ preDoc = target "preDoc" [Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true] \();	
 
 buildExtPath is pathPatternType = 
-    array [FileInclude (buildExtlibDir ^ "/*.jar"), 
-           FileInclude "ybuilder/extlib_managed/*.jar"];
+    array [Fileset [buildExtlibDir : [Include "**/*.jar"]], 
+           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
-    array [FileInclude (libManagedDir||"/compile/**/*.jar"),
-           FileInclude (libManagedDir||"/runtime/**/*.jar"),
-           FileInclude (libDir||"/**/*.jar")];
+    array [Fileset [ libManagedDir~ : [Include "/compile/**/*.jar",
+                                       Include "/runtime/**/*.jar"]],
+           Fileset [ libDir~ : [Include "**/*.jar"]]];
            
 compilePath is pathPatternType = 
-    array [FileInclude (libManagedDir||"/system/**/*.jar"),
-           FileInclude (libManagedDir||"/provided/**/*.jar"), 
+    array [Fileset [ libManagedDir~ : [Include "/system/**/*.jar",
+                                       Include "/provided/**/*.jar"]], 
            Patterns \runtimePath];
 testPath is pathPatternType = 
-    array [FileInclude (libManagedDir||"/test/**/*.jar"), 
+    array [Fileset [libManagedDir || "/test" : [Include "**.*.jar"]], 
            Patterns \compilePath];
 testRuntimePath is pathPatternType = array [Patterns \testPath];
 
