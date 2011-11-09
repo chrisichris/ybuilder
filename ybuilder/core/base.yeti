@@ -23,6 +23,7 @@ docDir = path targetDir "/doc";
 ybuilderDir = path basedir "/ybuilder";
 targetClassesDir = path targetDir "/classes";
 targetTestClassesDir = path targetDir "/testclasses";
+webappDir = path srcDir "/webapp";
 
 
 
@@ -234,6 +235,7 @@ ybuilderDir,
 targetClassesDir,
 targetTestClassesDir,
 buildExtlibDir,
+webappDir,
 
 buildExtPath, initBuildPathes,
 artifactDependencies, maven, localRepository, remoteRepositories, 
