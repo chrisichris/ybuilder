@@ -36,14 +36,26 @@ jary = target "jary" [InLivecycle package] do p:
     jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
     
     antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
-        ((map do j:	el "zipfileset" ["src":libDir || j,"excludes":"MANIFEST.MF"] [] done jars) ++
-        [el "manifest" [:] [
-            el "attribute" ["name":"Implementation-Vendor", "value":projectVendor] [],
-            el "attribute" ["name":"Implementation-Title", "value":"\(projectGroupId)-\(projectArtifactId)"] [],
-            el "attribute" ["name":"Implementation-Version", "value":projectVersion] [],
-            el "attribute" ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] [],
-        ]]) p;	
-    done;
+            ((map do j:	
+                    el "zipfileset" 
+                       ["src":libDir || j,"excludes":"MANIFEST.MF"] [] 
+                  done jars) 
+             ++ [el "manifest" [:]
+                    [el "attribute" 
+                        ["name":"Implementation-Vendor", "value":projectVendor] 
+                        [],
+                    el "attribute" 
+                       ["name":"Implementation-Title", 
+                        "value":"\(projectGroupId)-\(projectArtifactId)"] 
+                       [],
+                    el "attribute" 
+                       ["name":"Implementation-Version", "value":projectVersion] 
+                       [],
+                    el "attribute" 
+                       ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] 
+                       []]]) 
+            p;	
+done;
             
 
 dependency "junit" "junit" "3.8.2" [TestScope()];

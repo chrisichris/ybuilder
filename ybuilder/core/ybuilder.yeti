@@ -10,7 +10,8 @@ args = list _argv;
 
 buildDependenciesProg = "ybuilder/buildDependencies.yeti"; 
 
-if (file buildDependenciesProg)#exists() and (not (file "ybuilder/extlib_managed")#exists()) then
+if (file buildDependenciesProg)#exists() 
+    and (not (file "ybuilder/extlib_managed")#exists()) then
     yeti#main(array(buildDependenciesProg :: args));
 fi;	
 
@@ -26,7 +27,12 @@ elif (not empty? args) and ((head args) == "buildLibs") then
 elif (not empty? args) and ((head args) == "newProject") then
     load ybuilder.core.yetibase;
     load ybuilder.core.build;
-    projectName = if not empty? (tail args) then path basedir (head (tail args)) else basedir fi;
+    projectName = 
+        if not empty? (tail args) then 
+            path basedir (head (tail args)) 
+        else 
+            basedir 
+        fi;
     createNewYetiProject projectName (createProject ()); 
     yeti#main(array [buildDependenciesProg]);
 elif (not (file "project.yeti")#exists()) then
@@ -36,23 +42,35 @@ else
     import org.apache.tools.ant.AntClassLoader;
     oL = Thread#currentThread()#getContextClassLoader();
     
-    flUrl = (classOf AntClassLoader)#getProtectionDomain()#getCodeSource()#getLocation();
+    flUrl = (classOf AntClassLoader)#getProtectionDomain()
+                                    #getCodeSource()#getLocation();
         
-    antFiles = (createAntFileSet [Include "ybuilder/extlib/*.jar", Include "ybuilder/extlib_managed/*.jar"])#getDirectoryScanner();
+    antFiles = 
+        (createAntFileSet 
+            [Include "ybuilder/extlib/*.jar", 
+             Include "ybuilder/extlib_managed/*.jar"])
+        #getDirectoryScanner();
+        
     antFiles#scan();
-    urls = map do n: (new File(string n))#toURL() done (array antFiles#getIncludedFiles());
+    urls = map do n: (new File(string n))#toURL() done 
+               (array antFiles#getIncludedFiles());
 //	println ("urls" ^ urls);
     ctxtLoader = if empty? urls then
             oL
         else
     //		println "urls \(urls)";
             import java.lang.ClassLoader;
-            new URLClassLoader(array (flUrl::urls),ClassLoader#getSystemClassLoader()#getParent()); 
+            new URLClassLoader(array (flUrl::urls),
+                               ClassLoader#getSystemClassLoader()#getParent()); 
         fi;
     Thread#currentThread()#setContextClassLoader(ctxtLoader);
     try
-        m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")#getMethod("main",array [classOf java.lang.String[]]);
-        m#invoke((),(array [(array ("project.yeti" :: args)) as ~String[] ]) as ~String[][]);
+        m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
+                      #getMethod("main",array [classOf java.lang.String[]]);
+        m#invoke((),
+                (array 
+                    [(array ("project.yeti" :: args)) as ~String[]]
+                ) as ~String[][]);
         //yeti#main(array ("project.yeti" :: args));
     finally 
         Thread#currentThread()#setContextClassLoader(oL);

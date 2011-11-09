@@ -6,60 +6,92 @@ libManagedDir = "ybuilder/extlib_managed";
 
 artifactDependencies = array[];					  
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
-localRepository = { var layout = "default", var path = "${user.home}/.m2/repository"}; 	
+localRepository = { 
+    var layout = "default", 
+    var path = "${user.home}/.m2/repository"
+}; 	
 remoteRepositories = array [];
-exclusion groupId artifactId = Exclusion {groupId is string, artifactId is string};
+exclusion groupId artifactId = 
+    Exclusion {groupId is string, artifactId is string};
 
-dependency groupId artifactId version opts = (
-	v = {groupId is string,
-		artifactId is string,
-		var version = version is string,
-		var type = "jar", 
-		var classifier = undef_str,
-		var scope = "compile",
-		var systemPath = undef_str,
-		exclusions = array []};
-	for opts do opt: case opt of
-		Type t: v.type := t;
-		Classifier b: v.classifier := b;
-		TestScope (): v.scope := "test";
-		CompileScope (): v.scope := "compile";
-		ProvidedScope (): v.scope := "provided";
-		SystemScope (): v.scope := "system";
-		RuntimeScope (): v.scope := "runtime";
-		SystemPath b: v.systemPath := b; 
-		Exclusion {groupId, artifactId} : push v.exclusions {groupId is string, artifactId is string}; 
-		esac;done;
-	push artifactDependencies v;
-	());
+dependency groupId artifactId version opts = 
+   (v = {groupId is string,
+        artifactId is string,
+        var version = version is string,
+        var type = "jar", 
+        var classifier = undef_str,
+        var scope = "compile",
+        var systemPath = undef_str,
+        exclusions = array []
+    };
+    for opts do opt: 
+        case opt of
+        Type t: v.type := t;
+        Classifier b: v.classifier := b;
+        TestScope (): v.scope := "test";
+        CompileScope (): v.scope := "compile";
+        ProvidedScope (): v.scope := "provided";
+        SystemScope (): v.scope := "system";
+        RuntimeScope (): v.scope := "runtime";
+        SystemPath b: v.systemPath := b; 
+        Exclusion {groupId, artifactId} : push v.exclusions {groupId is string, artifactId is string}; 
+        esac;
+    done;
+    push artifactDependencies v;
+    ());
 
-remoteRepository idstr url = push remoteRepositories {id = idstr is string, url is string, var layout = "default"};
+remoteRepository idstr url = 
+    push remoteRepositories 
+        {id = idstr is string, 
+         url is string, 
+         var layout = "default"};
 
 
 retrieveLibs () = 
-	(project = createProject();
-	
-	antTask "delete" ["dir":libManagedDir] [] project;
-	antTask "mkdir" ["dir":libManagedDir] [] project;
-	if not empty? artifactDependencies then
-		antTask (maven "dependencies") ["filesetId" : "dependenciesFS", "useScope":"runtime"] (
-				[el (maven "localRepository") ["layout":localRepository.layout, "path":localRepository.path] []] ++
-				(map do rr: el (maven "remoteRepository") ["id":rr.id, "url":rr.url,"layout":rr.layout] [] done remoteRepositories) ++
-				(map do dep: el (maven "dependency") ["groupId" : dep.groupId,
-													"artifactId" : dep.artifactId,
-													"version" : dep.version,
-													"type" : dep.type,
-													"classifier" : dep.classifier,
-													"scope" : dep.scope,
-													"systemPath": dep.systemPath]
-										(map do exc: el (maven "exclusion") ["groupId":exc.groupId, "artifactId":exc.artifactId] [] done dep.exclusions) 
-					done artifactDependencies)) project;
-					
-		antTask "copy" ["todir":libManagedDir] [
-				el "fileset" ["refid":"dependenciesFS"][],
-				el "mapper" ["type":"flatten"] []] project;
-	fi;
-	);
+   (project = createProject();
+    
+    antTask "delete" ["dir":libManagedDir] [] project;
+    antTask "mkdir" ["dir":libManagedDir] [] project;
+    if not empty? artifactDependencies then
+        antTask (maven "dependencies") 
+                ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
+                ([el (maven "localRepository") 
+                     ["layout":localRepository.layout, 
+                      "path":localRepository.path] []] 
+                 ++ (map do rr: 
+                        el (maven "remoteRepository") 
+                           ["id":rr.id, "url":rr.url,"layout":rr.layout] 
+                           [] 
+                     done remoteRepositories) 
+                 ++ (map do dep: 
+                        el (maven "dependency") 
+                           ["groupId" : dep.groupId,
+                            "artifactId" : dep.artifactId,
+                            "version" : dep.version,
+                            "type" : dep.type,
+                            "classifier" : dep.classifier,
+                            "scope" : dep.scope,
+                            "systemPath": dep.systemPath]
+                           (map do exc: 
+                                el (maven "exclusion") 
+                                   ["groupId":exc.groupId, 
+                                    "artifactId":exc.artifactId] [] 
+                            done dep.exclusions) 
+                     done artifactDependencies)) 
+                project;
+                    
+        antTask "copy" ["todir":libManagedDir] 
+                [el "fileset" ["refid":"dependenciesFS"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+    fi;
+    );
 {
-artifactDependencies, localRepository, remoteRepositories, dependency, remoteRepository, retrieveLibs,exclusion
+artifactDependencies, 
+localRepository, 
+remoteRepositories, 
+dependency, 
+remoteRepository, 
+retrieveLibs,
+exclusion
 }

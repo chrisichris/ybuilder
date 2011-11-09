@@ -4,7 +4,9 @@ load ybuilder.core.base;
 load ybuilder.core.build;
 
 jarManifest = [:] is hash<string,string>;
-jarAttributes = ["destfile":targetDir || "\(projectGroupId)-\(projectVersion).jar"];
+jarAttributes = 
+    ["destfile":targetDir || "\(projectGroupId)-\(projectVersion).jar"];
+
 jarFiles = array [Include (targetClassesDir || "**/*")];
 
 {
@@ -12,11 +14,16 @@ jarFiles = array [Include (targetClassesDir || "**/*")];
     jarAttributes,
     jarFiles,
     
-    jar = target "jar" [Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
-        (antTask "jar" jarAttributes 
-            ((antFileset jarFiles) ::
-            (el "manifest" [:] 
-                (mapHash do k v: el "attribute" ["name":k, "value":v] [] done jarManifest)) ::[] )),
+    jar = 
+        target "jar" 
+               [Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
+               (antTask "jar" jarAttributes 
+                        ((antFileset jarFiles) 
+                         ::(el "manifest" [:] 
+                               (mapHash do k v: 
+                                 el "attribute" ["name":k, "value":v] [] 
+                               done jarManifest)) 
+                         ::[] )),
     
     packageType t = addTargetToLivecycle t package, 
     

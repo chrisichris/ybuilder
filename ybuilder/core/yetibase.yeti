@@ -11,22 +11,34 @@ yetiTestDir = path testDir "yeti";
 yetidocDir = path docDir "yetidoc";
 
 yeticAttributes = ["srcdir":yetiDir~, "destdir": targetClassesDir~];
-yeticTestAttributes = ["srcdir":yetiTestDir~, "destdir" : targetTestClassesDir~];
+yeticTestAttributes = ["srcdir":yetiTestDir~, 
+                       "destdir" : targetTestClassesDir~];
 
-createNewYetiProject projectDir project = (
-        for [libDir, javaDir,yetiDir,resourcesDir,javaTestDir,yetiTestDir,resourcesTestDir, path basedir buildExtlibDir] 
-            do d: antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project done;
-        antTask "copy" ["todir":(joinPath projectDir ybuilderDir)~, "overwrite":"false"] [
-            el "javaresource" ["name":"ybuilder/core/buildDependencies.yeti"][],
-            el "mapper" ["type":"flatten"] []] project;
-        antTask "copy" ["todir":projectDir~, "overwrite":"false"] [
-            el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
-            el "mapper" ["type":"flatten"] []] project;
+createNewYetiProject projectDir project = 
+       (for [libDir, javaDir,yetiDir,resourcesDir,javaTestDir,yetiTestDir,
+             resourcesTestDir, path basedir buildExtlibDir] 
+            do d: 
+                antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project 
+            done;
+        antTask "copy" 
+                ["todir":(joinPath projectDir ybuilderDir)~, 
+                 "overwrite":"false"] 
+                [el "javaresource" 
+                    ["name":"ybuilder/core/buildDependencies.yeti"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+                
+        antTask "copy" ["todir":projectDir~, "overwrite":"false"] 
+                [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
     );
     
 yetiMainTask args project = 
-    antTask "java" ["classname":"yeti.lang.compiler.yeti", "classpathref":"testPath", "fork":"true"] 
-        (map do a: el "arg" ["value":a] [] done args) project;
+    antTask "java" ["classname":"yeti.lang.compiler.yeti", 
+                    "classpathref":"testPath", "fork":"true"] 
+            (map do a: el "arg" ["value":a] [] done args) 
+            project;
     
     
 
@@ -37,25 +49,42 @@ yetiMainTask args project =
 
     createNewYetiProject,
     
-    defineYetic = target "defineYetic" [Depends initPathes, InLivecycle initialize]
-        (antTask "taskdef" ["name":"yetic", "classname":"yeti.lang.compiler.YetiTask", "classpathref":"compilePath"] []),	
+    defineYetic = 
+        target "defineYetic" 
+               [Depends initPathes, InLivecycle initialize]
+               (antTask "taskdef" 
+                        ["name":"yetic", 
+                         "classname":"yeti.lang.compiler.YetiTask", 
+                         "classpathref":"compilePath"] 
+                        []),	
 
-    compileYeti = target "compileYeti" [Depends compileJava, InLivecycle compile] 
-        (antTask "yetic" yeticAttributes [
-            el "classpath" [:] [
-                el "pathelement" ["path":"compilePath"] []]]),
+    compileYeti = 
+        target "compileYeti" [Depends compileJava, InLivecycle compile] 
+                (antTask "yetic" yeticAttributes 
+                    [el "classpath" [:] 
+                        [el "pathelement" ["path":"compilePath"] []]]),
                  
-    testCompileYeti = target "testCompileYeti" [Depends testCompileJava, InLivecycle testCompile] 
-        (antTask "yetic" yeticTestAttributes [
-            el "classpath" [:] [
-                el "pathelement" ["path":"testPath"] []]]),
-    yetidoc = target "yetidoc" [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] do p:
-        antTask "delete" ["dir":yetidocDir~] [] p;
-        antTask "mkdir" ["dir":yetidocDir~] [] p;
-        fileSet = createAntFileSet [Include (yetiDir||"**/*.yeti"), Exclude "**/ybuilder.yeti" ];
-        fs = map (strReplace File#pathSeparator "/" . string) (array fileSet#getDirectoryScanner()#getIncludedFiles());
-        args = ["-doc", yetidocDir~] ++ fs;
-        yetiMainTask args p;
-        done;
+    testCompileYeti = 
+        target "testCompileYeti" 
+               [Depends testCompileJava, InLivecycle testCompile] 
+               (antTask "yetic" yeticTestAttributes 
+                        [el "classpath" [:] 
+                            [el "pathelement" ["path":"testPath"] []]]),
+                            
+    yetidoc = 
+        target "yetidoc" 
+            [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] 
+            do p:
+                antTask "delete" ["dir":yetidocDir~] [] p;
+                antTask "mkdir" ["dir":yetidocDir~] [] p;
+                fileSet = 
+                    createAntFileSet [Include (yetiDir||"**/*.yeti"), 
+                                      Exclude "**/ybuilder.yeti" ];
+                fs = map (strReplace File#pathSeparator "/" . string) 
+                         (array fileSet#getDirectoryScanner()
+                                #getIncludedFiles());
+                args = ["-doc", yetidocDir~] ++ fs;
+                yetiMainTask args p;
+            done;
 }
 
