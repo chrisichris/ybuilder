@@ -10,15 +10,31 @@ jarAttributes =
 
 jarFileset = [ targetClassesDir~ : []];
 
-/*
-warLibset = [
-warClassesset
-warFileset =  
-*/
+warAttributes = 
+    ["destfile":targetDir || "/\(projectGroupId).war"];
+
+warLibset = 
+     [libDir~ : [Include "**/*.jar"],
+      libManagedDir~ : [Include "compile/**/*.jar",
+                        Include "runtime/**/*.jar"]];
+                       
+warClassesset =
+    [targetClassesDir~ : [Include "**/*.*"]];
+
+warFileset = [webappDir~ : [Include "**/*.*"]];
+
+webxmlFile = path webappDir "/WEB-INF/web.xml";
+
 {
     jarManifest,
     jarAttributes,
     jarFileset,
+    
+    warAttributes,
+    warLibset,
+    warClassesset,
+    warFileset,
+    webxmlFile,
     
     jar = 
         target "jar" 
@@ -32,18 +48,22 @@ warFileset =
                                (mapHash do k v: 
                                  el "attribute" ["name":k, "value":v] [] 
                                done jarManifest)] )),
-    /*
+
     war = 
-        target "jar" 
+        target "war" 
                [Depends preparePackage, 
-                Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
-               (antTask "jar" jarAttributes 
-                        ((antFileset jarFiles) 
-                         ::(el "manifest" [:] 
-                               (mapHash do k v: 
-                                 el "attribute" ["name":k, "value":v] [] 
-                               done jarManifest)) 
-                         ::[] )),
-     
-    */
+                Description "Makes a war file in \(warAttributes.['destfile'])"]
+               (antTask "war" 
+                        (atts = (copy warAttributes);
+                         atts.["webxml"]:= (webxmlFile~);
+                         atts)
+                        ((mapHash do dir ie:
+                                el "lib" [dir:"."] (antPatterns ie);
+                          done warLibset)
+                         ++ (mapHash do dir ie:
+                                el "classes" [dir:"."] (antPatterns ie);
+                          done warClassesset)
+                         ++ (mapHash do dir ie:
+                                antFileset dir ie;
+                          done warFileset)))
 }

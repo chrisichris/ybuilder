@@ -23,7 +23,7 @@ docDir = path targetDir "/doc";
 ybuilderDir = path basedir "/ybuilder";
 targetClassesDir = path targetDir "/classes";
 targetTestClassesDir = path targetDir "/testclasses";
-webappDir = path srcDir "/webapp";
+webappDir = path mainDir "/webapp";
 
 
 
