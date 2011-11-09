@@ -172,7 +172,13 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
     t = {
         name, 
         depends = array [],
-        isLivecycle = fold do v le: v or case le of Livecycle x:x; _:false esac done false opts,
+        isLivecycle = 
+            fold do v le: 
+                    v or case le of 
+                         Livecycle x:x; _:false 
+                         esac 
+                 done false opts,
+                 
         livecycles = array [],
         pos = synchronized _targetCounter 
             \(_targetCounter := _targetCounter +1; _targetCounter),
@@ -184,12 +190,12 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
     
     for opts do opt: 
         case opt of
-            Depends d : push t.depends d;
-            Dependencies ds: for ds (push t.depends);
-            Description d : t.description := d;
-            DependencyOf target : push (target is targetType).depends t;
-            InLivecycle lc: addTargetToLivecycle t lc;
-            Livecycle x: (); //already set in target construciton
+        Depends d : push t.depends d;
+        Dependencies ds: for ds (push t.depends);
+        Description d : t.description := d;
+        DependencyOf target : push (target is targetType).depends t;
+        InLivecycle lc: addTargetToLivecycle t lc;
+        Livecycle x: (); //already set in target construciton
         esac 
     done;
 
@@ -277,7 +283,8 @@ antfact antElementHandler antXmlContext elem =
                         
         saxAtts = new AttributesImpl();
         forHash attributes do key value:
-            saxAtts#addAttribute((), key, key, "CDATA", value) done;
+            saxAtts#addAttribute((), key, key, "CDATA", value) 
+        done;
 
         (antElementHandler is ~ProjectHelper2$ElementHandler)
             #onStartElement(ns, sname, sname,
