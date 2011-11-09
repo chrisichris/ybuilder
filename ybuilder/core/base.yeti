@@ -12,17 +12,18 @@ localRepository = {
 remoteRepositories = array [];
 
 
-var libManagedDir = path basedir "/lib_managed";
-var libDir = path basedir "/lib";	
-var targetDir = path basedir "/target";
-var srcDir = path basedir "/src";
-var mainDir = path srcDir "/main";
-var testDir = path srcDir "/test";
-var reportsDir = path targetDir "/reports";
-var docDir = path targetDir "/doc";
-var ybuilderDir = path basedir "/ybuilder";
-var targetClassesDir = path targetDir "/classes";
-var targetTestClassesDir = path targetDir "/testclasses";
+libManagedDir = path basedir "/lib_managed";
+libDir = path basedir "/lib";	
+targetDir = path basedir "/target";
+srcDir = path basedir "/src";
+mainDir = path srcDir "/main";
+testDir = path srcDir "/test";
+reportsDir = path targetDir "/reports";
+docDir = path targetDir "/doc";
+ybuilderDir = path basedir "/ybuilder";
+targetClassesDir = path targetDir "/classes";
+targetTestClassesDir = path targetDir "/testclasses";
+
 
 
 buildExtlibDir = "ybuilder/extlib";

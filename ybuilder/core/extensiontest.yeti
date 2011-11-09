@@ -6,8 +6,8 @@ import java.io:FileInputStream, File;
 load ybuilder.core.build;
 load ybuilder.core.base;
 
-var extensionTestDir = path mainDir "/etprojects";
-var extensionTestTargetDir = path targetDir "/etprojects";
+extensionTestDir = path mainDir "/etprojects";
+extensionTestTargetDir = path targetDir "/etprojects";
 
 extensionTestDirs = array ([] is list<string>);
 

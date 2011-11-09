@@ -58,6 +58,10 @@ typedef targetType = {
     var postFn is projectType -> ()
 };
 
+typedef pathType = {
+    var fn is () -> string
+};
+
 
     
 
@@ -71,21 +75,27 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-var basedir = do (): "." done;
+path parent child = {
+    var fn () = (parent.fn ()) ^ child;
+} is pathType;
 
-joinPath parent child  = 
-    do ():
-        cs = child ();
-        c= if strStarts? cs ((basedir ()) ^ "/") then
-            strRight cs (strLength (basedir()));
+setPath path parent child = 
+    (path is pathType).fn := do (): (parent.fn ()) ^ child done;
+
+basedir = {var fn = do (): "." done};
+(~) path = path.fn (); 
+
+joinPath parent child  = {
+    var fn () = 
+       (cs = (child is pathType).fn ();
+        c= if strStarts? cs ((basedir~) ^ "/") then
+            strRight cs (strLength (basedir~));
         else
             cs;
         fi;
-        (parent ()) ^ c;
-    done;
+        ((parent is pathType).fn ()) ^ c)
+};
     
-path parent component = 
-    do (): parent() ^component done;
 /*    
 pathComponent p = 
     case p of
@@ -95,7 +105,6 @@ pathComponent p =
 */
 
 
-(~) path = path (); 
 
 (||) parentPath component = (path parentPath component)~;
 
@@ -409,6 +418,7 @@ cmdYbuilderVersion =
 
 {
 path, 
+setPath,
 joinPath,
 (~), 
 (||), 

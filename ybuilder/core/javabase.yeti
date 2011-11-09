@@ -5,11 +5,11 @@ load ybuilder.core.build;
 
 
 
-var javaDir = path mainDir "/java";
-var javaTestDir = path testDir "/java";
-var resourcesDir = path mainDir "/resources";
-var resourcesTestDir = path testDir "/resources";
-var javadocDir = path docDir "/javadoc";
+javaDir = path mainDir "/java";
+javaTestDir = path testDir "/java";
+resourcesDir = path mainDir "/resources";
+resourcesTestDir = path testDir "/resources";
+javadocDir = path docDir "/javadoc";
 
 javacAttributes = 
     ["srcdir" : javaDir~, "destdir":targetClassesDir~, 

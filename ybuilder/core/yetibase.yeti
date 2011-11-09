@@ -8,9 +8,9 @@ load ybuilder.core.javabase;
 
 
 
-var yetiDir = path mainDir "/yeti";
-var yetiTestDir = path testDir "/yeti";
-var yetidocDir = path docDir "/yetidoc";
+yetiDir = path mainDir "/yeti";
+yetiTestDir = path testDir "/yeti";
+yetidocDir = path docDir "/yetidoc";
 
 yeticAttributes = ["srcdir":yetiDir~, "destdir": targetClassesDir~];
 yeticTestAttributes = ["srcdir":yetiTestDir~, 
