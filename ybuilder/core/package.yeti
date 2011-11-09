@@ -17,7 +17,8 @@ jarFiles = array [Include (targetClassesDir || "/**/*")];
     
     jar = 
         target "jar" 
-               [Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
+               [Dependency preparePackage, 
+                Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
                (antTask "jar" jarAttributes 
                         ((antFileset jarFiles) 
                          ::(el "manifest" [:] 
@@ -26,6 +27,6 @@ jarFiles = array [Include (targetClassesDir || "/**/*")];
                                done jarManifest)) 
                          ::[] )),
     
-    packageType t = addTargetToLivecycle t package, 
+     
     
 }
