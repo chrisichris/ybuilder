@@ -46,7 +46,7 @@ else
                                     #getCodeSource()#getLocation();
         
     antFiles = 
-        (createAntFileSet 
+        (createAntFileSet "."
             [Include "ybuilder/extlib/*.jar", 
              Include "ybuilder/extlib_managed/*.jar"])
         #getDirectoryScanner();

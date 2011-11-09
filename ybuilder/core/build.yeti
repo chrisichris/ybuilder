@@ -24,16 +24,12 @@ typedef xmlelement = Text string
                             subelements is list<xmlelement>
                         };
                                 
-typedef filePatternType = array<Include string 
+typedef filePatternType = list?<Include string 
                                 | Exclude string 
                                 | Patterns (() -> filePatternType) >;
                                 
-typedef pathPatternType = array<Include string 
-                                | Exclude string 
-                                | FileInclude string 
-                                | FileExclude string 
-                                | DirInclude string 
-                                | DirExclude string 
+typedef pathPatternType = list?<Fileset hash<string, filePatternType>
+                                | Dirset hash<string, filePatternType> 
                                 | Location string 
                                 | Path string 
                                 | Patterns ( () -> pathPatternType) >;
@@ -348,30 +344,32 @@ antPatterns patts =
             esac 
         done patts; 
 
-antFileset patts =  
-    el "fileset" ["dir" : "."] (antPatterns patts);
-antDirset patts =  
-    el "dirset" ["dir" : "."] (antPatterns patts);
+antFileset dir patts =  
+    el "fileset" ["dir" : dir] (antPatterns patts);
+antDirset dir patts =  
+    el "dirset" ["dir" : dir] (antPatterns patts);
 
 antPathElements patts = 
-   (dirIncludes = array [];
-    fileIncludes = array [];
+   (filesets = array [];
+    dirsets = array [];
     root = array[];
     withPatts pattsI =
         for (pattsI is pathPatternType) do pat:
                 case pat of
-                Include str: push fileIncludes (Include str);
-                Exclude str: push fileIncludes (Exclude str);
-                FileInclude str: push fileIncludes (Include str);
-                FileExclude str: push fileIncludes (Exclude str);
-                DirInclude str: push dirIncludes (Include str);
-                DirExclude str: push dirIncludes (Exclude str);
+                Fileset h: 
+                    forHash h do k v: 
+                        push filesets (antFileset k v) 
+                    done;
+                Dirset h: 
+                    forHash h do k v:
+                        push dirsets (antDirset k v)
+                    done;
                 Path str : push root (el "pathelement" ["path" : str] []);
                 Location str: push root (el "pathelement" ["location" : str] []);
                 Patterns pa: withPatts ( pa ());
                 esac; 
             done;
-    list (root ++ [antFileset fileIncludes, antDirset dirIncludes])); 
+    list (root ++ filesets ++ dirsets)); 
     
 
 createAntPath patts	= 
@@ -380,16 +378,16 @@ createAntPath patts	=
     antTask "path" ["id" : name] (antPathElements patts) project;
     (project.antProject#getReference(name)) unsafely_as ~Path);
     
-createAntFileSet patts	= 
+createAntFileSet dir patts	= 
    (name="foox";
     project = createProject();
-    antTask "fileset" ["dir":".", "id" : name] (antPatterns patts) project;
+    antTask "fileset" ["dir":dir, "id" : name] (antPatterns patts) project;
     ((project.antProject#getReference(name)) unsafely_as ~FileSet));
 
-createAntDirSet patts	= 
+createAntDirSet dir patts	= 
    (name="foox";
     project = createProject();
-    antTask "dirset" ["dir":".", "id" : name] (antPatterns patts) project;
+    antTask "dirset" ["dir":dir, "id" : name] (antPatterns patts) project;
     ((project.antProject#getReference(name)) unsafely_as ~DirSet));
     
     
@@ -424,40 +422,40 @@ cmdYbuilderVersion =
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
 
 {
-prop,
-setProp,
-path, 
-setPath,
-joinPath,
-(~), 
-(||), 
-//(|) p c = path p c,
-assert,
-ybuilderVersion,
-cmdYbuilderVersion,
-basedir,
+    prop,
+    setProp,
+    path, 
+    setPath,
+    joinPath,
+    (~), 
+    (||), 
+    //(|) p c = path p c,
+    assert,
+    ybuilderVersion,
+    cmdYbuilderVersion,
+    basedir,
 
-createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, getAntAbstractFileSetFromProject,
-targetToString,
+    createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, getAntAbstractFileSetFromProject,
+    targetToString,
 
-cmdTargets,
-cmdLivecycles,
-cmdHelp,
-targets,
-target,
-addTargetToLivecycle,
-runTarget,
-executeTarget,
-createProject,
-el,
-tel,
-antTaskWithElement,
-antTask,
-antPatterns,
-antFileset,
-antDirset,
-antPathElements,
-file,
+    cmdTargets,
+    cmdLivecycles,
+    cmdHelp,
+    targets,
+    target,
+    addTargetToLivecycle,
+    runTarget,
+    executeTarget,
+    createProject,
+    el,
+    tel,
+    antTaskWithElement,
+    antTask,
+    antPatterns,
+    antFileset,
+    antDirset,
+    antPathElements,
+    file,
 }
 
 

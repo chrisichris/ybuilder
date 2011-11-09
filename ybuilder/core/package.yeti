@@ -8,14 +8,32 @@ jarManifest = [:] is hash<string,string>;
 jarAttributes = 
     ["destfile":targetDir || "/\(projectGroupId)-\(projectVersion).jar"];
 
-jarFiles = array [Include (targetClassesDir || "/**/*")];
+jarFileset = [ targetClassesDir~ : []];
 
+/*
+warLibset = [
+warClassesset
+warFileset =  
+*/
 {
     jarManifest,
     jarAttributes,
-    jarFiles,
+    jarFileset,
     
     jar = 
+        target "jar" 
+               [Depends preparePackage, 
+                Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
+               (antTask "jar" jarAttributes 
+                        (mapHash do dir ie:
+                            antFileset dir ie;
+                         done jarFileset
+                         ++ [el "manifest" [:] 
+                               (mapHash do k v: 
+                                 el "attribute" ["name":k, "value":v] [] 
+                               done jarManifest)] )),
+    /*
+    war = 
         target "jar" 
                [Depends preparePackage, 
                 Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
@@ -26,7 +44,6 @@ jarFiles = array [Include (targetClassesDir || "/**/*")];
                                  el "attribute" ["name":k, "value":v] [] 
                                done jarManifest)) 
                          ::[] )),
-    
      
-    
+    */
 }
