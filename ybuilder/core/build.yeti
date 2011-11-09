@@ -75,15 +75,22 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-path parent child = {
-    var fn () = (parent.fn ()) ^ child;
-} is pathType;
+prop fn1 = {
+    var fn = do (): fn1 () done;
+};
 
+(~) prop = prop.fn (); 
+
+path parent child = 
+    prop \( (parent~) ^ (child is string)); 
+
+setProp prop fn1 = 
+    prop.fn := do (): fn1 () done;
+    
 setPath path parent child = 
     (path is pathType).fn := do (): (parent.fn ()) ^ child done;
 
 basedir = {var fn = do (): "." done};
-(~) path = path.fn (); 
 
 joinPath parent child  = {
     var fn () = 
@@ -417,6 +424,8 @@ cmdYbuilderVersion =
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
 
 {
+prop,
+setProp,
 path, 
 setPath,
 joinPath,

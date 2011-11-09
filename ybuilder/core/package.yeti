@@ -17,7 +17,7 @@ jarFiles = array [Include (targetClassesDir || "/**/*")];
     
     jar = 
         target "jar" 
-               [Dependency preparePackage, 
+               [Depends preparePackage, 
                 Description "Makes a jar file in \(jarAttributes.['destfile'])"] 
                (antTask "jar" jarAttributes 
                         ((antFileset jarFiles) 
