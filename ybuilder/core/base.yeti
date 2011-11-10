@@ -25,30 +25,57 @@ project = {
  	
 
 //directories
-libManagedDir = path basedir "/lib_managed";
-libDir = path basedir "/lib";	
-targetDir = path basedir "/target";
-srcDir = path basedir "/src";
-mainDir = path srcDir "/main";
-testDir = path srcDir "/test";
-reportsDir = path targetDir "/reports";
-docDir = path targetDir "/doc";
-ybuilderDir = path basedir "/ybuilder";
-targetClassesDir = path targetDir "/classes";
-targetTestClassesDir = path targetDir "/testclasses";
-webappDir = path mainDir "/webapp";
+    libManagedDir = path basedir "/lib_managed";
+    libDir = path basedir "/lib";	
+    targetDir = path basedir "/target";
+    srcDir = path basedir "/src";
+    mainDir = path srcDir "/main";
+    testDir = path srcDir "/test";
+    reportsDir = path targetDir "/reports";
+    docDir = path targetDir "/doc";
+    ybuilderDir = path basedir "/ybuilder";
+    targetClassesDir = path targetDir "/classes";
+    targetTestClassesDir = path targetDir "/testclasses";
+    webappDir = path mainDir "/webapp";
 
-javaDir = path mainDir "/java";
-javaTestDir = path testDir "/java";
-resourcesDir = path mainDir "/resources";
-resourcesTestDir = path testDir "/resources";
-javadocDir = path docDir "/javadoc";
+    javaDir = path mainDir "/java";
+    javaTestDir = path testDir "/java";
+    resourcesDir = path mainDir "/resources";
+    resourcesTestDir = path testDir "/resources";
+    javadocDir = path docDir "/javadoc";
 
-yetiDir = path mainDir "/yeti";
-yetiTestDir = path testDir "/yeti";
-yetidocDir = path docDir "/yetidoc";
+    yetiDir = path mainDir "/yeti";
+    yetiTestDir = path testDir "/yeti";
+    yetidocDir = path docDir "/yetidoc";
 
-buildExtlibDir = "ybuilder/extlib";
+    buildExtlibDir = "ybuilder/extlib";
+    
+    dir = {
+        libManaged = libManagedDir,
+        lib = libDir,	
+        target = targetDir,
+        src = srcDir,
+        main = mainDir,
+        test = testDir,
+        reports = reportsDir,
+        doc = docDir,
+        ybuilder = ybuilderDir,
+        targetClasses = targetClassesDir,
+        targetTestClasses = targetTestClassesDir,
+        webapp = webappDir,
+
+        java = javaDir,
+        javaTest = javaTestDir,
+        resources = resourcesDir,
+        resourcesTest = resourcesTestDir,
+        javadoc = javadocDir,
+
+        yeti = yetiDir,
+        yetiTest = yetiTestDir,
+        yetidoc = yetidocDir,
+        
+        buildExtlib = buildExtlibDir,
+    };
 
 //pathes
 buildExtPath is pathPatternType = 
@@ -470,35 +497,15 @@ livecycleTargets = {
 {
     project,
     
-    libManagedDir,
-    libDir,
-    targetDir,
-    srcDir,
-    mainDir,
-    testDir,
-    reportsDir,
-    docDir,
-    ybuilderDir,
-    targetClassesDir,
-    targetTestClassesDir,
-    buildExtlibDir,
-    webappDir,
-
-    javaDir, 
-    javaTestDir, 
-    resourcesDir, 
-    resourcesTestDir, 
-    javadocDir,
-
-    yetiDir, 
-    yetiTestDir, 
-    yetidocDir,
-
-    buildExtPath,
-    runtimePath, 
-    compilePath, 
-    testPath, 
-    testRuntimePath,
+    dir,
+    
+    pathes = {
+        builExt = buildExtPath,
+        runtime = runtimePath,
+        compile = compilePath,
+        test = testPath,
+        testRuntime = testRuntimePath,
+    },
 
     javacAttributes,
     javacCompilerarg,

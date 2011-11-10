@@ -34,7 +34,7 @@ evaluate argv =
         "\n";
     elif (head argv) == "-yeti" then
         cl = 
-            (pat = createAntPath (load ybuilder.core.base).testRuntimePath;
+            (pat = createAntPath (load ybuilder.core.base).pathes.testRuntime;
              new AntClassLoader(ClassLoader#getSystemClassLoader()#getParent(), 
                                 pat#getProject(), pat, false));
         _ = withCl cl 

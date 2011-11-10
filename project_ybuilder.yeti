@@ -16,20 +16,20 @@ for ["test1", "test2"] (push extensionTestDirs);
 
 init = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
 
-    antTask "delete" ["dir":mainDir~] [] p;
+    antTask "delete" ["dir":dir.main~] [] p;
     
-    antTask "mkdir" ["dir":javaDir~] [] p;
+    antTask "mkdir" ["dir":dir.java~] [] p;
     
-    antTask "copy" ["todir":javaDir || "/ybuilder"] [
-        el "fileset" ["dir":ybuilderDir~] [
+    antTask "copy" ["todir":dir.java || "/ybuilder"] [
+        el "fileset" ["dir":dir.ybuilder~] [
             el "include" ["name":"**/*.java"] []]] p;
 
-    antTask "copy" ["todir":yetiDir || "/ybuilder"] [
-        el "fileset" ["dir":ybuilderDir~] [
+    antTask "copy" ["todir":dir.yeti || "/ybuilder"] [
+        el "fileset" ["dir":dir.ybuilder~] [
             el "include" ["name":"core/*.yeti"] []]] p;
 
-    antTask "copy" ["todir":resourcesDir~] [
-        el "fileset" ["dir":ybuilderDir || "/resources"] []] p;
+    antTask "copy" ["todir":dir.resources~] [
+        el "fileset" ["dir":dir.ybuilder || "/resources"] []] p;
 
     done;
 
@@ -38,10 +38,10 @@ jarFile = "ybuilder.jar";
 jary = target "jary" [InLivecycle livecycleTargets.package] do p:
     jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
     
-    antTask "jar" ["jarfile":jarFile,"basedir":targetClassesDir~] 
+    antTask "jar" ["jarfile":jarFile,"basedir":dir.targetClasses~] 
             ((map do j:	
                     el "zipfileset" 
-                       ["src":libDir || "/\(j)","excludes":"MANIFEST.MF"] [] 
+                       ["src":dir.lib || "/\(j)","excludes":"MANIFEST.MF"] [] 
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 
