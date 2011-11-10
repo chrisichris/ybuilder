@@ -20,6 +20,8 @@ if (not empty? args) and ((head args) == "cleanBuildLibs") then
     antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
 elif (not empty? args) and ((head args) == "buildLibs") then
     if (file buildDependenciesProg)#exists() then
+        load ybuilder.core.build;
+        antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
         yeti#main(array(buildDependenciesProg :: args));
     else
         failWith "There is no \(buildDependenciesProg) file";

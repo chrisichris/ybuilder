@@ -2,4 +2,7 @@ load ybuilder.core.builddeps;
 
 dependency "org.apache.ant" "ant-junit" "1.8.1" [exclusion "junit" "junit", exclusion "org.apache.ant" "ant"];
 
+//uncomment for jetty support
+//dependency "org.eclipse.jetty" "jetty-server" "7.5.0.RC2" []; 
+
 retrieveLibs();

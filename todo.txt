@@ -2,7 +2,7 @@
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * maven target
-* war target with jetty support
+* jetty support
 * standard lib project
 * standard prog project
 * standard war project
@@ -22,3 +22,4 @@
 + add arguments to target invoke
 + add properties support
 + jar target
++ war target 
