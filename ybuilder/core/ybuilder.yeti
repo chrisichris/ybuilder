@@ -27,8 +27,8 @@ elif (not empty? args) and ((head args) == "buildLibs") then
         failWith "There is no \(buildDependenciesProg) file";
     fi
 elif (not empty? args) and ((head args) == "newProject") then
-    load ybuilder.core.yetibase;
     load ybuilder.core.build;
+    load ybuilder.core.base;
     projectName = 
         if not empty? (tail args) then 
             path basedir (head (tail args)) 

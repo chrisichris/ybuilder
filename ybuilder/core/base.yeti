@@ -1,17 +1,30 @@
 module ybuilder.core.base;
 
+import java.io.File;
+import org.apache.tools.ant.types: FileSet;
+
+
 load ybuilder.core.build;
 
-artifactDependencies = array[];					  
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 localRepository = { 
     var layout = "default", 
     var path = "${user.home}/.m2/repository"
 };
+
+
+//general settings
+project = {
+    var version = "", 
+    var artifactId = "", 
+    var groupId = "",
+    var description = "",
+    var vendor = "",
+    var homePage = "",
+};
  	
-remoteRepositories = array [];
 
-
+//directories
 libManagedDir = path basedir "/lib_managed";
 libDir = path basedir "/lib";	
 targetDir = path basedir "/target";
@@ -25,9 +38,87 @@ targetClassesDir = path targetDir "/classes";
 targetTestClassesDir = path targetDir "/testclasses";
 webappDir = path mainDir "/webapp";
 
+javaDir = path mainDir "/java";
+javaTestDir = path testDir "/java";
+resourcesDir = path mainDir "/resources";
+resourcesTestDir = path testDir "/resources";
+javadocDir = path docDir "/javadoc";
 
+yetiDir = path mainDir "/yeti";
+yetiTestDir = path testDir "/yeti";
+yetidocDir = path docDir "/yetidoc";
 
 buildExtlibDir = "ybuilder/extlib";
+
+//pathes
+buildExtPath is pathPatternType = 
+    array [Fileset [buildExtlibDir : [Include "**/*.jar"]], 
+           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
+           
+runtimePath is pathPatternType = 
+    array [Fileset [ libManagedDir~ : [Include "/compile/**/*.jar",
+                                       Include "/runtime/**/*.jar"]],
+           Fileset [ libDir~ : [Include "**/*.jar"]],
+           Location (targetClassesDir~)];
+           
+compilePath is pathPatternType = 
+    array [Fileset [ libManagedDir~ : [Include "/system/**/*.jar",
+                                       Include "/provided/**/*.jar"]], 
+           Patterns \runtimePath];
+testPath is pathPatternType = 
+    array [Fileset [libManagedDir || "/test" : [Include "**.*.jar"]], 
+           Patterns \compilePath,
+           Location (targetTestClassesDir~)];
+           
+testRuntimePath is pathPatternType = array [Patterns \testPath];
+
+
+//task attributes
+javacAttributes = 
+    ["srcdir" : javaDir~, "destdir":targetClassesDir~, 
+     "classpathref":"compilePath", "debug": "on", 
+     "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+     
+var javacCompilerarg = "";
+
+javacTestAttributes = 
+    ["srcdir" : javaTestDir~, "destdir":targetTestClassesDir~, "classpathref":"testPath", 
+     "debug": "on", "debuglevel" : "lines, vars, source", "includeAntRuntime":"false"];
+
+var javacTestCompilerarg = "";
+
+javadocAttributes = 
+    ["sourcepath" : javaDir~, 
+     "destdir":javadocDir~, "classpathref":"compilePath"];
+
+yeticAttributes = ["srcdir":yetiDir~, "destdir": targetClassesDir~];
+yeticTestAttributes = ["srcdir":yetiTestDir~, 
+                       "destdir" : targetTestClassesDir~];
+
+jarManifest = [:] is hash<string,string>;
+jarDestfile = joinPath targetDir (prop \"/\(project.groupId)-\(project.version).jar");
+jarAttributes = [:]; 
+jarFileset = [ targetClassesDir~ : []];
+
+warDestfile = joinPath targetDir (prop \"/\(project.groupId).war");
+warAttributes = [:];
+
+warLibset = 
+     [libDir~ : [Include "**/*.jar"],
+      libManagedDir~ : [Include "compile/**/*.jar",
+                        Include "runtime/**/*.jar"]];
+                       
+warClassesset =
+    [targetClassesDir~ : [Include "**/*.*"]];
+
+warFileset = [webappDir~ : [Include "**/*.*"]];
+
+webxmlFile = path webappDir "/WEB-INF/web.xml";
+                       
+
+//dependency management
+artifactDependencies = array[];					  
+remoteRepositories = array [];
 
 dependency groupId artifactId version opts = 
    (v = {
@@ -67,6 +158,40 @@ remoteRepository idstr url =
         
 exclusion groupId artifactId = 
     Exclusion {groupId is string, artifactId is string};
+
+//helper functions
+createNewYetiProject projectDir project = 
+       (for [libDir, javaDir,yetiDir,resourcesDir,javaTestDir,yetiTestDir,
+             resourcesTestDir, path basedir buildExtlibDir] 
+            do d: 
+                antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project 
+            done;
+        antTask "copy" 
+                ["todir":(joinPath projectDir ybuilderDir)~, 
+                 "overwrite":"false"] 
+                [el "javaresource" 
+                    ["name":"ybuilder/core/buildDependencies.yeti"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+                
+        antTask "copy" ["todir":projectDir~, "overwrite":"false"] 
+                [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+    );
+    
+yetiMainTask args project = 
+    antTask "java" ["classname":"yeti.lang.compiler.yeti", 
+                    "classpathref":"testPath", "fork":"true"] 
+            (map do a: el "arg" ["value":a] [] done args) 
+            project;
+    
+yetidocTask targetDir fileSet project=     
+   (fs = map (strReplace File#pathSeparator "/" . string) 
+             (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    #getIncludedFiles());
+    args = ["-doc", targetDir] ++ fs;
+    yetiMainTask args project);
 
 
 //lifecycle targets
@@ -133,25 +258,8 @@ build = target "build" [Dependencies [cleanAll,integrationTest]] \();
 preDoc = target "preDoc" [Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true] \();	
 
-buildExtPath is pathPatternType = 
-    array [Fileset [buildExtlibDir : [Include "**/*.jar"]], 
-           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
-           
-runtimePath is pathPatternType = 
-    array [Fileset [ libManagedDir~ : [Include "/compile/**/*.jar",
-                                       Include "/runtime/**/*.jar"]],
-           Fileset [ libDir~ : [Include "**/*.jar"]]];
-           
-compilePath is pathPatternType = 
-    array [Fileset [ libManagedDir~ : [Include "/system/**/*.jar",
-                                       Include "/provided/**/*.jar"]], 
-           Patterns \runtimePath];
-testPath is pathPatternType = 
-    array [Fileset [libManagedDir || "/test" : [Include "**.*.jar"]], 
-           Patterns \compilePath];
-testRuntimePath is pathPatternType = array [Patterns \testPath];
 
-
+//retrieve target
 retrieveLibs = 
     target "retrieveLibs" 
         [InLivecycle initialize, Description "loads librararies in [\(libManagedDir~)]"] 
@@ -201,7 +309,8 @@ retrieveLibs =
             copyDeps "runtime" project;
         fi;
     done;
-    
+
+//path targets    
 initPathes = 
     target "initPathes" [InLivecycle initialize,Depends retrieveLibs] 
             do project:
@@ -215,33 +324,230 @@ initBuildPathes =
     target "initBuildPathes" [InLivecycle initializeBuild,Depends retrieveLibs] 
           (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
 
+//java targets
+copyResources = 
+    target "copyResources" 
+           [InLivecycle processResources,
+            Description "Copies resources from \(resourcesDir~) to \(targetClassesDir~)"]
+           (antTask "copy" ["todir":targetClassesDir~] 
+                    [el "fileset" ["dir":resourcesDir~] []]);
+
+copyTestResources = 
+    target "copyTestResources" 
+           [InLivecycle processTestResources, 
+            Description "Copies test resources to test classes dir"]
+           (antTask "copy" ["todir":targetTestClassesDir~] 
+                    [el "fileset" ["dir":resourcesTestDir~] []]);
+
+compileJava = 
+    target "compileJava" 
+           [InLivecycle compile, Description "Compiles java sources"]
+           (antTask "javac" javacAttributes 
+                [el "compilerarg" ["line":javacCompilerarg] []]);
+
+testCompileJava = 
+    target "testCompileJava" 
+           [InLivecycle testCompile, Description "compiles java test sources"]
+           (antTask "javac" javacTestAttributes 
+                    [el "compilerarg" ["line":javacTestCompilerarg] []]);
+
+javadoc = 
+    target "javadoc" 
+           [InLivecycle doc, 
+            Description "create javadocs from [\(javaDir~)] to [\(javadocDir~)]"] 
+            do p:
+                antTask "delete" ["dir":javadocDir~] [] p;
+                antTask "javadoc" javadocAttributes [] p;
+            done;
+
+junitTest = 
+    target "junitTest" [InLivecycle test] 
+          (antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
+                   [el "classpath" [:] 
+                       [el "pathelement" ["path":"testPath"] []],
+                    el "formatter" ["type":"plain"] [],
+                    el "batchtest" ["fork":"yes", 
+                                    "todir":(reportsDir || "/tests")] 
+                       [el "fileset" ["dir":javaTestDir~] 
+                           [el "include" ["name":"**/*Test.java"] []]]]);
+
+          
+//yeti targets
+defineYetic = 
+    target "defineYetic" 
+           [Depends initPathes, InLivecycle initialize]
+           (antTask "taskdef" 
+                    ["name":"yetic", 
+                     "classname":"yeti.lang.compiler.YetiTask", 
+                     "classpathref":"compilePath"] 
+                    []);	
+
+compileYeti = 
+    target "compileYeti" [Depends compileJava, InLivecycle compile] 
+            (antTask "yetic" yeticAttributes 
+                [el "classpath" [:] 
+                    [el "pathelement" ["path":"compilePath"] []]]);
+             
+testCompileYeti = 
+    target "testCompileYeti" 
+           [Depends testCompileJava, InLivecycle testCompile] 
+           (antTask "yetic" yeticTestAttributes 
+                    [el "classpath" [:] 
+                        [el "pathelement" ["path":"testPath"] []]]);
+                        
+yetidoc = 
+    target "yetidoc" 
+        [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] 
+        do p:
+            antTask "delete" ["dir":yetidocDir~] [] p;
+            antTask "mkdir" ["dir":yetidocDir~] [] p;
+            fileSet = 
+                createAntFileSet (yetiDir~) [Include "**/*.yeti", 
+                                  Exclude "**/ybuilder.yeti" ];
+            yetidocTask (yetidocDir~) fileSet p;
+        done;
+
+jar = 
+    target "jar" 
+           [Depends preparePackage, 
+            Description "Makes a jar file in dir.target"] 
+           (antTask "jar" 
+                    (atts = copy jarAttributes;
+                     atts.["destfile"] := (jarDestfile~);
+                     atts)
+                    (mapHash do dir ie:
+                        antFileset dir ie;
+                     done jarFileset
+                     ++ [el "manifest" [:] 
+                           (mapHash do k v: 
+                             el "attribute" ["name":k, "value":v] [] 
+                           done jarManifest)] ));
+
+war = 
+    target "war" 
+           [Depends preparePackage, 
+            Description "Makes a war file in dir.target"]
+           (antTask "war" 
+                    (atts = (copy warAttributes);
+                     atts.["destfile"] := (warDestfile~);
+                     atts.["webxml"]:= (webxmlFile~);
+                     atts)
+                    ((mapHash do dir ie:
+                            el "lib" [dir:"."] (antPatterns ie);
+                      done warLibset)
+                     ++ (mapHash do dir ie:
+                            el "classes" [dir:"."] (antPatterns ie);
+                      done warClassesset)
+                     ++ (mapHash do dir ie:
+                            antFileset dir ie;
+                      done warFileset)));
+        
+        
+livecycleTargets = {
+    preClean, 
+    clean, 
+    cleanAll, 
+    validate, 
+    initializeBuild, 
+    initialize, 
+    generateResources, 
+    processResources,
+    compile, 
+    processClasses, 
+    generateTestResources, 
+    processTestResources, 
+    testCompile, 
+    processTestClasses, 
+    test, 
+    preparePackage,
+    package, 
+    preIntegrationTest, 
+    integrationTest, 
+    build, 
+    preDoc, 
+    doc,  
+};	
 {
-var projectVersion = "", 
-var projectArtifactId = "", 
-var projectGroupId = "",
-var projectDescription = "",
-var projectVendor = "",
-var projectHomePage = "",
+    project,
+    
+    libManagedDir,
+    libDir,
+    targetDir,
+    srcDir,
+    mainDir,
+    testDir,
+    reportsDir,
+    docDir,
+    ybuilderDir,
+    targetClassesDir,
+    targetTestClassesDir,
+    buildExtlibDir,
+    webappDir,
 
-libManagedDir,
-libDir,
-targetDir,
-srcDir,
-mainDir,
-testDir,
-reportsDir,
-docDir,
-ybuilderDir,
-targetClassesDir,
-targetTestClassesDir,
-buildExtlibDir,
-webappDir,
+    javaDir, 
+    javaTestDir, 
+    resourcesDir, 
+    resourcesTestDir, 
+    javadocDir,
 
-buildExtPath, initBuildPathes,
-artifactDependencies, maven, localRepository, remoteRepositories, 
-dependency, exclusion,remoteRepository, retrieveLibs, cleanLibs, preClean, clean, cleanAll, validate, initializeBuild, initialize, generateResources, processResources,
-compile, processClasses, generateTestResources, processTestResources, testCompile, processTestClasses, test, preparePackage,
-package, preIntegrationTest, integrationTest, build, preDoc, doc, runtimePath, compilePath, testPath, testRuntimePath, initPathes
-}	
+    yetiDir, 
+    yetiTestDir, 
+    yetidocDir,
 
+    buildExtPath,
+    runtimePath, 
+    compilePath, 
+    testPath, 
+    testRuntimePath,
+
+    javacAttributes,
+    javacCompilerarg,
+    javacTestAttributes,
+    javacTestCompilerarg,
+    yeticAttributes, 
+    yeticTestAttributes,
+    jarManifest,
+    jarAttributes,
+    jarDestfile,
+    jarFileset,
+    warAttributes,
+    warDestfile,
+    warLibset,
+    warClassesset,
+    warFileset,
+    webxmlFile,
+
+    artifactDependencies, 
+    localRepository, 
+    remoteRepositories, 
+    dependency, 
+    exclusion,
+    remoteRepository,
+
+    yetiMainTask,
+    yetidocTask,
+    createNewYetiProject,
+
+    livecycleTargets,
+    
+    baseTargets = livecycleTargets with {
+        copyResources,
+        copyTestResources,
+        compileJava,
+        testCompileJava,
+        javadoc,
+        junitTest,
+
+        defineYetic,
+        compileYeti,
+        testCompileYeti,
+        yetidoc,
+        initBuildPathes,
+        retrieveLibs, 
+        cleanLibs, 
+        initPathes,
+        war,
+        jar,
+    }
+}
 
