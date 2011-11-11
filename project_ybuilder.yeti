@@ -44,7 +44,7 @@ jary = target "jary" [InLivecycle livecycleTargets.package] do p:
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 
-                        ["name":"Implementation-Vendor", "value":project.vendor] 
+                        ["name":"Implementation-Vendor", "value":project.organization] 
                         [],
                     el "attribute" 
                        ["name":"Implementation-Title", 

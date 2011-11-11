@@ -15,12 +15,15 @@ localRepository = {
 
 //general settings
 project = {
+    var name = "",
     var version = "", 
     var artifactId = "", 
     var groupId = "",
     var description = "",
-    var vendor = "",
+    var organization = "",
     var homePage = "",
+    var license = "",
+    var licenseURL = "",
 };
  	
 
@@ -173,7 +176,8 @@ dependency groupId artifactId version opts =
         RuntimeScope (): v.scope := "runtime";
         
         SystemPath b: v.systemPath := b; 
-        Exclusion {groupId, artifactId} : push v.exclusions {groupId is string, artifactId is string}; 
+        Exclusion {groupId, artifactId} : 
+            push v.exclusions {groupId is string, artifactId is string}; 
         esac;
     done;
     
@@ -260,7 +264,8 @@ initializeBuild =
     target "initializeBuild" [Depends validate, Livecycle true] \();
     
 initialize = 
-    target "initialize" [Depends initializeBuild, Livecycle true] (antTask "mkdir" ["dir": targetDir~] []);
+    target "initialize" [Depends initializeBuild, Livecycle true] 
+           (antTask "mkdir" ["dir": targetDir~] []);
 
 generateResources = 
     target "generateResources" [Depends initialize, Livecycle true] \();
@@ -295,11 +300,57 @@ build = target "build" [Dependencies [cleanAll,integrationTest]] \();
 preDoc = target "preDoc" [Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true] \();	
 
+//mvn things
+_mvnDependencyTags () =     
+    (map do dep: 
+        atts = 
+           ["groupId" : dep.groupId,
+            "artifactId" : dep.artifactId,
+            "version" : dep.version,
+            "type" : dep.type,
+            "scope" : dep.scope,
+            "systemPath": dep.systemPath];
+        if defined? dep.classifier then
+            atts.["classifier"] := dep.classifier
+        fi;
+        if defined? dep.systemPath then
+            atts.["systemPath"] := dep.systemPath;
+        fi;
+        
+        el (maven "dependency") atts 
+            (map do exc: 
+                 el (maven "exclusion") 
+                    ["groupId":exc.groupId, 
+                     "artifactId":exc.artifactId] [] 
+                 done dep.exclusions) 
+    done artifactDependencies);
 
-//retrieve target
+initPom = 
+    target "initPom" [InLivecycle initialize] 
+        (antTask (maven "pom") 
+                ["id" : "pom",
+                 "groupId" : project.groupId,
+                 "artifactId" : project.artifactId,
+                 "version" : project.version,
+                 "name" : project.name]
+                (if (strLength project.license) > 0 
+                     and (strLength project.licenseURL) > 0 then
+                    [el "license" ["name":project.license,
+                                  "url": project.licenseURL] []]
+                 else
+                    []
+                 fi
+                 ++ _mvnDependencyTags ()));
+pom =
+    target "pom" [Depends initPom]
+           (antTask (maven "writepom") 
+                    ["pomRefId" : "pom", "file":"pom.xml"] []);  
+                
+    
 retrieveLibs = 
     target "retrieveLibs" 
-        [InLivecycle initialize, Description "loads librararies in [\(libManagedDir~)]"] 
+        [InLivecycle initialize, 
+         Description "loads librararies in [\(libManagedDir~)]"] 
         do project:
             copyDeps scope project = 
                 if not empty? artifactDependencies then
@@ -316,21 +367,7 @@ retrieveLibs =
                                         "layout":rr.layout] 
                                        [] 
                                    done remoteRepositories) 
-                             ++ (map do dep: 
-                                    el (maven "dependency") 
-                                       ["groupId" : dep.groupId,
-                                        "artifactId" : dep.artifactId,
-                                        "version" : dep.version,
-                                        "type" : dep.type,
-                                        "classifier" : dep.classifier,
-                                        "scope" : dep.scope,
-                                        "systemPath": dep.systemPath]
-                                        (map do exc: 
-                                             el (maven "exclusion") 
-                                                ["groupId":exc.groupId, 
-                                                 "artifactId":exc.artifactId] [] 
-                                             done dep.exclusions) 
-                                    done artifactDependencies)) 
+                             ++ (_mvnDependencyTags ()) ) 
                             project;
                             
                 antTask "copy" ["todir":libManagedDir|| "\(scope)"] [
@@ -351,10 +388,14 @@ retrieveLibs =
 initPathes = 
     target "initPathes" [InLivecycle initialize,Depends retrieveLibs] 
             do project:
-                antTask "path" ["id":"runtimePath"](antPathElements runtimePath) project;
-                antTask "path" ["id":"compilePath"](antPathElements compilePath) project;
-                antTask "path" ["id":"testPath"](antPathElements testPath) project;
-                antTask "path" ["id":"testRuntimePath"](antPathElements testRuntimePath) project;
+                antTask "path" ["id":"runtimePath"]
+                        (antPathElements runtimePath) project;
+                antTask "path" ["id":"compilePath"]
+                        (antPathElements compilePath) project;
+                antTask "path" ["id":"testPath"]
+                        (antPathElements testPath) project;
+                antTask "path" ["id":"testRuntimePath"]
+                        (antPathElements testRuntimePath) project;
             done;
     
 initBuildPathes = 
@@ -494,7 +535,7 @@ war =
                             antFileset (dir~) ie;
                       done warFileset)));
  
-
+ 
 jetty =
     target "jetty" [Description "runs jetty"] do project:
         import org.eclipse.jetty.server:Server;
