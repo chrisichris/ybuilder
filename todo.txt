@@ -3,7 +3,6 @@
 * update livecycles
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
-* maven target
 * continuses compilation
 * single test method
 * create webapp
@@ -27,3 +26,4 @@
 + jetty support
 + handel ant exceptions better
 + only compile java/yeti dirs if they exist
++ maven target
