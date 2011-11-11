@@ -380,24 +380,31 @@ compileJava =
     target "compileJava" 
            [InLivecycle compile, Description "Compiles java sources"]
            do p:
-                antTask "javac" (copyHash id (~) javacAttributes) 
-                    [el "compilerarg" ["line":(javacCompilerarg~)] []] 
-                    p;
+                if (file (javacAttributes.["srcdir"]~))#exists() then
+                    antTask "javac" (copyHash id (~) javacAttributes) 
+                        [el "compilerarg" ["line":(javacCompilerarg~)] []] 
+                        p;
+                fi;
            done; 
 
 testCompileJava = 
     target "testCompileJava" 
            [InLivecycle testCompile, Description "compiles java test sources"]
-           (antTask "javac" (copyHash id (~) javacTestAttributes) 
-                    [el "compilerarg" ["line":(javacTestCompilerarg~)] []]);
-
+           do p:
+                if (file (javacTestAttributes.["srcdir"]~))#exists() then
+                    antTask "javac" (copyHash id (~) javacTestAttributes) 
+                        [el "compilerarg" ["line":(javacTestCompilerarg~)] []] p
+                fi
+           done;
 javadoc = 
     target "javadoc" 
            [InLivecycle doc, 
             Description "create javadocs from [\(javaDir~)] to [\(javadocDir~)]"] 
             do p:
-                antTask "delete" ["dir":javadocDir~] [] p;
-                antTask "javadoc" (copyHash id (~) javadocAttributes) [] p;
+                if (file (javadocAttributes.["sourcepath"]~))#exists() then
+                    antTask "delete" ["dir":javadocDir~] [] p;
+                    antTask "javadoc" (copyHash id (~) javadocAttributes) [] p
+                fi
             done;
 
 junitTest = 
@@ -424,27 +431,39 @@ defineYetic =
 
 compileYeti = 
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
-            (antTask "yetic" (copyHash id (~) yeticAttributes) 
-                [el "classpath" [:] 
-                    [el "pathelement" ["path":"compilePath"] []]]);
-             
+           do p:
+                if (file (yeticAttributes.["srcdir"]~))#exists() then
+                    antTask "yetic" (copyHash id (~) yeticAttributes) 
+                            [el "classpath" [:] 
+                                [el "pathelement" ["path":"compilePath"] []]]
+                            p
+                fi
+           done;
+           
 testCompileYeti = 
     target "testCompileYeti" 
            [Depends testCompileJava, InLivecycle testCompile] 
-           (antTask "yetic" (copyHash id (~) yeticTestAttributes) 
-                    [el "classpath" [:] 
-                        [el "pathelement" ["path":"testPath"] []]]);
+           do p:
+                if (file (yeticTestAttributes.["srcdir"]~))#exists() then
+                   antTask "yetic" (copyHash id (~) yeticTestAttributes) 
+                            [el "classpath" [:] 
+                                [el "pathelement" ["path":"testPath"] []]]
+                            p;
+                fi;
+           done;
                         
 yetidoc = 
     target "yetidoc" 
         [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] 
         do p:
-            antTask "delete" ["dir":yetidocDir~] [] p;
-            antTask "mkdir" ["dir":yetidocDir~] [] p;
-            fileSet = 
-                createAntFileSet (yetiDir~) [Include "**/*.yeti", 
-                                  Exclude "**/ybuilder.yeti" ];
-            yetidocTask (yetidocDir~) fileSet p;
+            if (file (yetiDir~))#exists() then
+                antTask "delete" ["dir":yetidocDir~] [] p;
+                antTask "mkdir" ["dir":yetidocDir~] [] p;
+                fileSet = 
+                    createAntFileSet (yetiDir~) [Include "**/*.yeti", 
+                                      Exclude "**/ybuilder.yeti" ];
+                yetidocTask (yetidocDir~) fileSet p;
+            fi;
         done;
 
 jar = 
@@ -575,7 +594,7 @@ livecycleTargets = {
         testCompileJava,
         javadoc,
         junitTest,
-
+        jetty,
         defineYetic,
         compileYeti,
         testCompileYeti,

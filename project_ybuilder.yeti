@@ -18,7 +18,6 @@ init = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
 
     antTask "delete" ["dir":dir.main~] [] p;
     
-    antTask "mkdir" ["dir":dir.java~] [] p;
     
     antTask "copy" ["todir":dir.java || "ybuilder"] [
         el "fileset" ["dir":dir.ybuilder~] [
