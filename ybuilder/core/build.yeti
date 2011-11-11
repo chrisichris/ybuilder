@@ -246,17 +246,19 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
         oldArgs = project.args;
         project.args := targetArgs;
         try
-            println "Exectuing target \(target.name)";
+            //println "Exectuing target \(target.name)";
             target.preFn project; target.fn project; target.postFn project;
         finally
             project.args := oldArgs;
         yrt
     fi);
-        
+
+class YbuilderAntException(String message, Exception ca) extends RuntimeException(message,ca) 
+end;
+    
         
 runTarget target opts =
     executeTarget  target opts (createProject ());
-
 
 antfact antElementHandler antXmlContext elem =
     case (elem is xmlelement) of
@@ -299,6 +301,7 @@ antfact antElementHandler antXmlContext elem =
 
 _antProjectElementHandler = new ProjectHelper2$ElementHandler();
 
+
 antTaskWithElement elem ybtProject = 
    (project is ~Project = ybtProject.antProject;
     collectorTarget = new Target();
@@ -325,7 +328,12 @@ antTaskWithElement elem ybtProject =
             project#setDefaultInputStream(originalIn);
             System#setIn(new DemuxInputStream(project));
 
-            (task unsafely_as ~Task)#perform();
+            try 
+                (task unsafely_as ~Task)#perform();
+            catch Exception ex: 
+                throw new YbuilderAntException(ex#getMessage(),ex);
+            yrt;
+            
             System#setIn(originalIn);
             project#setDefaultInputStream(projectDefaultStream);
         fi

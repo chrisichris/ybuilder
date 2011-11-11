@@ -1,5 +1,5 @@
 //todo
-* handel ant exceptions better
+* only compile java/yeti dirs if they exist
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * maven target
@@ -24,3 +24,4 @@
 + jar target
 + war target 
 + jetty support
++ handel ant exceptions better

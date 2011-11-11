@@ -79,21 +79,24 @@ evaluate argv =
             
             //println nargs;
             //for (keys targets) println;
-            
-            strJoin "\n" 
-                   (map do ps:
-                        ns = list ps.params;
-                        n = head ns;
-                        if not n in targets then
-                            "Error: target [\(n)] does not exist";
-                        else
-                            t = targets.[n];
-                            runTarget t [Args (tail ns),
-                                         Properties ps.properties];
-                            "target run \(n)";
-                        fi 
-                    done nargs) 
-            ^ "\n";
+            try 
+                strJoin "\n" 
+                       (map do ps:
+                            ns = list ps.params;
+                            n = head ns;
+                            if not n in targets then
+                                throw new YbuilderAntException("\(n) is no target",());
+                            else
+                                t = targets.[n];
+                                runTarget t [Args (tail ns),
+                                             Properties ps.properties];
+                                "target run \(n)";
+                            fi 
+                        done nargs) 
+                ^ "\n";
+            catch YbuilderAntException ex:
+                "Build Failed:\n\(ex#getMessage())";
+            yrt;
         fi;
     fi;
 
