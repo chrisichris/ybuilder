@@ -303,44 +303,45 @@ _antProjectElementHandler = new ProjectHelper2$ElementHandler();
 
 
 antTaskWithElement elem ybtProject = 
-   (project is ~Project = ybtProject.antProject;
-    collectorTarget = new Target();
-    antXmlContext = new AntXMLContext(project is ~Project);
-    collectorTarget#setProject(project);
-    antXmlContext#setCurrentTarget(collectorTarget);
-    antXmlContext#setLocator(new AntBuilderLocator());
+    try 
+        project is ~Project = ybtProject.antProject;
+        collectorTarget = new Target();
+        antXmlContext = new AntXMLContext(project is ~Project);
+        collectorTarget#setProject(project);
+        antXmlContext#setCurrentTarget(collectorTarget);
+        antXmlContext#setLocator(new AntBuilderLocator());
 
-    //execute
-    node = antfact _antProjectElementHandler antXmlContext elem;
-    if nullptr? node then
-        ()
-    elif node instanceof Task then
-        task = if node instanceof UnknownElement then
-                    ue = node unsafely_as ~UnknownElement;
-                    ue#maybeConfigure();
-                    ue#getRealThing();
-               else
-                    node 
-               fi;
-        if task instanceof Task then
-            originalIn = System#in;
-            projectDefaultStream = project#getDefaultInputStream();
-            project#setDefaultInputStream(originalIn);
-            System#setIn(new DemuxInputStream(project));
+        //execute
+        node = antfact _antProjectElementHandler antXmlContext elem;
+        if nullptr? node then
+            ()
+        elif node instanceof Task then
+            task = if node instanceof UnknownElement then
+                        ue = node unsafely_as ~UnknownElement;
+                        ue#maybeConfigure();
+                        ue#getRealThing();
+                   else
+                        node 
+                   fi;
+            if task instanceof Task then
+                originalIn = System#in;
+                projectDefaultStream = project#getDefaultInputStream();
+                project#setDefaultInputStream(originalIn);
+                System#setIn(new DemuxInputStream(project));
 
-            try 
-                (task unsafely_as ~Task)#perform();
-            catch Exception ex: 
-                throw new YbuilderAntException(ex#getMessage(),ex);
-            yrt;
-            
-            System#setIn(originalIn);
-            project#setDefaultInputStream(projectDefaultStream);
-        fi
-    else
-        (node unsafely_as ~RuntimeConfigurable)#maybeConfigure(project);
-    fi;
-    node);
+                    (task unsafely_as ~Task)#perform();
+                
+                System#setIn(originalIn);
+                project#setDefaultInputStream(projectDefaultStream);
+            fi
+        else
+            (node unsafely_as ~RuntimeConfigurable)#maybeConfigure(project);
+        fi;
+        node
+    catch Exception ex: 
+        throw new YbuilderAntException(ex#getMessage(),ex);
+    yrt;
+    
 
 antTask name atts subelements project = 
     (_ = antTaskWithElement (el name atts subelements) project;

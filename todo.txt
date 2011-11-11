@@ -1,5 +1,4 @@
 //todo
-* ant exception handling also to creation of tasks
 * update livecycles
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
@@ -27,3 +26,4 @@
 + handel ant exceptions better
 + only compile java/yeti dirs if they exist
 + maven target
++ ant exception handling also to creation of tasks
