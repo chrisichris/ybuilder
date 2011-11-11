@@ -148,7 +148,12 @@ warClassesset =
 
 warFileset = [webappDir : [Include "**/*.*"]];
 
-                       
+deployRepository = {
+    var url = undef_str,
+    var providerArtifactId = undef_str,
+    var providerVersion = "1.0-beta2",
+    params = (array []) is array<xmlelement>
+};
 
 //dependency management
 artifactDependencies = array[];					  
@@ -235,6 +240,29 @@ copyHash fnk fnv h =
     done;
     hr);
 
+mvnInstall fileName project = 
+    antTask (maven "install") ["file": fileName]
+            [el "pom" ["refId":"pom"][]]
+            project;
+
+mvnDeploy fileName project =
+   (if defined? deployRepository.providerArtifactId then
+        antTask (maven "install-provider") 
+                ["artifactId":deployRepository.providerArtifactId,
+                 "version":deployRepository.providerVersion] 
+                [] project;
+    fi;
+    antTask (maven "deploy") ["file":fileName]
+            (if defined? deployRepository.url then
+                [el "remoteRepository" ["url":deployRepository.url]
+                    (list deployRepository.params)]
+             else
+                []
+             fi)
+            project);
+                 
+            
+    
 //lifecycle targets
 preClean = 
     target "preClean" 
@@ -327,7 +355,9 @@ _mvnDependencyTags () =
 
 initPom = 
     target "initPom" [InLivecycle initialize] 
-        (antTask (maven "pom") 
+        do p:
+            //println project.groupId;
+            antTask (maven "pom") 
                 ["id" : "pom",
                  "groupId" : project.groupId,
                  "artifactId" : project.artifactId,
@@ -339,13 +369,30 @@ initPom =
                                   "url": project.licenseURL] []]
                  else
                     []
-                 fi
-                 ++ _mvnDependencyTags ()));
+                 fi 
+                 ++  _mvnDependencyTags ())
+                p
+        done;
+                 /*
+                 "groupId" : project.groupId,
+                 "artifactId" : project.artifactId,
+                 "version" : project.version,
+                 "name" : project.name]
+                (if (strLength project.license) > 0 
+                     and (strLength project.licenseURL) > 0 then
+                    [el "license" ["name":project.license,
+                                  "url": project.licenseURL] []]
+                 else
+                    []
+                 fi 
+                 ++  _mvnDependencyTags ()));
+                 */
 pom =
-    target "pom" [Depends initPom]
+    target "pom" [Depends initPom, Description "Writes a pom"] 
            (antTask (maven "writepom") 
                     ["pomRefId" : "pom", "file":"pom.xml"] []);  
-                
+
+                    
     
 retrieveLibs = 
     target "retrieveLibs" 
@@ -507,34 +554,49 @@ yetidoc =
             fi;
         done;
 
+_mvnInstallOrDeploy fileName project = 
+   (if contains? ":install" project.args then
+        mvnInstall fileName project;
+    fi;
+    if contains? ":deploy" project.args then
+        mvnDeploy fileName project;
+    fi);
+        
 jar = 
     target "jar" 
            [Depends preparePackage, 
             Description "Makes a jar file in dir.target"] 
-           (antTask "jar" (copyHash id (~) jarAttributes) 
-                    (mapHash do dir ie:
-                        antFileset (dir~) ie;
-                     done jarFileset
-                     ++ [el "manifest" [:] 
-                           (mapHash do k v: 
-                             el "attribute" ["name":k, "value":v] [] 
-                           done jarManifest)] ));
+           do p:
+                antTask "jar" (copyHash id (~) jarAttributes) 
+                        (mapHash do dir ie:
+                            antFileset (dir~) ie;
+                         done jarFileset
+                         ++ [el "manifest" [:] 
+                               (mapHash do k v: 
+                                 el "attribute" ["name":k, "value":v] [] 
+                               done jarManifest)] ) 
+                        p;
+                _mvnInstallOrDeploy (jarAttributes.["destfile"]~) p;
+           done;
 
 war = 
     target "war" 
            [Depends preparePackage, 
             Description "Makes a war file in dir.target"]
-           (antTask "war" (copyHash id (~) warAttributes)
-                    ((mapHash do dir ie:
-                            el "lib" [(dir~):"."] (antPatterns ie);
-                      done warLibset)
-                     ++ (mapHash do dir ie:
-                            el "classes" [(dir~) :"."] (antPatterns ie);
-                      done warClassesset)
-                     ++ (mapHash do dir ie:
-                            antFileset (dir~) ie;
-                      done warFileset)));
- 
+            do p:
+                antTask "war" (copyHash id (~) warAttributes)
+                        ((mapHash do dir ie:
+                                el "lib" [(dir~):"."] (antPatterns ie);
+                          done warLibset)
+                         ++ (mapHash do dir ie:
+                                el "classes" [(dir~) :"."] (antPatterns ie);
+                          done warClassesset)
+                         ++ (mapHash do dir ie:
+                                antFileset (dir~) ie;
+                          done warFileset))
+                        p;
+                _mvnInstallOrDeploy (warAttributes.["destfile"]~) p;
+            done;
  
 jetty =
     target "jetty" [Description "runs jetty"] do project:
@@ -615,6 +677,10 @@ livecycleTargets = {
         warFileset,
     },
 
+    mvnInstall, 
+    mvnDeploy, 
+    deployRepository,    
+    
     artifactDependencies, 
     localRepository, 
     remoteRepositories, 
@@ -646,6 +712,8 @@ livecycleTargets = {
         initPathes,
         war,
         jar,
+        pom,
+        initPom,
     }
 }
 

@@ -1,4 +1,5 @@
 //todo
+* ant exception handling also to creation of tasks
 * update livecycles
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
