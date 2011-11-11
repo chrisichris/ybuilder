@@ -71,6 +71,9 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
+cprop v = {
+    var fn = do (): v done;
+};
 prop fn1 = {
     var fn = do (): fn1 () done;
 };
@@ -86,12 +89,12 @@ setProp prop fn1 =
 setPath path parent child = 
     (path is pathType).fn := do (): (parent.fn ()) ^ child done;
 
-basedir = {var fn = do (): "." done};
+basedir = {var fn = do (): "./" done};
 
 joinPath parent child  = {
     var fn () = 
        (cs = (child is pathType).fn ();
-        c= if strStarts? cs ((basedir~) ^ "/") then
+        c= if strStarts? cs (basedir~) then
             strRight cs (strLength (basedir~));
         else
             cs;
@@ -395,21 +398,21 @@ createAntDirSet dir patts	=
 getAntPathFromProject name project = 
    (var ref = (project is projectType).antProject#getReference(name is string);
     if not defined? ref then 
-        none;
+        () unsafely_as ~Path;
     elif not ref instanceof Path then 
         failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
     else 
-        Some (ref unsafely_as ~Path) 
+        ref unsafely_as ~Path 
     fi;);
     
 getAntAbstractFileSetFromProject name project = 
    (var ref = (project is projectType).antProject#getReference(name is string);
     if not defined? ref then 
-        none;
+        () unsafely_as ~AbstractFileSet;
     elif not ref instanceof AbstractFileSet then 
         failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
     else 
-        Some (ref unsafely_as ~AbstractFileSet) 
+        ref unsafely_as ~AbstractFileSet 
     fi);
 
     
@@ -424,6 +427,7 @@ cmdYbuilderVersion =
 
 {
     prop,
+    cprop,
     setProp,
     path, 
     setPath,

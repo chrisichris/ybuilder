@@ -20,16 +20,16 @@ init = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
     
     antTask "mkdir" ["dir":dir.java~] [] p;
     
-    antTask "copy" ["todir":dir.java || "/ybuilder"] [
+    antTask "copy" ["todir":dir.java || "ybuilder"] [
         el "fileset" ["dir":dir.ybuilder~] [
             el "include" ["name":"**/*.java"] []]] p;
 
-    antTask "copy" ["todir":dir.yeti || "/ybuilder"] [
+    antTask "copy" ["todir":dir.yeti || "ybuilder"] [
         el "fileset" ["dir":dir.ybuilder~] [
             el "include" ["name":"core/*.yeti"] []]] p;
 
     antTask "copy" ["todir":dir.resources~] [
-        el "fileset" ["dir":dir.ybuilder || "/resources"] []] p;
+        el "fileset" ["dir":dir.ybuilder || "resources"] []] p;
 
     done;
 
@@ -41,7 +41,7 @@ jary = target "jary" [InLivecycle livecycleTargets.package] do p:
     antTask "jar" ["jarfile":jarFile,"basedir":dir.targetClasses~] 
             ((map do j:	
                     el "zipfileset" 
-                       ["src":dir.lib || "/\(j)","excludes":"MANIFEST.MF"] [] 
+                       ["src":dir.lib || "\(j)","excludes":"MANIFEST.MF"] [] 
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 

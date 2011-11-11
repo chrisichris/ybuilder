@@ -1,14 +1,14 @@
 //todo
+* handel ant exceptions better
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * maven target
-* jetty support
-* standard lib project
-* standard prog project
-* standard war project
 * continuses compilation
 * single test method
-
+* create webapp
+* unifyhelp
+* maven dir layout as option - means changing current dirs to "simple" + option
+  to create project to make maven-layout
 
 //done
 + doc targets
@@ -23,3 +23,4 @@
 + add properties support
 + jar target
 + war target 
++ jetty support
