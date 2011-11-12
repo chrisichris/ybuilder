@@ -279,13 +279,11 @@ cleanLibs =
     target "cleanLibs" 
            [Description "Cleans the retrieved dependencies in [\(libManagedDir~)] directory"] 
            (antTask "delete" ["dir":libManagedDir~] []);
-           
 cleanAll = 
     target "cleanAll" 
            [Livecycle true,Dependencies[cleanLibs, clean], 
             Description "Cleans the project and all the libs"] 
            \();
-
 validate = target "validate" [Livecycle true] \();
 
 initializeBuild = 
@@ -300,7 +298,8 @@ generateResources =
 processResources = 
     target "processResources" [Depends generateResources, Livecycle true] \();
 compile = 
-    target "compile" [Depends processResources, Livecycle true] \();
+    target "compile" [Depends processResources, Livecycle true,
+                      Description "Compiles the sources of the project"] \();
 processClasses = 
     target "processClasses" [Depends compile, Livecycle true] \();
 generateTestResources = 
@@ -313,13 +312,14 @@ testCompile =
 processTestClasses = 
     target "processTestClasses" [Depends testCompile, Livecycle true] \();
 test = 
-    target "test" [Depends processTestClasses, Livecycle true] \();
+    target "test" [Depends processTestClasses, Livecycle true,
+                   Description "runs the tests of the project"] \();
 preparePackage = 
     target "preparePackage" [Depends test, Livecycle true] \();
 
-
 preDoc = target "preDoc" [Livecycle true] \();
-doc = target "doc" [Depends preDoc, Livecycle true] \();	
+doc = target "doc" [Depends preDoc, Livecycle true,
+                    Description "Generates project documentation"] \();	
 
 //mvn things
 _mvnDependencyTags () =     
@@ -381,12 +381,10 @@ initPom =
                  ++  _mvnDependencyTags ()));
                  */
 pom =
-    target "pom" [Depends initPom, Description "Writes a pom"] 
+    target "pom" [Depends initPom, Description "Writes a pom.xml"] 
            (antTask (maven "writepom") 
                     ["pomRefId" : "pom", "file":"pom.xml"] []);  
 
-                    
-    
 retrieveLibs = 
     target "retrieveLibs" 
         [InLivecycle initialize, 
@@ -428,6 +426,8 @@ retrieveLibs =
 initPathes = 
     target "initPathes" [InLivecycle initialize,Depends retrieveLibs] 
             do project:
+                antTask "mkdir" ["dir":targetClassesDir~] [] project;
+                antTask "mkdir" ["dir":targetTestClassesDir~][] project;
                 antTask "path" ["id":"runtimePath"]
                         (antPathElements runtimePath) project;
                 antTask "path" ["id":"compilePath"]
@@ -558,7 +558,7 @@ _mvnInstallOrDeploy fileName project =
 jar = 
     target "jar" 
            [Depends preparePackage, 
-            Description "Makes a jar file in dir.target"] 
+            Description "Makes a jar file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"] 
            do p:
                 antTask "jar" (copyHash id (~) jarAttributes) 
                         (mapHash do dir ie:
@@ -575,7 +575,7 @@ jar =
 war = 
     target "war" 
            [Depends preparePackage, 
-            Description "Makes a war file in dir.target"]
+            Description "Makes a war file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"]
             do p:
                 antTask "war" (copyHash id (~) warAttributes)
                         ((mapHash do dir ie:
@@ -592,7 +592,7 @@ war =
             done;
  
 jetty =
-    target "jetty" [Description "runs jetty"] do project:
+    target "jetty" [Description "runs jetty - note the jetty libs must be on the ybuilder path"] do project:
         import org.eclipse.jetty.server:Server;
         import org.eclipse.jetty.webapp:WebAppContext;
         
@@ -617,6 +617,9 @@ jetty =
     done;
           
         
+for [clean, retrieveLibs, compile, test, jar, war, 
+     doc, pom, jetty, cleanLibs, cleanAll]
+    (push targetsInHelp);
         
 livecycleTargets = {
     preClean, 

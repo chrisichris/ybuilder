@@ -15,18 +15,7 @@ if (file buildDependenciesProg)#exists()
     yeti#main(array(buildDependenciesProg :: args));
 fi;	
 
-if (not empty? args) and ((head args) == "cleanBuildLibs") then
-    load ybuilder.core.build;
-    antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
-elif (not empty? args) and ((head args) == "buildLibs") then
-    if (file buildDependenciesProg)#exists() then
-        load ybuilder.core.build;
-        antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
-        yeti#main(array(buildDependenciesProg :: args));
-    else
-        failWith "There is no \(buildDependenciesProg) file";
-    fi
-elif (not empty? args) and ((head args) == "newProject") then
+if (not empty? args) and ((head args) == "newProject") then
     load ybuilder.core.build;
     load ybuilder.core.base;
     projectName = 
@@ -38,7 +27,32 @@ elif (not empty? args) and ((head args) == "newProject") then
     createNewYetiProject projectName (createProject ()); 
     yeti#main(array [buildDependenciesProg]);
 elif (not (file "project.yeti")#exists()) then
-    failWith "There is no 'project.yeti' file. You must first create a project use 'newProject' command";
+    println '
+ybuilder is a simple build-enviroment for YETI the functional 
+programming-language for JVM.
+
+To use ybuilder create a new ybuilder project:
+
+1.) copy the "ybuilder.jar" file to a new directory and 
+2.) run "java -jar ybuilder.jar newProject" to create the needed files and 
+    directories
+3.) edit the "project.yeti" file as described in the comments
+4.) run "java -jar ybuilder.jar" again to get a detailed help message
+
+For detailed description google ybuilder yeti (there is no homepage yet)
+'
+
+elif (not empty? args) and ((head args) == "cleanBuildLibs") then
+    load ybuilder.core.build;
+    antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
+elif (not empty? args) and ((head args) == "buildLibs") then
+    if (file buildDependenciesProg)#exists() then
+        load ybuilder.core.build;
+        antTask "delete" ["dir":"ybuilder/extlib_managed"][] (createProject());
+        yeti#main(array(buildDependenciesProg :: args));
+    else
+        failWith "There is no \(buildDependenciesProg) file";
+    fi
 else
     load ybuilder.core.build;
     import org.apache.tools.ant.AntClassLoader;

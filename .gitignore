@@ -4,5 +4,6 @@ src
 target
 ybuilder/extlib_managed
 ybuilder.jar
+pom.xml
 
 

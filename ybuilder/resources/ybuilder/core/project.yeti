@@ -1,24 +1,46 @@
-load ybt.core.base;
-load ybt.core.yetibase;
+//the base module sets up all the targets, pathes etc for a basic yeti build
+load ybuilder.core.base;
 
-import junit.framework.TestCase;
-import java.lang.Thread;
+//---General setup
+//FIXME: change following values to fit your project
 
-projectArtifactId := "yourname";
-projectGroupId :="yourname";
-projectVersion := "0.1-alpha";
-projectDescription := "update desription here";
+project.name := "FIXME: projects-name";
+project.groupId :="FIXME: project-groupId";
+project.artifactId := "FIXME: project artifactId";
+project.version := "FIXME: 0.1-alpha";
+project.description := "FIXME: project description";
 
-			
 
-dependency "junit" "junit" "3.8.2" [TestScope ()];
+//---Library Dependencies ---			
+// add your library dependencies in maven style
+// use: dependency "groupId" "artifactId" "version" [options]
+//      options = ProvidedScope(), TestScope(), SystemScope()
+//      default scope is compile scope
 
-println ("Cl: " ^ string ());
+// dependency "org.apache.commons" "commons-io" "1.3.2" [];
+// dependency "junit" "junit" "3.8.2" [TestScope()];
+// dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
-var cl = Thread#currentThread()#getContextClassLoader();
-(not nullptr? cl) loop (
-	println cl;
-	cl := cl#getParent());
+//---custom targets --
 
-//_ = new TestCase("Hier");
-load ybt.core.run;
+// add custom targets here
+// a (stupid) example:
+//
+// myInit = 
+//    target "myInit" 
+//           [InLivecycle livecycleTargets.initialize, Depends initPathes] 
+//           do p:
+//                antTask "delete" ["dir":"target/foo"] [] p;
+//        
+//                antTask "copy" ["todir":"target/foo"] 
+//                        [el "fileset" ["dir":"foo-source"] 
+//                            [el "include" ["name":"**/*.java"] []]] 
+//                          p;
+//           done;
+
+
+//---End--
+
+// leave the final load! 
+// runs the targets entered at the command line
+load ybuilder.core.run;

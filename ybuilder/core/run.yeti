@@ -101,6 +101,8 @@ evaluate argv =
 argvL = list _argv;
 
 if empty? argvL then
+    println (evaluate ["help"])
+elif (head argvL) == "-c" then
     repl evaluate;
 else
     println (evaluate argvL)

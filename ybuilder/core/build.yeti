@@ -144,7 +144,6 @@ tel name atts text = el name atts [Text text];
 targets is hash<string,targetType> = [:];
 
 isLivecycleTarget? target = (target is targetType).isLivecycle;
-isCommandTarget? target = strStarts? (target is targetType).name "-";
     
 
 addTargetToLivecycle target livecycle = 
@@ -209,23 +208,62 @@ targetToString t = (
     "-----\n\(if isLivecycleTarget? t then "* " else "" fi)\(t.name)\n   description:\(t.description)\n   depends: \(strJoin ", " (map (.name) deps))");   
 
 cmdTargets = 
-    target "-targets" 
+    target "targets" 
         [Description "Shows all the available targets in current project"] 
         \(for (sortBy (on (<)(.pos)) (list targets)) 
             (println . targetToString));
     
 cmdLivecycles = 
-    target "-livecycles" 
+    target "livecycles" 
         [Description "Shows all livecycles in current project"] 
         \(for (sortBy (on (<)(.pos)) (filter isLivecycleTarget? (list targets))) 
             (println . targetToString));
-            
-cmdHelp = 
-    target "-help" 
-        [Description "Shows all the command targets"] 
-        \(for (sortBy (on (<)(.pos)) (filter isCommandTarget? (list targets))) 
-            (println . targetToString));
 
+targetsInHelp = array [cmdTargets,cmdLivecycles];             
+            
+help = 
+    target "help" 
+        [Description "Shows help"] 
+        do p:
+            println '
+----
+ybuilder is a simple build-enviroment for YETI the functional 
+programming-language for the JVM.
+----
+
+To run ybuilder targets defined in project.yeti:
+
+java -jar ybuilder.jar target [params] [-property] [, target [param] [-property] ]+
+
+target       name of the target to run
+params       space seperated list of params for target
+property     space seperated list of -key=value pairs starting with - for target
+
+-or-
+
+To run yeti-expression in ybuilder enviroment:
+
+java -jar ybuilder.jar #yeti-expression
+
+---
+Common targets:
+
+-c              Starts ybuilder in repl mode
+
+-yeti           Same as invoking the yeti.jar in your project but with the full 
+                classpath setup  
+
+help            Prints this message
+
+retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
+
+cleanBuildLibs  deletes the ybuilder/libext_managed directory 
+                triggering fresh load next time
+';  
+            for targetsInHelp do t:
+                println String#format("%1$-15s %2$s\n",array [t.name,t.description])
+            done
+        done;
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
    (var runAlways = false;
@@ -454,7 +492,8 @@ cmdYbuilderVersion =
 
     cmdTargets,
     cmdLivecycles,
-    cmdHelp,
+    targetsInHelp,
+    help,
     targets,
     target,
     addTargetToLivecycle,
