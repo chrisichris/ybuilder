@@ -283,7 +283,7 @@ cleanLibs =
 cleanAll = 
     target "cleanAll" 
            [Livecycle true,Dependencies[cleanLibs, clean], 
-                    Description "Cleans the project and all the libs"] 
+            Description "Cleans the project and all the libs"] 
            \();
 
 validate = target "validate" [Livecycle true] \();
@@ -316,14 +316,7 @@ test =
     target "test" [Depends processTestClasses, Livecycle true] \();
 preparePackage = 
     target "preparePackage" [Depends test, Livecycle true] \();
-package = 
-    target "package" [Depends preparePackage, Livecycle true] \();
-preIntegrationTest = 
-    target "preIntegrationTest" [Depends package, Livecycle true] \();
-integrationTest = 
-    target "integrationTest" [Depends preIntegrationTest, Livecycle true] \();
 
-build = target "build" [Dependencies [cleanAll,integrationTest]] \();
 
 preDoc = target "preDoc" [Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true] \();	
@@ -642,10 +635,6 @@ livecycleTargets = {
     processTestClasses, 
     test, 
     preparePackage,
-    package, 
-    preIntegrationTest, 
-    integrationTest, 
-    build, 
     preDoc, 
     doc,  
 };	

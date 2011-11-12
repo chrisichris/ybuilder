@@ -69,7 +69,7 @@ runExtensionTests project = (
 );
 
 extensionTests = 
-    target "extensionTests" [InLivecycle livecycleTargets.integrationTest] runExtensionTests;
+    target "extensionTests" [InLivecycle livecycleTargets.test] runExtensionTests;
 
 {
     extensionTests, 
