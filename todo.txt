@@ -6,7 +6,6 @@
 * continues compilation
 * single test method
 * create webapp
-* unifyhelp
 * maven dir layout as option - means changing current dirs to "simple" + option
   to create project to make maven-layout
 
@@ -29,3 +28,4 @@
 + maven target
 + ant exception handling also to creation of tasks
 + update livecycles
++ unifyhelp
