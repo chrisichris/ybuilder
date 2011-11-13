@@ -1,6 +1,6 @@
 module ybuilder.core.build;
 
-import java.lang.Thread;
+import java.lang:System,Thread;
 import java.io.File;
 
 import org.xml.sax: Attributes, Locator, SAXParseException;
@@ -58,7 +58,6 @@ typedef pathType = {
     var fn is () -> string
 };
 
-
     
 
 class AntBuilderLocator extends Locator
@@ -95,7 +94,7 @@ joinPath parent child  = {
     var fn () = 
        (cs = (child is pathType).fn ();
         c= if strStarts? cs (basedir~) then
-            strRight cs (strLength (basedir~));
+            strRight cs ((strLength (basedir~)) -1);
         else
             cs;
         fi;
@@ -205,7 +204,19 @@ forTargetDependencies target cont resFn = (
 targetToString t = (
     deps = array [];
     forTargetDependencies t [:] (push deps);
-    "-----\n\(if isLivecycleTarget? t then "* " else "" fi)\(t.name)\n   description:\(t.description)\n   depends: \(strJoin ", " (map (.name) deps))");   
+    "---\n\(t.name)"
+    ^ if isLivecycleTarget? t then
+        " (Lifecycle Target)"
+    else
+        ""
+    fi
+    ^ "\n"
+    ^ if (strLength t.description) > 0 then
+        "   \(t.description)\n"
+    else
+        ""
+    fi
+    ^ "   depends: \(strJoin ", " (map (.name) deps))");   
 
 cmdTargets = 
     target "targets" 
@@ -254,15 +265,16 @@ Common targets:
                 classpath setup  
 
 help            Prints this message
-
-retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
-
-cleanBuildLibs  deletes the ybuilder/libext_managed directory 
-                triggering fresh load next time
 ';  
             for targetsInHelp do t:
                 println String#format("%1$-15s %2$s\n",array [t.name,t.description])
-            done
+            done;
+println 'retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
+
+cleanBuildLibs  deletes the ybuilder/libext_managed directory 
+                triggering fresh load next time
+';
+
         done;
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
@@ -414,7 +426,7 @@ antPathElements patts =
                     forHash h do k v:
                         push dirsets (antDirset k v)
                     done;
-                Path str : push root (el "pathelement" ["path" : str] []);
+                Path str : push root (el "pathelement" ["path" : "${\(str)}"] []);
                 Location str: push root (el "pathelement" ["location" : str] []);
                 Patterns pa: withPatts ( pa ());
                 esac; 
@@ -461,6 +473,9 @@ getAntAbstractFileSetFromProject name project =
     else 
         ref unsafely_as ~AbstractFileSet 
     fi);
+    
+antPathById name project =
+        strJoin ";" (wrapArray (getAntPathFromProject name project)#list());
 
     
 file name = new File(name is string);
@@ -487,7 +502,8 @@ cmdYbuilderVersion =
     cmdYbuilderVersion,
     basedir,
 
-    createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, getAntAbstractFileSetFromProject,
+    createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, 
+    getAntAbstractFileSetFromProject,
     targetToString,
 
     cmdTargets,
@@ -508,6 +524,7 @@ cmdYbuilderVersion =
     antFileset,
     antDirset,
     antPathElements,
+    antPathById,
     file,
 }
 

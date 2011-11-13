@@ -106,23 +106,25 @@ testRuntimePath is pathPatternType = array [Patterns \testPath];
 //task attributes
 javacAttributes = 
     ["srcdir" : javaDir, "destdir":targetClassesDir, 
-     "classpathref":cprop "compilePath", "debug": cprop "on", 
+     "debug": cprop "on", 
      "debuglevel" : cprop "lines, vars, source", 
-     "includeAntRuntime":cprop "false"];
+     "includeAntRuntime":cprop "false",
+     "fork":cprop "true"];
      
 javacCompilerarg = cprop "";
 
 javacTestAttributes = 
     ["srcdir" : javaTestDir, "destdir":targetTestClassesDir, 
-     "classpathref":cprop "testPath", "debug": cprop "on", 
+     "debug": cprop "on", 
      "debuglevel" : cprop "lines, vars, source", 
-     "includeAntRuntime": cprop "false"];
+     "includeAntRuntime": cprop "false",
+     "fork":cprop "true"];
 
 javacTestCompilerarg = cprop "";
 
 javadocAttributes = 
     ["sourcepath" : javaDir, 
-     "destdir":javadocDir, "classpathref": cprop "compilePath"];
+     "destdir":javadocDir];
 
 yeticAttributes = ["srcdir":yetiDir, "destdir": targetClassesDir];
 yeticTestAttributes = ["srcdir":yetiTestDir, 
@@ -385,12 +387,13 @@ pom =
            (antTask (maven "writepom") 
                     ["pomRefId" : "pom", "file":"pom.xml"] []);  
 
-retrieveLibs = 
-    target "retrieveLibs" 
+prepareLibs = 
+    target "prepareLibs" 
         [InLivecycle initialize, 
          Description "loads librararies in [\(libManagedDir~)]"] 
         do project:
             copyDeps scope project = 
+               (antTask "mkdir" ["dir":libManagedDir|| "\(scope)"] [] project;
                 if not empty? artifactDependencies then
                     antTask (maven "dependencies") 
                             ["filesetId" : "dependenciesFS-"^scope, 
@@ -408,23 +411,29 @@ retrieveLibs =
                              ++ (_mvnDependencyTags ()) ) 
                             project;
                             
-                antTask "copy" ["todir":libManagedDir|| "\(scope)"] [
-                        el "fileset" ["refid":"dependenciesFS-" ^ scope][],
-                        el "mapper" ["type":"flatten"] []] project;
-            fi;
+                    antTask "copy" ["todir":libManagedDir|| "\(scope)"] [
+                            el "fileset" ["refid":"dependenciesFS-" ^ scope][],
+                            el "mapper" ["type":"flatten"] []] project;
+                fi);
 
-        if not (file (libManagedDir~))#exists() then
-            copyDeps "test" project;
-            copyDeps "compile" project;
-            copyDeps "system" project;
-            copyDeps "provided" project;
-            copyDeps "runtime" project;
-        fi;
-    done;
+            if not (file (libManagedDir~))#exists() then
+                copyDeps "test" project;
+                copyDeps "compile" project;
+                copyDeps "system" project;
+                copyDeps "provided" project;
+                copyDeps "runtime" project;
+            fi;
+        done;
+ retrieveLibs =
+    target "retrieveLibs" [Description "loads libraries in [\(libManagedDir~)]"]
+        do p:
+            antTask "delete" ["dir":libManagedDir~] [] p;
+            _ =executeTarget prepareLibs [RunAlways true] p;
+        done;
 
 //path targets    
 initPathes = 
-    target "initPathes" [InLivecycle initialize,Depends retrieveLibs] 
+    target "initPathes" [InLivecycle initialize,Depends prepareLibs] 
             do project:
                 antTask "mkdir" ["dir":targetClassesDir~] [] project;
                 antTask "mkdir" ["dir":targetTestClassesDir~][] project;
@@ -439,7 +448,7 @@ initPathes =
             done;
     
 initBuildPathes = 
-    target "initBuildPathes" [InLivecycle initializeBuild,Depends retrieveLibs] 
+    target "initBuildPathes" [InLivecycle initializeBuild,Depends prepareLibs] 
           (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
 
 //java targets
@@ -447,15 +456,25 @@ copyResources =
     target "copyResources" 
            [InLivecycle processResources,
             Description "Copies resources from \(resourcesDir~) to \(targetClassesDir~)"]
-           (antTask "copy" ["todir":targetClassesDir~] 
-                    [el "fileset" ["dir":resourcesDir~] []]);
-
+           do p:
+                if (file (resourcesDir~))#exists() then
+                    antTask "copy" ["todir":targetClassesDir~] 
+                        [el "fileset" ["dir":resourcesDir~] []]
+                        p
+                fi
+           done;
+           
 copyTestResources = 
     target "copyTestResources" 
            [InLivecycle processTestResources, 
             Description "Copies test resources to test classes dir"]
-           (antTask "copy" ["todir":targetTestClassesDir~] 
-                    [el "fileset" ["dir":resourcesTestDir~] []]);
+           do p:
+                if (file (resourcesTestDir~))#exists() then
+                    antTask "copy" ["todir":targetTestClassesDir~] 
+                            [el "fileset" ["dir":resourcesTestDir~] []]
+                            p
+                fi
+           done;
 
 compileJava = 
     target "compileJava" 
@@ -463,7 +482,8 @@ compileJava =
            do p:
                 if (file (javacAttributes.["srcdir"]~))#exists() then
                     antTask "javac" (copyHash id (~) javacAttributes) 
-                        [el "compilerarg" ["line":(javacCompilerarg~)] []] 
+                        [el "compilerarg" ["line":(javacCompilerarg~)] [],
+                         el "classpath" [:] (antPathElements compilePath)] 
                         p;
                 fi;
            done; 
@@ -474,7 +494,9 @@ testCompileJava =
            do p:
                 if (file (javacTestAttributes.["srcdir"]~))#exists() then
                     antTask "javac" (copyHash id (~) javacTestAttributes) 
-                        [el "compilerarg" ["line":(javacTestCompilerarg~)] []] p
+                        [el "compilerarg" ["line":(javacTestCompilerarg~)] [],
+                         el "classpath" [:] (antPathElements testPath)] 
+                        p
                 fi
            done;
 javadoc = 
@@ -484,20 +506,11 @@ javadoc =
             do p:
                 if (file (javadocAttributes.["sourcepath"]~))#exists() then
                     antTask "delete" ["dir":javadocDir~] [] p;
-                    antTask "javadoc" (copyHash id (~) javadocAttributes) [] p
+                    antTask "javadoc" (copyHash id (~) javadocAttributes) 
+                            [el "classpath" [:] (antPathElements compilePath)] 
+                            p
                 fi
             done;
-
-junitTest = 
-    target "junitTest" [InLivecycle test] 
-          (antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
-                   [el "classpath" [:] 
-                       [el "pathelement" ["path":"testPath"] []],
-                    el "formatter" ["type":"plain"] [],
-                    el "batchtest" ["fork":"yes", 
-                                    "todir":(reportsDir || "tests")] 
-                       [el "fileset" ["dir":javaTestDir~] 
-                           [el "include" ["name":"**/*Test.java"] []]]]);
 
           
 //yeti targets
@@ -515,8 +528,7 @@ compileYeti =
            do p:
                 if (file (yeticAttributes.["srcdir"]~))#exists() then
                     antTask "yetic" (copyHash id (~) yeticAttributes) 
-                            [el "classpath" [:] 
-                                [el "pathelement" ["path":"compilePath"] []]]
+                            [el "classpath" [:] (antPathElements compilePath)]
                             p
                 fi
            done;
@@ -527,9 +539,8 @@ testCompileYeti =
            do p:
                 if (file (yeticTestAttributes.["srcdir"]~))#exists() then
                    antTask "yetic" (copyHash id (~) yeticTestAttributes) 
-                            [el "classpath" [:] 
-                                [el "pathelement" ["path":"testPath"] []]]
-                            p;
+                           [el "classpath" [:] (antPathElements compilePath)]
+                           p;
                 fi;
            done;
                         
@@ -647,7 +658,7 @@ livecycleTargets = {
     dir,
     
     pathes = {
-        builExt = buildExtPath,
+        buildExt = buildExtPath,
         runtime = runtimePath,
         compile = compilePath,
         test = testPath,
@@ -692,13 +703,13 @@ livecycleTargets = {
         compileJava,
         testCompileJava,
         javadoc,
-        junitTest,
         jetty,
         defineYetic,
         compileYeti,
         testCompileYeti,
         yetidoc,
         initBuildPathes,
+        prepareLibs,
         retrieveLibs, 
         cleanLibs, 
         initPathes,

@@ -1,5 +1,7 @@
 load ybuilder.core.base;
-et = load ybuilder.core.extensiontest;
+load ybuilder.core.extensiontest;
+load ybuilder.core.build;
+
 
 
 import junit.framework.TestCase;
@@ -10,6 +12,14 @@ project.groupId :="ybuilder";
 project.version := "0.1-alpha";
 project.description := "A simple build tool for yeti";
 
+project = createProject(); 
+
+antTask "delete" ["dir":(dir.main~)] [] project;
+
+antTask "copy" ["todir":dir.main || "etprojects/"] 
+    [el "fileset" ["dir":dir.ybuilder || "etprojects"] []]
+    project;
+
 /*
 for ["test1", "test2"] (push et.extensionTestDirs);
 
@@ -17,9 +27,10 @@ _ = et.createExtensionTestDirs;
 */			
 
 dependency "junit" "junit" "3.8.2" [TestScope()];
-dependency "org.apache.commons" "commons-io" "1.3.2" [];
+dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
 dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
+for ["new-project","compile-java-yeti"] (push extensionTestDirs); 
 
 
 //_ = new TestCase("Hier");

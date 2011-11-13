@@ -93,7 +93,7 @@ evaluate argv =
                 done;
                 "Build successful";
             catch YbuilderAntException ex:
-                "Build Failed:\n\(ex#getMessage())";
+                "Build Failed:\n\(ex#getMessage())\n\(ex#getCause())";
             yrt;
         fi;
     fi;

@@ -1,5 +1,7 @@
 //the base module sets up all the targets, pathes etc for a basic yeti build
 load ybuilder.core.base;
+load ybuilder.core.build;
+_ = load ybuilder.core.junit;
 
 //---General setup
 //FIXME: change following values to fit your project
@@ -17,27 +19,20 @@ project.description := "FIXME: project description";
 //      options = ProvidedScope(), TestScope(), SystemScope()
 //      default scope is compile scope
 
-// dependency "org.apache.commons" "commons-io" "1.3.2" [];
-// dependency "junit" "junit" "3.8.2" [TestScope()];
+dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
+dependency "junit" "junit" "3.8.2" [TestScope()];
 // dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
 //---custom targets --
 
 // add custom targets here
 // a (stupid) example:
-//
-// load ybuilder.core.build;
-// myInit = 
-//    target "myInit" 
-//           [InLivecycle livecycleTargets.initialize, Depends baseTargets.initBuildPathes] 
-//           do p:
-//                antTask "delete" ["dir":"target/foo"] [] p;
-//        
-//                antTask "copy" ["todir":"target/foo"] 
-//                        [el "fileset" ["dir":"foo-source"] 
-//                            [el "include" ["name":"**/*.java"] []]] 
-//                          p;
-//           done;
+myt = 
+   target "myInit" 
+          [InLivecycle livecycleTargets.compile] 
+          do p:
+            println "TestPath: \(getAntPathFromProject 'testPath' p)";
+          done;
 
 
 //---End--

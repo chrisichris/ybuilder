@@ -26,10 +26,9 @@ project.description := "FIXME: project description";
 // add custom targets here
 // a (stupid) example:
 //
-// load ybuilder.core.build;
 // myInit = 
 //    target "myInit" 
-//           [InLivecycle livecycleTargets.initialize, Depends baseTargets.initBuildPathes] 
+//           [InLivecycle livecycleTargets.initialize, Depends initPathes] 
 //           do p:
 //                antTask "delete" ["dir":"target/foo"] [] p;
 //        
