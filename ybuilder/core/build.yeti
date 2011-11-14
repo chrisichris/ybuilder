@@ -501,7 +501,7 @@ cmdYbuilderVersion =
     joinPath,
     (~), 
     (||), 
-    //(|) p c = path p c,
+    (|) p c = path p c,
     assert,
     ybuilderVersion,
     cmdYbuilderVersion,
