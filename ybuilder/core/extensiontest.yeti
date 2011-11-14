@@ -44,24 +44,30 @@ runExtensionTests project = (
              fi);
                         
         for projectDirs do dir:
-            args = 
-               (pf = new File(dir, "targets.properties");
-                fis = new FileInputStream(new File(dir,"targets.properties"));
+            argLines = 
+               (fis = new FileInputStream(new File(dir,"targets.properties"));
                 try 
                     props = new Properties();
                     props#load(fis);
-                    [string props#get("targets")];
+                    fst = string props#get("targets");
+                    if props#contains("targets1") then
+                        [fst,(string props#get("targets1"))]
+                    else
+                        [fst]
+                    fi
                 finally
                     fis#close();
                 yrt);
             println "-------------\nextension test [\(dir#getName())]";
-            println "target: \(args)";
-                        
-            antTask "java" 
-                    ["jar":"ybuilder.jar", "fork":"true", 
-                     "dir":dir#getAbsolutePath()] 
-                    (map do a: el "arg" ["line":string a] [] done args) 
-                    project;
+            for argLines do args:
+                println "target: \(args)";
+                            
+                antTask "java" 
+                        ["jar":"ybuilder.jar", "fork":"true", 
+                         "dir":dir#getAbsolutePath()] 
+                        [el "arg" ["line":args] []] 
+                        project;
+            done;
         done;
     fi;    
 );
