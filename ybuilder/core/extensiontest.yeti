@@ -50,7 +50,7 @@ runExtensionTests project = (
                     props = new Properties();
                     props#load(fis);
                     fst = string props#get("targets");
-                    if props#contains("targets1") then
+                    if defined? (props#get("targets1")) then
                         [fst,(string props#get("targets1"))]
                     else
                         [fst]
