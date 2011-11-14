@@ -24,15 +24,6 @@ typedef xmlelement = Text string
                             subelements is list<xmlelement>
                         };
                                 
-typedef filePatternType = list?<Include string 
-                                | Exclude string 
-                                | Patterns (() -> filePatternType) >;
-                                
-typedef pathPatternType = list?<Fileset hash<string, filePatternType>
-                                | Dirset hash<string, filePatternType> 
-                                | Location string 
-                                | Path string 
-                                | Patterns ( () -> pathPatternType) >;
 
 typedef projectType = {
     antProject is ~Project, 
@@ -58,6 +49,15 @@ typedef pathType = {
     var fn is () -> string
 };
 
+typedef filePatternType = list?<Include string
+                                | Exclude string 
+                                | Patterns (() -> filePatternType) >;
+                                
+typedef pathPatternType = list?<Fileset hash<pathType, filePatternType>
+                                | Dirset hash<pathType, filePatternType> 
+                                | Location pathType 
+                                | Path string 
+                                | Patterns ( () -> pathPatternType) >;
     
 
 class AntBuilderLocator extends Locator
@@ -411,9 +411,9 @@ antPatterns patts =
         done patts; 
 
 antFileset dir patts =  
-    el "fileset" ["dir" : dir] (antPatterns patts);
+    el "fileset" ["dir" : (dir~)] (antPatterns patts);
 antDirset dir patts =  
-    el "dirset" ["dir" : dir] (antPatterns patts);
+    el "dirset" ["dir" : (dir~)] (antPatterns patts);
 
 antPathElements patts = 
    (filesets = array [];
@@ -431,7 +431,7 @@ antPathElements patts =
                         push dirsets (antDirset k v)
                     done;
                 Path str : push root (el "pathelement" ["path" : "${\(str)}"] []);
-                Location str: push root (el "pathelement" ["location" : str] []);
+                Location str: push root (el "pathelement" ["location" : (str~)] []);
                 Patterns pa: withPatts ( pa ());
                 esac; 
             done;

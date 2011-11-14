@@ -87,38 +87,38 @@ dir = {
 };
 
 libPathSet is pathPatternType = 
-    array [Fileset [(libDir~) : [Include "**/*.jar"]]]; 
+    array [Fileset [libDir : [Include "**/*.jar"]]]; 
 
 //setPathes
 pathSet = {
     lib = libPathSet,
     compile is pathPatternType =
-        array [Fileset [libManagedDir~ : [Include "/compile/**/*.jar"]],
-               Location (targetClassesDir~),
+        array [Fileset [libManagedDir : [Include "/compile/**/*.jar"]],
+               Location targetClassesDir,
                Patterns \libPathSet],
     
     runtime is pathPatternType =
-        array [Fileset [libManagedDir~ : [Include "/runtime/**/*.jar"]],
+        array [Fileset [libManagedDir : [Include "/runtime/**/*.jar"]],
                Patterns \libPathSet],
 
     system is pathPatternType =
-        array [Fileset [libManagedDir~ : [Include "/system/**/*.jar"]],
+        array [Fileset [libManagedDir : [Include "/system/**/*.jar"]],
                Patterns \libPathSet],
 
     provided is pathPatternType =
-        array [Fileset [libManagedDir~ : [Include "/provided/**/*.jar"]],
+        array [Fileset [libManagedDir : [Include "/provided/**/*.jar"]],
                Patterns \libPathSet],
 
     test is pathPatternType =
-        array [Fileset [libManagedDir~ : [Include "/test/**/*.jar"]],
-               Location (targetTestClassesDir~),
+        array [Fileset [libManagedDir : [Include "/test/**/*.jar"]],
+               Location targetTestClassesDir,
                Patterns \libPathSet],
 };               
 
 //pathes
 buildExtPath is pathPatternType = 
-    array [Fileset [buildExtlibDir : [Include "**/*.jar"]], 
-           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
+    array [Fileset [cprop buildExtlibDir : [Include "**/*.jar"]], 
+           Fileset [cprop "ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
     array [Patterns \pathSet.compile,
@@ -610,7 +610,7 @@ jar =
            do p:
                 antTask "jar" (copyHash id (~) jarAttributes) 
                         (mapHash do dir ie:
-                            antFileset (dir~) ie;
+                            antFileset dir ie;
                          done jarFileset
                          ++ [el "manifest" [:] 
                                (mapHash do k v: 
@@ -633,7 +633,7 @@ war =
                                 el "classes" [(dir~) :"."] (antPatterns ie);
                           done warClassesset)
                          ++ (mapHash do dir ie:
-                                antFileset (dir~) ie;
+                                antFileset dir ie;
                           done warFileset))
                         p;
                 _mvnInstallOrDeploy (warAttributes.["destfile"]~) p;
