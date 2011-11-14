@@ -1,21 +1,43 @@
-Welcome to the yeticl java api
-==============================
+Ybuilder - a simple build tool for Yeti the funtional language for JVM
+==========================================================
 
-This plugin provides a ClassLoader (org.yeticl.YetiClassLoader) which can compile [yeti sources](http://mth.github.com/yeti/)
-on the fly as the class for the source is requested.
+Ybuilder aims to be an easy-to-use alternative to maven and ant to build 
+[yeti](http://mth.github.com/yeti/) projects. It provides built-in commands for 
+common tasks like downloading dependencies, compiling the project, lauching the
+REPL etc.
 
-Additional it provides:
+At the base of Ybuilder is a module to call ant-tasks from yeti and to define
+build-scripts in yeti. On top of this there is a predefined build module which
+handles dependency-management, manages different classapthes,
+provides the commands for compiling, launching the repl etc.   
+ 
+## Installation
 
-- a yeti expression evaluator to evalute yeti expression strings from Java (org.yeticl.YetiEvaluator).
+Installation is easy. Just download the `ybuilder.jar` file, copy it into 
+a fresh project-directory, from there call `java -jar ybuilder newProject` and
+edit the created `project.yeti`file to set your projects name and specify 
+dependencies etc.
 
-- utilities to dynamicly load an execute modules from a ClassLoader (org.yeticl.YetiShellUtils)
+## Usage
 
-- an improved repl with yline support
+The central definition file of ybuilder is the project.yeti file in the
+root-dir of your project. There you can add dependencies, define additional tasks
+change directories etc. Please consult the created file where examples are given
+in the comments.
 
-- different yeti sourcereaders
+From the command-line you can execute different targets with
 
-## Support
+    java -jar ybuilder.jar target-name
 
-Join the discussion mailing list at:
+To get a list of the most important tasks (ie compile, test, jar etc) call 
+ybuilder without a target
 
-http://groups.google.com/group/yeti-lang
+    java -jar ybuilder.jar
+
+You can also chain targets togehter in a single command by using commas:
+
+    java -jar ybuilder.jar clean, compile
+    
+Note the commands have to be run from within the project directory.
+
+    
