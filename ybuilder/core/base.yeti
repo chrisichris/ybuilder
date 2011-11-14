@@ -240,11 +240,11 @@ exclusion groupId artifactId =
 
 //helper functions
 createNewYetiProject projectDir project = 
-       (for [libDir, javaDir,yetiDir,resourcesDir,javaTestDir,yetiTestDir,
+       (for [libDir, yetiDir,resourcesDir,yetiTestDir,
              resourcesTestDir, path basedir buildExtlibDir] 
-            do d: 
+             do d: 
                 antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project 
-            done;
+        done;
         antTask "copy" 
                 ["todir":(joinPath projectDir ybuilderDir)~, 
                  "overwrite":"false"] 
@@ -298,7 +298,7 @@ mvnDeploy fileName project =
              else
                 []
              fi)
-            project);
+             project);
                  
             
     
