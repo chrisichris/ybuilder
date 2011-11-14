@@ -15,7 +15,6 @@ createExtensionTestDirs name project = (
     createNewYetiProject baseDir project;
     antTask "copy" ["todir":baseDir~, "overwrite":"false"] 
         [el "javaresource" ["name":"ybuilder/core/targets.properties"][],
-         el "javaresource" ["name":"ybuilder/core/testextension.yeti"][],
          el "mapper" ["type":"flatten"][]] 
         project;
         
@@ -68,6 +67,8 @@ runExtensionTests project = (
                         [el "arg" ["line":args] []] 
                         project;
             done;
+            
+            
         done;
     fi;    
 );
