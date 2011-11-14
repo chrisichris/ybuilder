@@ -86,25 +86,56 @@ dir = {
     buildExtlib = buildExtlibDir,
 };
 
+libPathSet is pathPatternType = 
+    array [Fileset [(libDir~) : [Include "**/*.jar"]]]; 
+
+//setPathes
+pathSet = {
+    lib = libPathSet,
+    compile is pathPatternType =
+        array [Fileset [libManagedDir~ : [Include "/compile/**/*.jar"]],
+               Location (targetClassesDir~),
+               Patterns \libPathSet],
+    
+    runtime is pathPatternType =
+        array [Fileset [libManagedDir~ : [Include "/runtime/**/*.jar"]],
+               Patterns \libPathSet],
+
+    system is pathPatternType =
+        array [Fileset [libManagedDir~ : [Include "/system/**/*.jar"]],
+               Patterns \libPathSet],
+
+    provided is pathPatternType =
+        array [Fileset [libManagedDir~ : [Include "/provided/**/*.jar"]],
+               Patterns \libPathSet],
+
+    test is pathPatternType =
+        array [Fileset [libManagedDir~ : [Include "/test/**/*.jar"]],
+               Location (targetTestClassesDir~),
+               Patterns \libPathSet],
+};               
+
 //pathes
 buildExtPath is pathPatternType = 
     array [Fileset [buildExtlibDir : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
-    array [Fileset [ libManagedDir~ : [Include "/compile/**/*.jar",
-                                       Include "/runtime/**/*.jar"]],
-           Fileset [ libDir~ : [Include "**/*.jar"]],
-           Location (targetClassesDir~)];
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.runtime,
+           Patterns \pathSet.system];
            
 compilePath is pathPatternType = 
-    array [Fileset [ libManagedDir~ : [Include "/system/**/*.jar",
-                                       Include "/provided/**/*.jar"]], 
-           Patterns \runtimePath];
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.provided,
+           Patterns \pathSet.system];
+           
 testPath is pathPatternType = 
-    array [Fileset [libManagedDir || "test" : [Include "**.*.jar"]], 
-           Patterns \compilePath,
-           Location (targetTestClassesDir~)];
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.provided,
+           Patterns \pathSet.system,
+           Patterns \pathSet.runtime,
+           Patterns \pathSet.test];
            
 testRuntimePath is pathPatternType = array [Patterns \testPath];
 
@@ -662,7 +693,7 @@ livecycleTargets = {
     project,
     
     dir,
-    
+    pathSet,
     pathes = {
         buildExt = buildExtPath,
         runtime = runtimePath,
