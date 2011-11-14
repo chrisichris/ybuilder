@@ -11,6 +11,7 @@ load ybuilder.core.base;
 
 junitTarget = 
     target "junitTest" [InLivecycle livecycleTargets.test] do p:
+       antTask "mkdir" ["dir":dir.reports || "tests"] [] p;
        antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
                [el "classpath" [:] (antPathElements pathes.test),
                 el "formatter" ["type":"plain"] [],

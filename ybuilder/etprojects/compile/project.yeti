@@ -30,6 +30,7 @@ dependency "junit" "junit" "3.8.2" [TestScope()];
 _ = 
    target "extTest" [] 
           do p:
+            println "--tesing";
             assert "java-file" (file (dir.targetClasses || "foo/JavaFoo.class"))#exists();
             assert "yeti-file" (file (dir.targetClasses || "foo.class"))#exists();
             assert "yeti-file2" (file (dir.targetClasses || "mfoo/foo2.class"))#exists();

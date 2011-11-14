@@ -27,60 +27,67 @@ createExtensionTestProject =
             createExtensionTestDirs n p 
         done;
     done;
+    
+_doExtensionTest name project = (
+    if (file (extensionTestDir ||"/\(name)"))#exists() then 
+        antTask "copy" ["todir":extensionTestTargetDir || "/\(name)"] 
+                [el "fileset" ["dir":extensionTestDir || "/\(name)"] []] 
+                project;
+        
+        dir = file (extensionTestTargetDir || "/\(name)");
+
+        argLines = 
+           (fis = new FileInputStream(new File(dir,"targets.properties"));
+            try 
+                props = new Properties();
+                props#load(fis);
+                fst = string props#get("targets");
+                if defined? (props#get("targets1")) then
+                    [fst,(string props#get("targets1"))]
+                else
+                    [fst]
+                fi
+            finally
+                fis#close();
+            yrt);
+        println "-------------\nextension test [\(dir#getName())]";
+        for argLines do args:
+            println "target: \(args)";
+                        
+            antTask "java" 
+                    ["jar":"ybuilder.jar", "fork":"true", 
+                     "dir":dir#getAbsolutePath()] 
+                    [el "arg" ["line":args] []] 
+                    project;
+        done;
+    fi;        
+);    
 
 runExtensionTests project = (
     if (file (extensionTestDir~))#exists() then
-        antTask "copy" ["todir":extensionTestTargetDir~] 
-                [el "fileset" ["dir":extensionTestDir~] []] 
-                project;
-
-        projectDirs = 
-            (fs = (file (extensionTestTargetDir~))#listFiles();
-             if nullptr? fs then 
-                [] 
-             else 
-                list (wrapArray fs) 
-             fi);
-                        
-        for projectDirs do dir:
-            argLines = 
-               (fis = new FileInputStream(new File(dir,"targets.properties"));
-                try 
-                    props = new Properties();
-                    props#load(fis);
-                    fst = string props#get("targets");
-                    if defined? (props#get("targets1")) then
-                        [fst,(string props#get("targets1"))]
-                    else
-                        [fst]
-                    fi
-                finally
-                    fis#close();
-                yrt);
-            println "-------------\nextension test [\(dir#getName())]";
-            for argLines do args:
-                println "target: \(args)";
-                            
-                antTask "java" 
-                        ["jar":"ybuilder.jar", "fork":"true", 
-                         "dir":dir#getAbsolutePath()] 
-                        [el "arg" ["line":args] []] 
-                        project;
-            done;
-            
-            
-        done;
-    fi;    
+        names = if (length project.args) > 0 then
+            list project.args;
+        else
+            rs = (file (extensionTestDir~))#list();
+            if defined? rs then 
+                map string rs 
+            else
+                []
+            fi;
+        fi;
+        for names do n: _doExtensionTest n project done;
+    fi;
 );
 
-extensionTests = 
-    target "extensionTests" [InLivecycle livecycleTargets.test] runExtensionTests;
+extensionTest = 
+    target "extensionTest" [InLivecycle livecycleTargets.test] runExtensionTests;
 
+push targetsInHelp extensionTest;   
 push targetsInHelp createExtensionTestProject;   
 
 {
     init () = ();
-    extensionTests, 
+    extensionTest, 
     runExtensionTests, 
     extensionTestDir,
     createExtensionTestProject, 

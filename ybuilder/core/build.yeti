@@ -489,7 +489,7 @@ ybuilderVersion = "0.1-alpha";
 cmdYbuilderVersion = 
     target "-ybuilderVersion" 
         [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
-        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []); 
+        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []);
 
 {
     prop,

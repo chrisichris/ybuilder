@@ -175,7 +175,7 @@ yeticTestAttributes =
 jarManifest = [:] is hash<string,string>;
 jarAttributes = ["destfile" : 
                  (joinPath targetDir 
-                         (prop \"/\(project.groupId)-\(project.version).jar"))]; 
+                         (prop \"/\(project.groupId).jar"))]; 
 jarFileset = [ targetClassesDir : []];
 
 warAttributes = ["destfile":
