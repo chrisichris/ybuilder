@@ -27,12 +27,15 @@ dependency "junit" "junit" "3.8.2" [TestScope()];
 
 // add custom targets here
 // a (stupid) example:
-// myt = 
-   // target "myInit" 
-          // [InLivecycle livecycleTargets.compile] 
-          // do p:
-            // println "TestPath: \(getAntPathFromProject 'testPath' p)";
-          // done;
+_ = 
+   target "extTest" [] 
+          do p:
+            assert "java-file" (file (dir.targetClasses || "foo/JavaFoo.class"))#exists();
+            assert "yeti-file" (file (dir.targetClasses || "foo.class"))#exists();
+            assert "yeti-file2" (file (dir.targetClasses || "mfoo/foo2.class"))#exists();
+            assert "yeit-test-file" (file (dir.targetTestClasses || "testfoo.class"))#exists();
+            assert "java-test-file" (file (dir.targetTestClasses || "foo/JavaTestFoo.class"))#exists();
+          done;
 
 
 //---End--

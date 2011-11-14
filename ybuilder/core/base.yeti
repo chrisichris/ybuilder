@@ -144,7 +144,7 @@ testRuntimePath is pathPatternType = array [Patterns \testPath];
 javacAttributes = 
     ["srcdir" : javaDir, "destdir":targetClassesDir, 
      "debug": cprop "on", 
-     "debuglevel" : cprop "lines, vars, source", 
+     "debuglevel" : cprop "lines, vars, source",
      "includeAntRuntime":cprop "false",
      "fork":cprop "true"];
      
@@ -163,9 +163,14 @@ javadocAttributes =
     ["sourcepath" : javaDir, 
      "destdir":javadocDir];
 
-yeticAttributes = ["srcdir":yetiDir, "destdir": targetClassesDir];
-yeticTestAttributes = ["srcdir":yetiTestDir, 
-                       "destdir" : targetTestClassesDir];
+yeticAttributes = 
+    ["srcdir":yetiDir, 
+     "includes" : cprop "**/*.yeti",     
+     "destdir": targetClassesDir];
+yeticTestAttributes = 
+    ["srcdir":yetiTestDir, 
+     "includes" : cprop "**/*.yeti",     
+     "destdir" : targetTestClassesDir];
 
 jarManifest = [:] is hash<string,string>;
 jarAttributes = ["destfile" : 

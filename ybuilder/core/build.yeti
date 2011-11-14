@@ -483,7 +483,7 @@ antPathById name project =
 
     
 file name = new File(name is string);
-assert cond text = if not cond then failWith text else () fi;
+assert text cond = if not cond then failWith text else () fi;
 
 ybuilderVersion = "0.1-alpha";
 cmdYbuilderVersion = 

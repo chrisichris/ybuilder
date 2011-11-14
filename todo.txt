@@ -1,5 +1,5 @@
 //todo
-* update dependencies to include only props
+* extensiontest should run tests
 * add .gitignore to newProject, update project.yeti and dependencies.yeti
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
@@ -29,3 +29,4 @@
 + ant exception handling also to creation of tasks
 + update livecycles
 + unifyhelp
++ update dependencies to include only props
