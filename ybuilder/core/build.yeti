@@ -77,6 +77,10 @@ prop fn1 = {
     var fn = do (): fn1 () done;
 };
 
+
+setCProp prop v =
+    prop.fn := do (): v done;
+
 (~) prop = prop.fn (); 
 
 path parent child = 
@@ -491,6 +495,7 @@ cmdYbuilderVersion =
     prop,
     cprop,
     setProp,
+    setCProp,
     path, 
     setPath,
     joinPath,

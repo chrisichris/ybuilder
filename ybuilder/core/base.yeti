@@ -28,57 +28,63 @@ project = {
  	
 
 //directories
-    libManagedDir = path basedir "lib_managed/";
-    libDir = path basedir "lib/";	
-    targetDir = path basedir "target/";
-    srcDir = path basedir "src/";
-    mainDir = path srcDir "main/";
-    testDir = path srcDir "test/";
-    reportsDir = path targetDir "reports/";
-    docDir = path targetDir "doc/";
-    ybuilderDir = path basedir "ybuilder/";
-    targetClassesDir = path targetDir "classes/";
-    targetTestClassesDir = path targetDir "testclasses/";
-    webappDir = path mainDir "webapp/";
-
-    javaDir = path mainDir "java/";
-    javaTestDir = path testDir "java/";
-    resourcesDir = path mainDir "resources/";
-    resourcesTestDir = path testDir "resources/";
-    javadocDir = path docDir "javadoc/";
-
-    yetiDir = path mainDir "yeti/";
-    yetiTestDir = path testDir "yeti/";
-    yetidocDir = path docDir "yetidoc/";
-
-    buildExtlibDir = "ybuilder/extlib/";
     
-    dir = {
-        libManaged = libManagedDir,
-        lib = libDir,	
-        target = targetDir,
-        src = srcDir,
-        main = mainDir,
-        test = testDir,
-        reports = reportsDir,
-        doc = docDir,
-        ybuilder = ybuilderDir,
-        targetClasses = targetClassesDir,
-        targetTestClasses = targetTestClassesDir,
-        webapp = webappDir,
+libManagedDir = path basedir "lib_managed/";
+libDir = path basedir "lib/";	
+targetDir = path basedir "target/";
+srcDir = path basedir "";
+mainDir = path srcDir "src-";
+testDir = path srcDir "test-";
+reportsDir = path targetDir "reports/";
+docDir = path targetDir "doc/";
+ybuilderDir = path basedir "ybuilder/";
+targetClassesDir = path targetDir "classes/";
+targetTestClassesDir = path targetDir "testclasses/";
 
-        java = javaDir,
-        javaTest = javaTestDir,
-        resources = resourcesDir,
-        resourcesTest = resourcesTestDir,
-        javadoc = javadocDir,
+webappDir = path mainDir "webapp/";
+javaDir = path mainDir "java/";
+javaTestDir = path testDir "java/";
+resourcesDir = path mainDir "resources/";
+resourcesTestDir = path testDir "resources/";
+javadocDir = path docDir "javadoc/";
 
-        yeti = yetiDir,
-        yetiTest = yetiTestDir,
-        yetidoc = yetidocDir,
-        
-        buildExtlib = buildExtlibDir,
-    };
+yetiDir = path mainDir "yeti/";
+yetiTestDir = path testDir "yeti/";
+yetidocDir = path docDir "yetidoc/";
+
+buildExtlibDir = "ybuilder/extlib/";
+
+mavenizeLayout () =
+   (setPath srcDir basedir "src/";
+    setPath mainDir srcDir "main/";
+    setPath testDir srcDir "test/");
+
+dir = {
+    libManaged = libManagedDir,
+    lib = libDir,	
+    target = targetDir,
+    src = srcDir,
+    main = mainDir,
+    test = testDir,
+    reports = reportsDir,
+    doc = docDir,
+    ybuilder = ybuilderDir,
+    targetClasses = targetClassesDir,
+    targetTestClasses = targetTestClassesDir,
+    webapp = webappDir,
+
+    java = javaDir,
+    javaTest = javaTestDir,
+    resources = resourcesDir,
+    resourcesTest = resourcesTestDir,
+    javadoc = javadocDir,
+
+    yeti = yetiDir,
+    yetiTest = yetiTestDir,
+    yetidoc = yetidocDir,
+    
+    buildExtlib = buildExtlibDir,
+};
 
 //pathes
 buildExtPath is pathPatternType = 
@@ -696,6 +702,8 @@ livecycleTargets = {
     createNewYetiProject,
 
     livecycleTargets,
+    
+    mavenizeLayout,
     
     baseTargets = livecycleTargets with {
         copyResources,

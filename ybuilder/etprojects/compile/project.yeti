@@ -27,12 +27,12 @@ dependency "junit" "junit" "3.8.2" [TestScope()];
 
 // add custom targets here
 // a (stupid) example:
-myt = 
-   target "myInit" 
-          [InLivecycle livecycleTargets.compile] 
-          do p:
-            println "TestPath: \(getAntPathFromProject 'testPath' p)";
-          done;
+// myt = 
+   // target "myInit" 
+          // [InLivecycle livecycleTargets.compile] 
+          // do p:
+            // println "TestPath: \(getAntPathFromProject 'testPath' p)";
+          // done;
 
 
 //---End--
