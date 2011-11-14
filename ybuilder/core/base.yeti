@@ -545,7 +545,7 @@ testCompileYeti =
            do p:
                 if (file (yeticTestAttributes.["srcdir"]~))#exists() then
                    antTask "yetic" (copyHash id (~) yeticTestAttributes) 
-                           [el "classpath" [:] (antPathElements compilePath)]
+                           [el "classpath" [:] (antPathElements testPath)]
                            p;
                 fi;
            done;
