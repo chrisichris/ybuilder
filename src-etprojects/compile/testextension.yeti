@@ -1,3 +1,0 @@
-{file, assert} = load ybuilder.core.build;
-
-//write your tests here
