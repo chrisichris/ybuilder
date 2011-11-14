@@ -46,20 +46,14 @@ runExtensionTests project = (
         for projectDirs do dir:
             args = 
                (pf = new File(dir, "targets.properties");
-                if pf#isFile() then
+                fis = new FileInputStream(new File(dir,"targets.properties"));
+                try 
                     props = new Properties();
-                    fis = new FileInputStream(pf);
                     props#load(fis);
-                    r = if props#contains("targets") then 
-                        [string props#get("targets")];
-                    else 
-                        ["test"] 
-                    fi;
+                    [string props#get("targets")];
+                finally
                     fis#close();
-                    r;
-                else 
-                    ["test"] 
-                fi);
+                yrt);
             println "-------------\nextension test [\(dir#getName())]";
             println "target: \(args)";
                         
