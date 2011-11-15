@@ -1,12 +1,10 @@
 //todo
-* extensiontest should run tests
-* add .gitignore to newProject, update project.yeti and dependencies.yeti
+* update yeti compile to not use yeti task but command line
+* add project dependency
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * single test method
 * create webapp
-* maven dir layout as option - means changing current dirs to "simple" + option
-  to create project to make maven-layout
 
 //done
 + doc targets
@@ -30,3 +28,5 @@
 + unifyhelp
 + update dependencies to include only props
 + continues compilation
++ extensiontest should run tests
++ add .gitignore to newProject, update project.yeti and dependencies.yeti
