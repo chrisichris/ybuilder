@@ -205,12 +205,27 @@ cmdLivecycles =
         \(for (sortBy (on (<)(.pos)) (filter isLivecycleTarget? (list targets))) 
             (println . targetToString));
 
+printSimilarTargets name =
+   (n = name;
+    ts = filter do t: strStarts? t.name n done (mapHash do k t: t done targets);
+    if empty? ts then
+        println "There are no targets starting with [\(n)]";
+    else
+        println "Targets starting with [\(n)]:\n";
+        for ts do t:
+            println 
+                String#format("%1$-15s %2$s\n",
+                            array [t.name,t.description])
+        done;
+    fi);
+            
 targetsInHelp = array [cmdTargets,cmdLivecycles];             
             
 help = 
     target "help" 
         [Description "Shows help"] 
         do p:
+        if empty? p.args then
             println '
 ----
 ybuilder is a simple build-enviroment for YETI the functional 
@@ -250,6 +265,9 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
                 triggering fresh load next time
 ';
 
+        else
+            for p.args printSimilarTargets;
+        fi;
         done;
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
@@ -472,6 +490,8 @@ cmdYbuilderVersion =
     getAntAbstractFileSetFromProject,
     targetToString,
 
+    printSimilarTargets,
+    
     cmdTargets,
     cmdLivecycles,
     targetsInHelp,
