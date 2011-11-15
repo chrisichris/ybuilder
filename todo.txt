@@ -3,7 +3,6 @@
 * add .gitignore to newProject, update project.yeti and dependencies.yeti
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
-* continues compilation
 * single test method
 * create webapp
 * maven dir layout as option - means changing current dirs to "simple" + option
@@ -30,3 +29,4 @@
 + update livecycles
 + unifyhelp
 + update dependencies to include only props
++ continues compilation
