@@ -1,6 +1,7 @@
 //the base module sets up all the targets, pathes etc for a basic yeti build
 load ybuilder.core.base;
 load ybuilder.core.build;
+_ = load ybuilder.core.extensiontest;
 _ = load ybuilder.core.junit;
 
 //---General setup
@@ -27,12 +28,6 @@ dependency "junit" "junit" "3.8.2" [TestScope()];
 
 // add custom targets here
 // a (stupid) example:
-_ = 
-   target "extTest" [] 
-          do p:
-            println "--tesing";
-            assert "junit-test-file" (file (dir.reports ^ "tests/TEST-foo.FooTest.txt"))#exists();
-          done;
 
 
 //---End--

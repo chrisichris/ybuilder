@@ -22,14 +22,14 @@ import java.io:FileInputStream, File;
 load ybuilder.core.build;
 load ybuilder.core.base;
 
-extensionTestDir = path dir.main "etprojects/";
-extensionTestTargetDir = path dir.target "etprojects/";
+extensionTestDir = "etprojects/";
+extensionTestTargetDir = dir.target ^ "etprojects/";
 
 
 createExtensionTestDirs name project = (
-    baseDir = path extensionTestDir name;
+    baseDir = extensionTestDir ^ name ^ "/";
     createNewYetiProject baseDir project;
-    antTask "copy" ["todir":baseDir~, "overwrite":"false"] 
+    antTask "copy" ["todir":baseDir, "overwrite":"false"] 
         [el "javaresource" ["name":"ybuilder/core/targets.properties"][],
          el "mapper" ["type":"flatten"][]] 
         project;
@@ -38,19 +38,20 @@ createExtensionTestDirs name project = (
 
 createExtensionTestProject = 
     target "createExtensionTestProject" 
-           [Description "creates a project for testing of an extension in [\(extensionTestDir~)]. The name of the project must be provided as a param"] do p:
+           [Description "creates a project for testing of an extension in [\(extensionTestDir)]. The name of the project must be provided as a param"] do p:
         for p.args do n: 
             createExtensionTestDirs n p 
         done;
     done;
-    
+
 _doExtensionTest name project = (
-    if (file (extensionTestDir ||"/\(name)"))#exists() then 
-        antTask "copy" ["todir":extensionTestTargetDir || "/\(name)"] 
-                [el "fileset" ["dir":extensionTestDir || "/\(name)"] []] 
+    if (file (extensionTestDir ^ name))#exists() then 
+        println "\n================\nextension test [\(name)]";
+        antTask "copy" ["todir":extensionTestTargetDir ^ name] 
+                [el "fileset" ["dir":extensionTestDir ^ name] []] 
                 project;
         
-        dir = file (extensionTestTargetDir || "/\(name)");
+        dir = file (extensionTestTargetDir ^ name);
 
         argLines = 
            (fis = new FileInputStream(new File(dir,"targets.properties"));
@@ -66,9 +67,8 @@ _doExtensionTest name project = (
             finally
                 fis#close();
             yrt);
-        println "-------------\nextension test [\(dir#getName())]";
         for argLines do args:
-            println "target: \(args)";
+            println "\n---\ntarget: \(args)";
                         
             antTask "java" 
                     ["jar":"ybuilder.jar", "fork":"true", 
@@ -78,13 +78,14 @@ _doExtensionTest name project = (
         done;
     fi;        
 );    
+  
 
 runExtensionTests project = (
-    if (file (extensionTestDir~))#exists() then
+    if (file extensionTestDir)#exists() then
         names = if (length project.args) > 0 then
             list project.args;
         else
-            rs = (file (extensionTestDir~))#list();
+            rs = (file extensionTestDir)#list();
             if defined? rs then 
                 map string rs 
             else

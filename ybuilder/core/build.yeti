@@ -62,17 +62,14 @@ typedef targetType = {
     var postFn is projectType -> ()
 };
 
-typedef pathType = {
-    var fn is () -> string
-};
 
 typedef filePatternType = list?<Include string
                                 | Exclude string 
                                 | Patterns (() -> filePatternType) >;
                                 
-typedef pathPatternType = list?<Fileset hash<pathType, filePatternType>
-                                | Dirset hash<pathType, filePatternType> 
-                                | Location pathType 
+typedef pathPatternType = list?<Fileset hash<string, filePatternType>
+                                | Dirset hash<string, filePatternType> 
+                                | Location string 
                                 | Path string 
                                 | Patterns ( () -> pathPatternType) >;
     
@@ -87,52 +84,9 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-cprop v = {
-    var fn = do (): v done;
-};
-prop fn1 = {
-    var fn = do (): fn1 () done;
-};
 
+basedir = "./";
 
-setCProp prop v =
-    prop.fn := do (): v done;
-
-(~) prop = prop.fn (); 
-
-path parent child = 
-    prop \( (parent~) ^ (child is string)); 
-
-setProp prop fn1 = 
-    prop.fn := do (): fn1 () done;
-    
-setPath path parent child = 
-    (path is pathType).fn := do (): (parent.fn ()) ^ child done;
-
-basedir = {var fn = do (): "./" done};
-
-joinPath parent child  = {
-    var fn () = 
-       (cs = (child is pathType).fn ();
-        c= if strStarts? cs (basedir~) then
-            strRight cs ((strLength (basedir~)) -1);
-        else
-            cs;
-        fi;
-        ((parent is pathType).fn ()) ^ c)
-};
-    
-/*    
-pathComponent p = 
-    case p of
-    Basedir(): basedirStr;
-    Childdir{component} : component;
-    esac;
-*/
-
-
-
-(||) parentPath component = (path parentPath component)~;
 
 createProject () = 
     (antProject = new Project();
@@ -428,9 +382,9 @@ antPatterns patts =
         done patts; 
 
 antFileset dir patts =  
-    el "fileset" ["dir" : (dir~)] (antPatterns patts);
+    el "fileset" ["dir" : dir] (antPatterns patts);
 antDirset dir patts =  
-    el "dirset" ["dir" : (dir~)] (antPatterns patts);
+    el "dirset" ["dir" : dir] (antPatterns patts);
 
 antPathElements patts = 
    (filesets = array [];
@@ -448,7 +402,7 @@ antPathElements patts =
                         push dirsets (antDirset k v)
                     done;
                 Path str : push root (el "pathelement" ["path" : "${\(str)}"] []);
-                Location str: push root (el "pathelement" ["location" : (str~)] []);
+                Location str: push root (el "pathelement" ["location" : str] []);
                 Patterns pa: withPatts ( pa ());
                 esac; 
             done;
@@ -509,16 +463,6 @@ cmdYbuilderVersion =
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []);
 
 {
-    prop,
-    cprop,
-    setProp,
-    setCProp,
-    path, 
-    setPath,
-    joinPath,
-    (~), 
-    (||), 
-    (|) p c = path p c,
     assert,
     ybuilderVersion,
     cmdYbuilderVersion,

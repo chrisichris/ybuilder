@@ -25,18 +25,18 @@ load ybuilder.core.base;
 
 junitTarget = 
     target "junitTest" [InLivecycle livecycleTargets.test] do p:
-        if (file (dir.javaTest~))#exists() then
-            antTask "mkdir" ["dir":dir.reports || "tests"] [] p;
+        if (file dir.test)#exists() then
+            antTask "mkdir" ["dir":dir.reports ^ "tests"] [] p;
             antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
                    [el "classpath" [:] (antPathElements pathes.test),
                     el "formatter" ["type":"plain"] [],
                     el "batchtest" ["fork":"yes", 
-                                    "todir":(dir.reports || "tests")] 
-                       [el "fileset" ["dir":dir.javaTest~] 
+                                    "todir": dir.reports ^ "tests"] 
+                       [el "fileset" ["dir": dir.test] 
                            [el "include" ["name":"**/*Test.java"] []]]] p;
         fi
     done;
 
 {    
-    junitTarget,
+    junitTarget
 }

@@ -46,97 +46,60 @@ project = {
  	
 
 //directories
-    
-libManagedDir = path basedir "lib_managed/";
-libDir = path basedir "lib/";	
-targetDir = path basedir "target/";
-srcDir = path basedir "";
-mainDir = path srcDir "src-";
-testDir = path srcDir "test-";
-reportsDir = path targetDir "reports/";
-docDir = path targetDir "doc/";
-ybuilderDir = path basedir "ybuilder/";
-targetClassesDir = path targetDir "classes/";
-targetTestClassesDir = path targetDir "testclasses/";
-
-webappDir = path mainDir "webapp/";
-javaDir = path mainDir "java/";
-javaTestDir = path testDir "java/";
-resourcesDir = path mainDir "resources/";
-resourcesTestDir = path testDir "resources/";
-javadocDir = path docDir "javadoc/";
-
-yetiDir = path mainDir "yeti/";
-yetiTestDir = path testDir "yeti/";
-yetidocDir = path docDir "yetidoc/";
-
-buildExtlibDir = "ybuilder/extlib/";
-
-mavenizeLayout () =
-   (setPath srcDir basedir "src/";
-    setPath mainDir srcDir "main/";
-    setPath testDir srcDir "test/");
-
 dir = {
-    libManaged = libManagedDir,
-    lib = libDir,	
-    target = targetDir,
-    src = srcDir,
-    main = mainDir,
-    test = testDir,
-    reports = reportsDir,
-    doc = docDir,
-    ybuilder = ybuilderDir,
-    targetClasses = targetClassesDir,
-    targetTestClasses = targetTestClassesDir,
-    webapp = webappDir,
+    libManaged = "lib_managed/",
+    lib = "lib/",	
+    target = "target/",
+    src = "src/",
+    test = "test/",
+    reports = "target/reports/",
+    doc = "target/doc/",
+    ybuilder = "ybuilder/",
+    targetClasses = "target/classes/",
+    targetTestClasses = "target/testclasses/",
 
-    java = javaDir,
-    javaTest = javaTestDir,
-    resources = resourcesDir,
-    resourcesTest = resourcesTestDir,
-    javadoc = javadocDir,
+    webapp = "webapp/",
+    resources = "resources/",
+    resourcesTest = "test-resources/",
+    javadoc = "target/doc/javadoc/",
+    yetidoc = "target/doc/yetidoc/",
 
-    yeti = yetiDir,
-    yetiTest = yetiTestDir,
-    yetidoc = yetidocDir,
-    
-    buildExtlib = buildExtlibDir,
+    buildExtlib = "ybuilder/extlib/",
 };
 
 libPathSet is pathPatternType = 
-    array [Fileset [libDir : [Include "**/*.jar"]]]; 
+    array [Fileset [dir.lib : [Include "**/*.jar"]]]; 
 
 //setPathes
 pathSet = {
     lib = libPathSet,
     compile is pathPatternType =
-        array [Fileset [libManagedDir : [Include "/compile/**/*.jar"]],
-               Location targetClassesDir,
+        array [Fileset [dir.libManaged : [Include "/compile/**/*.jar"]],
+               Location dir.targetClasses,
                Patterns \libPathSet],
     
     runtime is pathPatternType =
-        array [Fileset [libManagedDir : [Include "/runtime/**/*.jar"]],
+        array [Fileset [dir.libManaged : [Include "/runtime/**/*.jar"]],
                Patterns \libPathSet],
 
     system is pathPatternType =
-        array [Fileset [libManagedDir : [Include "/system/**/*.jar"]],
+        array [Fileset [dir.libManaged : [Include "/system/**/*.jar"]],
                Patterns \libPathSet],
 
     provided is pathPatternType =
-        array [Fileset [libManagedDir : [Include "/provided/**/*.jar"]],
+        array [Fileset [dir.libManaged : [Include "/provided/**/*.jar"]],
                Patterns \libPathSet],
 
     test is pathPatternType =
-        array [Fileset [libManagedDir : [Include "/test/**/*.jar"]],
-               Location targetTestClassesDir,
+        array [Fileset [dir.libManaged : [Include "/test/**/*.jar"]],
+               Location dir.targetTestClasses,
                Patterns \libPathSet],
 };               
 
 //pathes
 buildExtPath is pathPatternType = 
-    array [Fileset [cprop buildExtlibDir : [Include "**/*.jar"]], 
-           Fileset [cprop "ybuilder/extlib_managed/": [Include "*.jar"]]];
+    array [Fileset [dir.buildExtlib : [Include "**/*.jar"]], 
+           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
     array [Patterns \pathSet.compile,
@@ -155,60 +118,65 @@ testPath is pathPatternType =
            Patterns \pathSet.runtime,
            Patterns \pathSet.test];
            
-testRuntimePath is pathPatternType = array [Patterns \testPath];
+testRuntimePath is pathPatternType = 
+    array [Patterns \testPath];
 
 
 //task attributes
 javacAttributes = 
-    ["srcdir" : javaDir, "destdir":targetClassesDir, 
-     "debug": cprop "on", 
-     "debuglevel" : cprop "lines, vars, source",
-     "includeAntRuntime":cprop "false",
-     "fork":cprop "true"];
+    ["srcdir" : dir.src, 
+     "destdir":dir.targetClasses,
+     "includes":"**/*.java",
+     "debug": "on", 
+     "debuglevel" : "lines, vars, source",
+     "includeAntRuntime":"false",
+     "fork": "true"];
      
-javacCompilerarg = cprop "";
+var javacCompilerarg = "";
 
 javacTestAttributes = 
-    ["srcdir" : javaTestDir, "destdir":targetTestClassesDir, 
-     "debug": cprop "on", 
-     "debuglevel" : cprop "lines, vars, source", 
-     "includeAntRuntime": cprop "false",
-     "fork":cprop "true"];
+    ["srcdir" : dir.test, 
+     "destdir": dir.targetTestClasses,
+     "includes": "**/*.java",
+     "debug": "on", 
+     "debuglevel" : "lines, vars, source", 
+     "includeAntRuntime": "false",
+     "fork": "true"];
 
-javacTestCompilerarg = cprop "";
+var javacTestCompilerarg = "";
 
 javadocAttributes = 
-    ["sourcepath" : javaDir, 
-     "destdir":javadocDir];
+    ["sourcepath" : dir.src,
+     "destdir": dir.javadoc];
 
 yeticAttributes = 
-    ["srcdir":yetiDir, 
-     "includes" : cprop "**/*.yeti",     
-     "destdir": targetClassesDir];
+    ["srcdir":dir.src, 
+     "includes" : "**/*.yeti",     
+     "destdir": dir.targetClasses];
+     
 yeticTestAttributes = 
-    ["srcdir":yetiTestDir, 
-     "includes" : cprop "**/*.yeti",     
-     "destdir" : targetTestClassesDir];
+    ["srcdir":dir.test, 
+     "includes" : "**/*.yeti",     
+     "destdir" : dir.targetTestClasses];
 
 jarManifest = [:] is hash<string,string>;
-jarAttributes = ["destfile" : 
-                 (joinPath targetDir 
-                         (prop \"/\(project.groupId).jar"))]; 
-jarFileset = [ targetClassesDir : []];
+//destfile
+jarAttributes is hash<string,string> = [:];
+                         
+jarFileset = [ dir.targetClasses : []];
 
-warAttributes = ["destfile":
-                 joinPath targetDir (prop \"/\(project.groupId).war"),
-                 "webxml": path webappDir "/WEB-INF/web.xml"];
+
+warAttributes = ["webxml": dir.webapp ^ "WEB-INF/web.xml"];
 
 warLibset = 
-     [libDir : [Include "**/*.jar"],
-      libManagedDir : [Include "compile/**/*.jar",
+     [dir.lib : [Include "**/*.jar"],
+      dir.libManaged : [Include "compile/**/*.jar",
                         Include "runtime/**/*.jar"]];
                        
 warClassesset =
-    [targetClassesDir : [Include "**/*.*"]];
+    [dir.targetClasses : [Include "**/*.*"]];
 
-warFileset = [webappDir : [Include "**/*.*"]];
+warFileset = [dir.webapp : [Include "**/*.*"]];
 
 deployRepository = {
     var url = undef_str,
@@ -263,29 +231,30 @@ exclusion groupId artifactId =
 
 //helper functions
 createNewYetiProject projectDir project = 
-       (for [libDir, yetiDir,resourcesDir,yetiTestDir,
-             resourcesTestDir, path basedir buildExtlibDir] 
+       (for [dir.lib, dir.src, dir.test, dir.buildExtlib] 
              do d: 
-                antTask "mkdir" ["dir":(joinPath projectDir d)~] [] project 
+                antTask "mkdir" ["dir":(projectDir ^ d)] [] project 
         done;
         antTask "copy" 
-                ["todir":(joinPath projectDir ybuilderDir)~, 
+                ["todir": projectDir ^ dir.ybuilder, 
                  "overwrite":"false"] 
                 [el "javaresource" 
                     ["name":"ybuilder/core/buildDependencies.yeti"][],
                  el "mapper" ["type":"flatten"] []] 
                 project;
                 
-        antTask "copy" ["todir":projectDir~, "overwrite":"false"] 
+        antTask "copy" ["todir":projectDir, "overwrite":"false"] 
                 [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
                  el "mapper" ["type":"flatten"] []] 
                 project;
     );
     
 yetiMainTask args project = 
-    antTask "java" ["classname":"yeti.lang.compiler.yeti", 
-                    "classpathref":"testPath", "fork":"true"] 
-            (map do a: el "arg" ["value":a] [] done args) 
+    antTask "java" 
+            ["classname":"yeti.lang.compiler.yeti", 
+             "classpathref":"testPath", "fork":"true"]
+            ((el "classpath" [:] (antPathElements testPath) 
+             :: (map do a: el "arg" ["value":a] [] done args))) 
             project;
     
 yetidocTask targetDir fileSet project=     
@@ -294,13 +263,6 @@ yetidocTask targetDir fileSet project=
                     #getIncludedFiles());
     args = ["-doc", targetDir] ++ fs;
     yetiMainTask args project);
-
-copyHash fnk fnv h =
-    (hr = [:];
-    forHash h do k v:
-        hr.[fnk k] := fnv v
-    done;
-    hr);
 
 mvnInstall fileName project = 
     antTask (maven "install") ["file": fileName]
@@ -334,13 +296,13 @@ preClean =
 clean = 
     target "clean" 
            [Depends preClean, Livecycle true, 
-                Description "cleans the build artifacts"] 
-           (antTask "delete" ["dir" : targetDir~] []);
+                Description "cleans the build [\(dir.target)] dir"] 
+           (antTask "delete" ["dir" : dir.target] []);
 
 cleanLibs = 
     target "cleanLibs" 
-           [Description "Cleans the retrieved dependencies in [\(libManagedDir~)] directory"] 
-           (antTask "delete" ["dir":libManagedDir~] []);
+           [Description "Cleans the retrieved dependencies in [\(dir.libManaged)] directory"] 
+           (antTask "delete" ["dir":dir.libManaged] []);
 cleanAll = 
     target "cleanAll" 
            [Livecycle true,Dependencies[cleanLibs, clean], 
@@ -353,7 +315,7 @@ initializeBuild =
     
 initialize = 
     target "initialize" [Depends initializeBuild, Livecycle true] 
-           (antTask "mkdir" ["dir": targetDir~] []);
+           (antTask "mkdir" ["dir": dir.target] []);
 
 generateResources = 
     target "generateResources" [Depends initialize, Livecycle true] \();
@@ -379,7 +341,7 @@ test =
 preparePackage = 
     target "preparePackage" [Depends test, Livecycle true] \();
 
-preDoc = target "preDoc" [Livecycle true] \();
+preDoc = target "preDoc" [Depends initialize, Livecycle true] \();
 doc = target "doc" [Depends preDoc, Livecycle true,
                     Description "Generates project documentation"] \();	
 
@@ -450,10 +412,10 @@ pom =
 prepareLibs = 
     target "prepareLibs" 
         [InLivecycle initialize, 
-         Description "loads librararies in [\(libManagedDir~)]"] 
+         Description "loads librararies in [\(dir.libManaged)]"] 
         do project:
-            copyDeps scope project = 
-               (antTask "mkdir" ["dir":libManagedDir|| "\(scope)"] [] project;
+            copyDeps scope = 
+               (antTask "mkdir" ["dir":"\(dir.libManaged)\(scope)"] [] project;
                 if not empty? artifactDependencies then
                     antTask (maven "dependencies") 
                             ["filesetId" : "dependenciesFS-"^scope, 
@@ -471,23 +433,25 @@ prepareLibs =
                              ++ (_mvnDependencyTags ()) ) 
                             project;
                             
-                    antTask "copy" ["todir":libManagedDir|| "\(scope)"] [
+                    antTask "copy" ["todir":"\(dir.libManaged)\(scope)"] [
                             el "fileset" ["refid":"dependenciesFS-" ^ scope][],
                             el "mapper" ["type":"flatten"] []] project;
                 fi);
-
-            if not (file (libManagedDir~))#exists() then
-                copyDeps "test" project;
-                copyDeps "compile" project;
-                copyDeps "system" project;
-                copyDeps "provided" project;
-                copyDeps "runtime" project;
+            
+            scopes =["test","compile","system","provided","runtime"];
+            
+            if not (file dir.libManaged)#exists() then
+                for scopes copyDeps;
+            else
+                for scopes do scope:
+                    antTask "mkdir" ["dir":dir.libManaged ^ scope] [] project
+                done
             fi;
         done;
  retrieveLibs =
-    target "retrieveLibs" [Description "loads libraries in [\(libManagedDir~)]"]
+    target "retrieveLibs" [Description "loads libraries in [\(dir.libManaged)]"]
         do p:
-            antTask "delete" ["dir":libManagedDir~] [] p;
+            antTask "delete" ["dir":dir.libManaged] [] p;
             _ =executeTarget prepareLibs [RunAlways true] p;
         done;
 
@@ -495,8 +459,8 @@ prepareLibs =
 initPathes = 
     target "initPathes" [InLivecycle initialize,Depends prepareLibs] 
             do project:
-                antTask "mkdir" ["dir":targetClassesDir~] [] project;
-                antTask "mkdir" ["dir":targetTestClassesDir~][] project;
+                antTask "mkdir" ["dir":dir.targetClasses] [] project;
+                antTask "mkdir" ["dir":dir.targetTestClasses][] project;
                 antTask "path" ["id":"runtimePath"]
                         (antPathElements runtimePath) project;
                 antTask "path" ["id":"compilePath"]
@@ -512,16 +476,23 @@ initBuildPathes =
           (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
 
 //java targets
+resourcesPatterns = 
+    [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"];
 copyResources = 
     target "copyResources" 
            [InLivecycle processResources,
-            Description "Copies resources from \(resourcesDir~) to \(targetClassesDir~)"]
+            Description "Copies resources from [\(dir.src), \(dir.resources)] to [\(dir.targetClasses)]"]
            do p:
-                if (file (resourcesDir~))#exists() then
-                    antTask "copy" ["todir":targetClassesDir~] 
-                        [el "fileset" ["dir":resourcesDir~] []]
+                if (file dir.resources)#exists() then
+                    antTask "copy" ["todir":dir.targetClasses] 
+                        [el "fileset" ["dir":dir.resources] []]
                         p
-                fi
+                fi;
+                if (file dir.src)#exists() then
+                    antTask "copy" ["todir":dir.targetClasses]
+                        [antFileset dir.src resourcesPatterns]
+                        p
+                fi;
            done;
            
 copyTestResources = 
@@ -529,20 +500,25 @@ copyTestResources =
            [InLivecycle processTestResources, 
             Description "Copies test resources to test classes dir"]
            do p:
-                if (file (resourcesTestDir~))#exists() then
-                    antTask "copy" ["todir":targetTestClassesDir~] 
-                            [el "fileset" ["dir":resourcesTestDir~] []]
+                if (file dir.resourcesTest)#exists() then
+                    antTask "copy" ["todir":dir.targetTestClasses] 
+                            [el "fileset" ["dir":dir.resourcesTest] []]
                             p
-                fi
+                fi;
+                if (file dir.test)#exists() then
+                    antTask "copy" ["todir":dir.targetTestClasses]
+                        [antFileset dir.test resourcesPatterns]
+                        p
+                fi;
            done;
 
 compileJava = 
     target "compileJava" 
            [InLivecycle compile, Description "Compiles java sources"]
            do p:
-                if (file (javacAttributes.["srcdir"]~))#exists() then
-                    antTask "javac" (copyHash id (~) javacAttributes) 
-                        [el "compilerarg" ["line":(javacCompilerarg~)] [],
+                if (file dir.src)#exists() then
+                    antTask "javac" javacAttributes 
+                        [el "compilerarg" ["line": javacCompilerarg] [],
                          el "classpath" [:] (antPathElements compilePath)] 
                         p;
                 fi;
@@ -552,9 +528,9 @@ testCompileJava =
     target "testCompileJava" 
            [InLivecycle testCompile, Description "compiles java test sources"]
            do p:
-                if (file (javacTestAttributes.["srcdir"]~))#exists() then
-                    antTask "javac" (copyHash id (~) javacTestAttributes) 
-                        [el "compilerarg" ["line":(javacTestCompilerarg~)] [],
+                if (file dir.test)#exists() then
+                    antTask "javac" javacTestAttributes 
+                        [el "compilerarg" ["line":javacTestCompilerarg] [],
                          el "classpath" [:] (antPathElements testPath)] 
                         p
                 fi
@@ -562,11 +538,12 @@ testCompileJava =
 javadoc = 
     target "javadoc" 
            [InLivecycle doc, 
-            Description "create javadocs from [\(javaDir~)] to [\(javadocDir~)]"] 
+            Description "create javadocs from [\(dir.src)] to [\(dir.javadoc)]"] 
             do p:
-                if (file (javadocAttributes.["sourcepath"]~))#exists() then
-                    antTask "delete" ["dir":javadocDir~] [] p;
-                    antTask "javadoc" (copyHash id (~) javadocAttributes) 
+                if (file dir.src)#exists() then
+                    antTask "delete" ["dir":dir.javadoc] [] p;
+                    antTask "mkdir" ["dir":dir.javadoc] [] p;
+                    antTask "javadoc" javadocAttributes 
                             [el "classpath" [:] (antPathElements compilePath)] 
                             p
                 fi
@@ -586,10 +563,10 @@ defineYetic =
 compileYeti = 
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
            do p:
-                if (file (yeticAttributes.["srcdir"]~))#exists() then
-                    antTask "yetic" (copyHash id (~) yeticAttributes) 
-                            [el "classpath" [:] (antPathElements compilePath)]
-                            p
+                if (file dir.src)#exists() then
+                    antTask "yetic" yeticAttributes 
+                        [el "classpath" [:] (antPathElements compilePath)]
+                        p
                 fi
            done;
            
@@ -597,8 +574,8 @@ testCompileYeti =
     target "testCompileYeti" 
            [Depends testCompileJava, InLivecycle testCompile] 
            do p:
-                if (file (yeticTestAttributes.["srcdir"]~))#exists() then
-                   antTask "yetic" (copyHash id (~) yeticTestAttributes) 
+                if (file dir.test)#exists() then
+                   antTask "yetic" yeticTestAttributes 
                            [el "classpath" [:] (antPathElements testPath)]
                            p;
                 fi;
@@ -608,13 +585,13 @@ yetidoc =
     target "yetidoc" 
         [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] 
         do p:
-            if (file (yetiDir~))#exists() then
-                antTask "delete" ["dir":yetidocDir~] [] p;
-                antTask "mkdir" ["dir":yetidocDir~] [] p;
+            if (file dir.test)#exists() then
+                antTask "delete" ["dir":dir.yetidoc] [] p;
+                antTask "mkdir" ["dir":dir.yetidoc] [] p;
                 fileSet = 
-                    createAntFileSet (yetiDir~) [Include "**/*.yeti", 
+                    createAntFileSet dir.src [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
-                yetidocTask (yetidocDir~) fileSet p;
+                yetidocTask dir.yetidoc fileSet p;
             fi;
         done;
 
@@ -631,7 +608,11 @@ jar =
            [Depends preparePackage, 
             Description "Makes a jar file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"] 
            do p:
-                antTask "jar" (copyHash id (~) jarAttributes) 
+                destfl = dir.target ^ project.artifactId ^ ".jar";
+                antTask "jar" 
+                        (nh = copy jarAttributes;
+                         nh.["destfile"] := destfl;
+                         nh)
                         (mapHash do dir ie:
                             antFileset dir ie;
                          done jarFileset
@@ -640,7 +621,7 @@ jar =
                                  el "attribute" ["name":k, "value":v] [] 
                                done jarManifest)] ) 
                         p;
-                _mvnInstallOrDeploy (jarAttributes.["destfile"]~) p;
+                _mvnInstallOrDeploy destfl p;
            done;
 
 war = 
@@ -648,18 +629,22 @@ war =
            [Depends preparePackage, 
             Description "Makes a war file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"]
             do p:
-                antTask "war" (copyHash id (~) warAttributes)
+                destfl = dir.target ^ project.artifactId ^ ".war";
+                antTask "war" 
+                        (nh = copy warAttributes;
+                         nh.["destfile"] := destfl;
+                         nh)
                         ((mapHash do dir ie:
-                                el "lib" [(dir~):"."] (antPatterns ie);
+                                el "lib" ["dir":dir] (antPatterns ie);
                           done warLibset)
                          ++ (mapHash do dir ie:
-                                el "classes" [(dir~) :"."] (antPatterns ie);
+                                el "classes" ["dir" :dir] (antPatterns ie);
                           done warClassesset)
                          ++ (mapHash do dir ie:
                                 antFileset dir ie;
                           done warFileset))
                         p;
-                _mvnInstallOrDeploy (warAttributes.["destfile"]~) p;
+                _mvnInstallOrDeploy destfl p;
             done;
 
             
@@ -670,8 +655,8 @@ jetty =
         
         server = new Server(8080);
         context = new WebAppContext();
-        context#setDescriptor((warAttributes.["webxml"])~);
-        context#setResourceBase(webappDir~);
+        context#setDescriptor((warAttributes.["webxml"]));
+        context#setResourceBase(dir.webapp);
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
         
@@ -688,7 +673,7 @@ jetty =
         server#join();
     done;
     
-continuesDirs = array [javaDir, yetiDir, resourcesDir];
+continuesDirs = array [dir.src];
 continues = 
     target "continues" 
            [Description "Continuesly runs the target given as argument"]
@@ -721,7 +706,7 @@ continues =
                     ntime);
 
                 var oldTime = System#currentTimeMillis();
-                scf = map (file . (~)) continuesDirs;
+                scf = map file continuesDirs;
 
                 true loop 
                    (nt = fsc scf oldTime;
@@ -786,8 +771,9 @@ livecycleTargets = {
         warLibset,
         warClassesset,
         warFileset,
+        resourcesPatterns,
     },
-
+    
     mvnInstall, 
     mvnDeploy, 
     deployRepository,    
@@ -804,8 +790,6 @@ livecycleTargets = {
     createNewYetiProject,
 
     livecycleTargets,
-    
-    mavenizeLayout,
     
     baseTargets = livecycleTargets with {
         copyResources,

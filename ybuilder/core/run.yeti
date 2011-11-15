@@ -103,6 +103,7 @@ evaluate argv =
                         throw new YbuilderAntException("\(n) is no target",());
                     else
                         t = targets.[n];
+                        println "--target: \(n)";
                         runTarget t [Args (tail ns),
                                      Properties ps.properties];
                     fi 

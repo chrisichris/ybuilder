@@ -14,14 +14,13 @@ project.description := "A simple build tool for yeti";
 
 project = createProject(); 
 
-antTask "delete" ["dir":dir.java~] [] project;
-antTask "delete" ["dir":dir.yeti~] [] project;
-antTask "delete" ["dir":dir.resources~] [] project;
-antTask "delete" ["dir":et.extensionTestDir~] [] project;
+antTask "delete" ["dir":dir.src] [] project;
+antTask "delete" ["dir":dir.resources] [] project;
+antTask "delete" ["dir":et.extensionTestDir] [] project;
 
 
-antTask "copy" ["todir":et.extensionTestDir~] 
-    [el "fileset" ["dir":dir.ybuilder || "etprojects"] []]
+antTask "copy" ["todir":et.extensionTestDir] 
+    [el "fileset" ["dir":dir.ybuilder ^ "etprojects"] []]
     project;
 
 /*

@@ -5,6 +5,7 @@ src-java
 src-yeti
 src-resources
 src-etprojects
+test
 target
 ybuilder/extlib_managed
 ybuilder.jar
