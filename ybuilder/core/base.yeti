@@ -245,6 +245,7 @@ createNewYetiProject projectDir project =
                 
         antTask "copy" ["todir":projectDir, "overwrite":"false"] 
                 [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
+                 el "javaresource" ["name":"ybuilder/core/.gitignore"] [],
                  el "mapper" ["type":"flatten"] []] 
                 project;
     );
