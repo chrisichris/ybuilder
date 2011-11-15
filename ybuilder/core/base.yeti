@@ -16,8 +16,10 @@
 
 module ybuilder.core.base;
 
+import java.lang.Thread;
 import java.io.File;
 import org.apache.tools.ant.types: FileSet;
+
 
 
 load ybuilder.core.build;
@@ -659,7 +661,8 @@ war =
                         p;
                 _mvnInstallOrDeploy (warAttributes.["destfile"]~) p;
             done;
- 
+
+            
 jetty =
     target "jetty" [Description "runs jetty - note the jetty libs must be on the ybuilder path"] do project:
         import org.eclipse.jetty.server:Server;
@@ -684,10 +687,57 @@ jetty =
         server#start();
         server#join();
     done;
-          
+    
+continuesDirs = array [javaDir, yetiDir, resourcesDir];
+continues = 
+    target "continues" 
+           [Description "Continuesly runs the target given as argument"]
+           do p:
+                if empty? p.args then
+                    failWith "No command to run for continue please pvoide one as arg";
+                fi;
+                cmd = head (list p.args);
+                if not cmd in targets then
+                    failWith "[\(cmd)] is no target";
+                fi;
+                
+                tar = targets.[cmd];
+                args = tail (list p.args);
+                props = p.properties;
+                
+                println "---\nStarting continues target [\(cmd) \(args)]\n";
+
+                fsc dirs time =
+                   (var ntime = time;
+                    for (dirs is list<~File>) do dir:
+                        if dir#exists() then
+                            ntime := max ntime (dir#lastModified());
+                            if (dir is ~File)#isDirectory() then
+                                ntime := fsc (list(wrapArray(dir#listFiles()))) 
+                                             ntime;
+                            fi
+                        fi
+                    done;
+                    ntime);
+
+                var oldTime = System#currentTimeMillis();
+                scf = map (file . (~)) continuesDirs;
+
+                true loop 
+                   (nt = fsc scf oldTime;
+                    if nt > oldTime then
+                        println "---\nSource changed running [\(cmd) \(args)], (\(nt),\(oldTime))\n";
+                        oldTime := nt;
+                        
+                        
+                        runTarget tar [Args args,
+                                     Properties props]
+                    fi;
+                    Thread#sleep(1000));
+           done;
         
 for [clean, retrieveLibs, compile, test, jar, war, 
-     doc, pom, jetty, cleanLibs, cleanAll]
+     doc, pom, jetty, cleanLibs, cleanAll, continues]
     (push targetsInHelp);
         
 livecycleTargets = {
