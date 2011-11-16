@@ -57,6 +57,7 @@ typedef targetType = {
     depends is array<targetType>,
     livecycles is array<targetType>,
     var description is string,
+    var doPreDependencies is projectType -> (),
     var preFn is projectType -> (), 
     var fn is projectType -> (), 
     var postFn is projectType -> ()
@@ -128,7 +129,7 @@ var _targetCounter = 0;
     
 target name opts fn1 is string -> 'a -> 'b -> targetType = 
    (if name in targets then 
-        failWith "\(name) already defined as target - use Redefine true option to set it anyway" 
+        failWith "\(name) already defined as target" 
     fi;
     
     t = {
@@ -144,7 +145,8 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
         livecycles = array [],
         pos = synchronized _targetCounter 
             \(_targetCounter := _targetCounter +1; _targetCounter),
-        var description = "", 
+        var description = "",
+        var doPreDependencies = \(),
         var preFn = \(), 
         var fn = fn1, 
         var postFn = \()
@@ -157,7 +159,8 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
         Description d : t.description := d;
         DependencyOf target : push (target is targetType).depends t;
         InLivecycle lc: addTargetToLivecycle t lc;
-        Livecycle x: (); //already set in target construciton
+        Livecycle x: (); //already set in target construciton;
+        DoPreDependencies fn: t.doPreDependencies := fn;
         esac 
     done;
 
@@ -285,9 +288,11 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
     if runAlways 
        or (not (target is targetType).name in project.executedTargets) then
         project.executedTargets.[target.name] := true;
-        forTargetDependencies target [:] do t: executeTarget t[] project done;
         oldArgs = project.args;
         project.args := targetArgs;
+
+        target.doPreDependencies project;
+        forTargetDependencies target [:] do t: executeTarget t[] project done;
         try
             //println "Exectuing target \(target.name)";
             target.preFn project; target.fn project; target.postFn project;
