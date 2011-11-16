@@ -1,9 +1,7 @@
 lib
 lib_managed
 src
-src-java
-src-yeti
-src-resources
+resources
 etprojects
 test
 target
