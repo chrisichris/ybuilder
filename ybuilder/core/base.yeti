@@ -189,7 +189,8 @@ dependency groupId artifactId version opts =
         var classifier = undef_str,
         var scope = "compile",
         var systemPath = undef_str,
-        exclusions = array []
+        exclusions = array [],
+        var optional = false,
     };
     for opts do opt: 
         case opt of
@@ -200,7 +201,7 @@ dependency groupId artifactId version opts =
         ProvidedScope (): v.scope := "provided";
         SystemScope (): v.scope := "system";
         RuntimeScope (): v.scope := "runtime";
-        
+        Optional b: v.optional := b;
         SystemPath b: v.systemPath := b; 
         Exclusion {groupId, artifactId} : 
             push v.exclusions {groupId is string, artifactId is string}; 
@@ -386,7 +387,8 @@ _mvnDependencyTags () =
             "version" : dep.version,
             "type" : dep.type,
             "scope" : dep.scope,
-            "systemPath": dep.systemPath];
+            "systemPath": dep.systemPath,
+            "optional" : string dep.optional];
         if defined? dep.classifier then
             atts.["classifier"] := dep.classifier
         fi;
