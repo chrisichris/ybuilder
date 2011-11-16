@@ -216,6 +216,9 @@ remoteRepository idstr url =
             url is string, 
             var layout = "default"
         };
+
+remoteRepository "chrisichris-snapshots" "http://chrisichris.github.com/chrisis-maven-repo/snapshots";
+remoteRepository "chrisichris" "http://chrisichris.github.com/chrisis-maven-repo/releases";
         
 exclusion groupId artifactId = 
     Exclusion {groupId is string, artifactId is string};
@@ -241,28 +244,57 @@ createNewYetiProject projectDir project =
                 project;
     );
     
-yetiMainTask args path project =
-    antTask "java" 
-            ["classname":"yeti.lang.compiler.yeti", 
-             "fork":"false",
-             "failonerror":"true"]
-            ((el "classpath" [:] (antPathElements path) 
-             :: (map do a: el "arg" ["value":a] [] done args))) 
-            project;
+yetiMainTask args path fork project = 
+   if fork then
+        antTask "java" 
+                ["classname":"yeti.lang.compiler.yeti", 
+                 "fork":"true",
+                 "failonerror":"true"]
+                ((el "classpath" [:] (antPathElements path) 
+                 :: (map do a: el "arg" ["value":a] [] done args))) 
+                project;
+    else
+        urls = 
+            (map do n: (file n)#toURL() done . map string)
+                (wrapArray (createAntPath path)#list());
+        
+        import java.lang.ClassLoader;
+        import java.net.URLClassLoader;
+        cl = new URLClassLoader(array urls, 
+                                ClassLoader#getSystemClassLoader()#getParent());
+        
+        oldCl = Thread#currentThread()#getContextClassLoader();
+        Thread#currentThread()#setContextClassLoader(cl);
+        try
+            m = cl#loadClass("yeti.lang.compiler.yeti")
+                          #getMethod("main",array [classOf java.lang.String[]]);
+            m#invoke((),
+                    (array [(array (args is list?<string>)) as ~String[]]
+                        ) as ~String[][])
+        finally 
+            Thread#currentThread()#setContextClassLoader(oldCl);
+        yrt;
+        ();
+    fi;
+    
     
 yetidocTask targetDir fileSet project=     
    (fs = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
     args = ["-doc", targetDir] ++ fs;
-    yetiMainTask args testPath project);
+    yetiMainTask args testPath false project);
     
-yeticTask targetDir fileSet path project =
-   (fs = map (strReplace File#separator "/" . string) 
+yeticTask targetDir srcDir path project =
+   (fileSet =
+        createAntFileSet "." [Include "\(srcDir)**/*.yeti"];
+    fs = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
+    println String#format("%1$11s Compiling \(length fs) files to \(targetDir)",array ["[yetic]"]);
+    println fs;
     args = ["-d", targetDir] ++ fs;
-    yetiMainTask args path project);    
+    yetiMainTask args path true project);    
 
 mvnInstall fileName project = 
     antTask (maven "install") ["file": fileName]
@@ -556,30 +588,52 @@ defineYetic =
            [Depends initPathes, InLivecycle initialize]
            (antTask "taskdef" 
                     ["name":"yetic", 
-                     "classname":"yeti.lang.compiler.YetiTask", 
-                     "classpathref":"compilePath"] 
-                    []);	
+                     "classname":"yeti.lang.compiler.YetiTask"] 
+                    [el "classpath" [:] (antPathElements compilePath)]);	
 
+                    
 compileYeti = 
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
            do p:
                 if (file dir.src)#exists() then
-                    fileSet =
-                        createAntFileSet dir.src [Include "**/*.yeti"];
-                    yeticTask dir.targetClasses fileSet compilePath p;
+                    antTask "yetic"
+                            ["srcdir":dir.src,
+                             "includes": "**/*.yeti",
+                             "destdir" : dir.targetClasses]
+                            [el "classpath" [:] (antPathElements compilePath)]
+                            p;
+                fi
+           done;
+
+testCompileYeti = 
+    target "testCompileYeti" [Depends compileJava, InLivecycle compile] 
+           do p:
+                if (file dir.test)#exists() then
+                    antTask "yetic"
+                            ["srcdir":dir.test,
+                             "includes": "**/*.yeti",
+                             "destdir" : dir.targetTestClasses]
+                            [el "classpath" [:] (antPathElements testPath)]
+                            p;
                 fi
            done;
            
-testCompileYeti = 
-    target "testCompileYeti" 
-           [Depends testCompileJava, InLivecycle testCompile] 
-           do p:
-                if (file dir.test)#exists() then
-                    fileSet =
-                        createAntFileSet dir.test [Include "**/*.yeti"];
-                    yeticTask dir.targetTestClasses fileSet testPath p;
-                fi;
-           done;
+// compileYeti = 
+    // target "compileYeti" [Depends compileJava, InLivecycle compile] 
+           // do p:
+                // if (file dir.src)#exists() then
+                    // yeticTask dir.targetClasses dir.src compilePath p;
+                // fi
+           // done;
+           
+// testCompileYeti = 
+    // target "testCompileYeti" 
+           // [Depends testCompileJava, InLivecycle testCompile] 
+           // do p:
+                // if (file dir.test)#exists() then
+                    // yeticTask dir.targetTestClasses dir.test testPath p;
+                // fi;
+           // done;
                         
 yetidoc = 
     target "yetidoc" 
@@ -795,7 +849,6 @@ livecycleTargets = {
         testCompileJava,
         javadoc,
         jetty,
-        defineYetic,
         compileYeti,
         testCompileYeti,
         yetidoc,

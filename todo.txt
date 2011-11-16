@@ -1,5 +1,6 @@
 //todo
-* update yeti compile to not use yeti task but command line
+* update yeti compile to not use yeti task but command line + good messages
+  ie files to compile
 * add project dependency
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
