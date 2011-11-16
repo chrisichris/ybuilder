@@ -149,15 +149,6 @@ javadocAttributes =
     ["sourcepath" : dir.src,
      "destdir": dir.javadoc];
 
-yeticAttributes = 
-    ["srcdir":dir.src, 
-     "includes" : "**/*.yeti",     
-     "destdir": dir.targetClasses];
-     
-yeticTestAttributes = 
-    ["srcdir":dir.test, 
-     "includes" : "**/*.yeti",     
-     "destdir" : dir.targetTestClasses];
 
 jarManifest = [:] is hash<string,string>;
 //destfile
@@ -250,20 +241,28 @@ createNewYetiProject projectDir project =
                 project;
     );
     
-yetiMainTask args project = 
+yetiMainTask args path project =
     antTask "java" 
             ["classname":"yeti.lang.compiler.yeti", 
-             "classpathref":"testPath", "fork":"true"]
-            ((el "classpath" [:] (antPathElements testPath) 
+             "fork":"false",
+             "failonerror":"true"]
+            ((el "classpath" [:] (antPathElements path) 
              :: (map do a: el "arg" ["value":a] [] done args))) 
             project;
     
 yetidocTask targetDir fileSet project=     
-   (fs = map (strReplace File#pathSeparator "/" . string) 
+   (fs = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
     args = ["-doc", targetDir] ++ fs;
-    yetiMainTask args project);
+    yetiMainTask args testPath project);
+    
+yeticTask targetDir fileSet path project =
+   (fs = map (strReplace File#separator "/" . string) 
+             (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    #getIncludedFiles());
+    args = ["-d", targetDir] ++ fs;
+    yetiMainTask args path project);    
 
 mvnInstall fileName project = 
     antTask (maven "install") ["file": fileName]
@@ -565,9 +564,9 @@ compileYeti =
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
            do p:
                 if (file dir.src)#exists() then
-                    antTask "yetic" yeticAttributes 
-                        [el "classpath" [:] (antPathElements compilePath)]
-                        p
+                    fileSet =
+                        createAntFileSet dir.src [Include "**/*.yeti"];
+                    yeticTask dir.targetClasses fileSet compilePath p;
                 fi
            done;
            
@@ -576,9 +575,9 @@ testCompileYeti =
            [Depends testCompileJava, InLivecycle testCompile] 
            do p:
                 if (file dir.test)#exists() then
-                   antTask "yetic" yeticTestAttributes 
-                           [el "classpath" [:] (antPathElements testPath)]
-                           p;
+                    fileSet =
+                        createAntFileSet dir.test [Include "**/*.yeti"];
+                    yeticTask dir.targetTestClasses fileSet testPath p;
                 fi;
            done;
                         
@@ -764,8 +763,6 @@ livecycleTargets = {
         javacCompilerarg,
         javacTestAttributes,
         javacTestCompilerarg,
-        yeticAttributes, 
-        yeticTestAttributes,
         jarManifest,
         jarAttributes,
         warAttributes,
@@ -787,7 +784,6 @@ livecycleTargets = {
     remoteRepository,
 
     yetiMainTask,
-    yetidocTask,
     createNewYetiProject,
 
     livecycleTargets,
