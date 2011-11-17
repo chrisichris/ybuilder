@@ -96,6 +96,7 @@ pathSet = {
                Patterns \libPathSet],
 };               
 
+
 //pathes
 buildExtPath is pathPatternType = 
     array [Fileset [dir.buildExtlib : [Include "**/*.jar"]], 
@@ -180,6 +181,7 @@ deployRepository = {
 artifactDependencies = array[];					  
 remoteRepositories = array [];
 
+
 dependency groupId artifactId version opts = 
    (v = {
         groupId is string,
@@ -192,6 +194,8 @@ dependency groupId artifactId version opts =
         exclusions = array [],
         var optional = false,
     };
+    var projectPath = "";
+    
     for opts do opt: 
         case opt of
         Type t: v.type := t;
@@ -202,13 +206,23 @@ dependency groupId artifactId version opts =
         SystemScope (): v.scope := "system";
         RuntimeScope (): v.scope := "runtime";
         Optional b: v.optional := b;
-        SystemPath b: v.systemPath := b; 
+        SystemPath b: v.systemPath := b;
+        Project str: projectPath := str;
         Exclusion {groupId, artifactId} : 
             push v.exclusions {groupId is string, artifactId is string}; 
         esac;
     done;
     
-    push artifactDependencies v;
+    v2 = if (strLength projectPath) > 0 then
+        if not (strStarts? projectPath "/") then
+            projectPath := "/" ^ projectPath;
+        fi;
+        Project {projectPath = projectPath, artifact = v};
+    else
+        Artifact v;
+    fi;
+    
+    push artifactDependencies v2;
     ());
 
 remoteRepository idstr url = 
@@ -341,6 +355,9 @@ cleanAll =
            [Livecycle true,Dependencies[cleanLibs, clean], 
             Description "Cleans the project and all the libs"] 
            \();
+           
+           
+
 validate = target "validate" [Livecycle true] \();
 
 initializeBuild = 
@@ -372,15 +389,33 @@ test =
     target "test" [Depends processTestClasses, Livecycle true,
                    Description "runs the tests of the project"] \();
 preparePackage = 
-    target "preparePackage" [Depends test, Livecycle true] \();
-
+    target "preparePackage" [Depends cleanAll, Depends test, Livecycle true,
+                             DoPreDependencies
+                               \(cp = copy artifactDependencies;
+                                clearArray artifactDependencies;
+                                for cp do a:
+                                    push artifactDependencies (case a of
+                                        Project p: Artifact p.artifact;
+                                        Artifact a: Artifact a;
+                                    esac)
+                                done)]
+                            \();
+                            
 preDoc = target "preDoc" [Depends initialize, Livecycle true] \();
+
 doc = target "doc" [Depends preDoc, Livecycle true,
                     Description "Generates project documentation"] \();	
 
 //mvn things
 _mvnDependencyTags () =     
-    (map do dep: 
+   (ads = map do v:
+        case v of
+            Project x : none;
+            Artifact y : Some y;
+        esac
+    done artifactDependencies;
+    ad = catSome ads;
+    map do dep: 
         atts = 
            ["groupId" : dep.groupId,
             "artifactId" : dep.artifactId,
@@ -402,7 +437,7 @@ _mvnDependencyTags () =
                     ["groupId":exc.groupId, 
                      "artifactId":exc.artifactId] [] 
                  done dep.exclusions) 
-    done artifactDependencies);
+    done ad);
 
 initPom = 
     target "initPom" [InLivecycle initialize] 
@@ -424,28 +459,62 @@ initPom =
                  ++  _mvnDependencyTags ())
                 p
         done;
-                 /*
-                 "groupId" : project.groupId,
-                 "artifactId" : project.artifactId,
-                 "version" : project.version,
-                 "name" : project.name]
-                (if (strLength project.license) > 0 
-                     and (strLength project.licenseURL) > 0 then
-                    [el "license" ["name":project.license,
-                                  "url": project.licenseURL] []]
-                 else
-                    []
-                 fi 
-                 ++  _mvnDependencyTags ()));
-                 */
+
 pom =
     target "pom" [Depends initPom, Description "Writes a pom.xml"] 
            (antTask (maven "writepom") 
                     ["pomRefId" : "pom", "file":"pom.xml"] []);  
 
+          
+addProjectDeps =
+    target "addProjectDeps" 
+           [InLivecycle initialize,
+            Description "add the pathes for dependend projects"]
+           do p:
+            sdeps = map do d:
+                        case d of
+                            Project p: Some p;
+                            Artifact _ : none;
+                        esac
+                    done artifactDependencies;
+            deps = catSome sdeps;
+            for deps do {projectPath, artifact}:
+                {scope} = artifact;
+                push libPathSet 
+                    (Fileset [(projectPath ^ dir.lib) : [Include "**/*.jar"]]); 
+                pushLoc pS =
+                    push pS (Location (projectPath ^ dir.targetClasses));
+                pushTD pS dpS =
+                    push pS 
+                         (Fileset [projectPath ^ dir.libManaged 
+                                  : [Include "/\(dpS)/**/*.jar"]]);
+                //scope dependencies according to maven:
+                //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
+                if scope == "compile" then
+                    pushLoc pathSet.compile;
+                    pushTD pathSet.compile "compile";
+                    pushTD pathSet.runtime "runtime";
+                elif scope == "provided" then
+                    pushLoc pathSet.provided;
+                    pushTD pathSet.provided "compile";
+                    pushTD pathSet.provided "provided";
+                    pushTD pathSet.provided "runtime";
+                elif scope == "runtime" then
+                    pushLoc pathSet.runtime;
+                    pushTD pathSet.runtime "compile";
+                    pushTD pathSet.runtime "runtime";
+                elif scope == "test" then
+                    pushLoc pathSet.test;
+                    pushTD pathSet.test "compile";
+                    pushTD pathSet.test "runtime";
+                fi;
+            done;
+           done;
+
+            
 prepareLibs = 
     target "prepareLibs" 
-        [InLivecycle initialize, 
+        [InLivecycle initialize, Depends addProjectDeps, 
          Description "loads librararies in [\(dir.libManaged)]"] 
         do project:
             copyDeps scope = 
@@ -490,19 +559,11 @@ prepareLibs =
         done;
 
 //path targets    
-initPathes = 
-    target "initPathes" [InLivecycle initialize,Depends prepareLibs] 
+initDirs = 
+    target "initDirs" [InLivecycle initialize,Depends prepareLibs] 
             do project:
                 antTask "mkdir" ["dir":dir.targetClasses] [] project;
                 antTask "mkdir" ["dir":dir.targetTestClasses][] project;
-                antTask "path" ["id":"runtimePath"]
-                        (antPathElements runtimePath) project;
-                antTask "path" ["id":"compilePath"]
-                        (antPathElements compilePath) project;
-                antTask "path" ["id":"testPath"]
-                        (antPathElements testPath) project;
-                antTask "path" ["id":"testRuntimePath"]
-                        (antPathElements testRuntimePath) project;
             done;
     
 initBuildPathes = 
@@ -587,7 +648,7 @@ javadoc =
 //yeti targets
 defineYetic = 
     target "defineYetic" 
-           [Depends initPathes, InLivecycle initialize]
+           [Depends initDirs, InLivecycle initialize]
            (antTask "taskdef" 
                     ["name":"yetic", 
                      "classname":"yeti.lang.compiler.YetiTask"] 
@@ -639,7 +700,7 @@ testCompileYeti =
                         
 yetidoc = 
     target "yetidoc" 
-        [InLivecycle doc, Depends initPathes, Description "creates yetidoc"] 
+        [InLivecycle doc, Depends initDirs, Description "creates yetidoc"] 
         do p:
             if (file dir.test)#exists() then
                 antTask "delete" ["dir":dir.yetidoc] [] p;
@@ -658,7 +719,8 @@ _mvnInstallOrDeploy fileName project =
     if contains? ":deploy" project.args then
         mvnDeploy fileName project;
     fi);
-        
+
+    
 jar = 
     target "jar" 
            [Depends preparePackage, 
@@ -858,7 +920,7 @@ livecycleTargets = {
         prepareLibs,
         retrieveLibs, 
         cleanLibs, 
-        initPathes,
+        initDirs,
         war,
         jar,
         pom,
