@@ -18,7 +18,7 @@ module ybuilder.core.builddeps;
 
 load ybuilder.core.build;
 
-libManagedDir = "ybuilder/extlib_managed";
+libManagedDir = "lib/ybuilder/extlib_managed";
 
 artifactDependencies = array[];					  
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);

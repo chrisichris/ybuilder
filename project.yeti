@@ -7,6 +7,8 @@ load ybuilder.core.build;
 import junit.framework.TestCase;
 import java.lang.Thread;
 
+ybuilderDir = "ybuilder/";
+
 project.artifactId := "ybuilder";
 project.groupId :="ybuilder";
 project.version := "0.1-alpha";
@@ -20,7 +22,7 @@ antTask "delete" ["dir":et.extensionTestDir] [] project;
 
 
 antTask "copy" ["todir":et.extensionTestDir] 
-    [el "fileset" ["dir":dir.ybuilder ^ "etprojects"] []]
+    [el "fileset" ["dir":ybuilderDir ^ "etprojects"] []]
     project;
 
 /*

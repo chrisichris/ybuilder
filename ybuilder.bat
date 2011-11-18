@@ -1,1 +1,1 @@
-java -Xmx512M -cp "lib/*" yeti.lang.compiler.yeti project_ybuilder.yeti %*
+java -Xmx512M -cp "lib/unmanaged/*" yeti.lang.compiler.yeti project_ybuilder.yeti %*

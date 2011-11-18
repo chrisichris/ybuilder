@@ -19,6 +19,7 @@ project.description := "FIXME: project description";
 //      options = ProvidedScope(), TestScope(), SystemScope()
 //      default scope is compile scope
 
+dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [];
 dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
 dependency "junit" "junit" "3.8.2" [TestScope()];
 // dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];

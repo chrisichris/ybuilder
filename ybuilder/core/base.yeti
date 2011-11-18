@@ -47,14 +47,14 @@ project = {
 
 //directories
 dir = {
-    libManaged = "lib_managed/",
-    lib = "lib/",	
+    libManaged = "lib/managed/",
+    lib = "lib/unmanaged/",	
     target = "target/",
     src = "src/",
     test = "test/",
     reports = "target/reports/",
     doc = "target/doc/",
-    ybuilder = "ybuilder/",
+    ybuilder = "lib/ybuilder/",
     targetClasses = "target/classes/",
     targetTestClasses = "target/testclasses/",
 
@@ -64,7 +64,7 @@ dir = {
     javadoc = "target/doc/javadoc/",
     yetidoc = "target/doc/yetidoc/",
 
-    buildExtlib = "ybuilder/extlib/",
+    buildExtlib = "lib/ybuilder/extlib/",
 };
 
 libPathSet is pathPatternType = 
@@ -540,6 +540,10 @@ prepareLibs =
                             el "fileset" ["refid":"dependenciesFS-" ^ scope][],
                             el "mapper" ["type":"flatten"] []] project;
                 fi);
+            
+            if not (file dir.lib)#exists() then
+                antTask "mkdir" ["dir":dir.lib] [] project;
+            fi;
             
             scopes =["test","compile","system","provided","runtime"];
             
