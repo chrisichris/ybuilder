@@ -1,3 +1,3 @@
-lib_managed
+lib/managed
+lib/ybuilder/extlib_managed
 target
-ybuilder/extlib_managed

@@ -1,5 +1,5 @@
-lib
-lib_managed
+lib/managed
+lib/ybuilder/extlib_managed
 src
 resources
 etprojects
