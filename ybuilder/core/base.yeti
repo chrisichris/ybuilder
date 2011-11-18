@@ -259,11 +259,12 @@ createNewYetiProject projectDir project =
                 project;
     );
     
-yetiMainTask args path fork project = 
+yetiMainTask args path fork dir project = 
    if fork then
         antTask "java" 
                 ["classname":"yeti.lang.compiler.yeti", 
                  "fork":"true",
+                 "dir": dir,
                  "failonerror":"true"]
                 ((el "classpath" [:] (antPathElements path) 
                  :: (map do a: el "arg" ["value":a] [] done args))) 
@@ -297,19 +298,18 @@ yetidocTask targetDir fileSet project=
    (fs = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
-    args = ["-doc", targetDir] ++ fs;
-    yetiMainTask args testPath false project);
+    args = ["-doc", "../"^targetDir] ++ fs;
+    yetiMainTask args testPath true dir.src project);
     
 yeticTask targetDir srcDir path project =
    (fileSet =
-        createAntFileSet "." [Include "\(srcDir)**/*.yeti"];
+        createAntFileSet srcDir [Include "**/*.yeti"];
     fs = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
     println String#format("%1$11s Compiling \(length fs) files to \(targetDir)",array ["[yetic]"]);
-    println fs;
-    args = ["-d", targetDir] ++ fs;
-    yetiMainTask args path true project);    
+    args = ["-d", "../"^targetDir] ++ fs;
+    yetiMainTask args path true srcDir project);    
 
 mvnInstall fileName project = 
     antTask (maven "install") ["file": fileName]
@@ -646,57 +646,57 @@ javadoc =
 
           
 //yeti targets
-defineYetic = 
-    target "defineYetic" 
-           [Depends initDirs, InLivecycle initialize]
-           (antTask "taskdef" 
-                    ["name":"yetic", 
-                     "classname":"yeti.lang.compiler.YetiTask"] 
-                    [el "classpath" [:] (antPathElements compilePath)]);	
+// defineYetic = 
+    // target "defineYetic" 
+           // [Depends initDirs, InLivecycle initialize]
+           // (antTask "taskdef" 
+                    // ["name":"yetic", 
+                     // "classname":"yeti.lang.compiler.YetiTask"] 
+                    // [el "classpath" [:] (antPathElements compilePath)]);	
 
                     
-compileYeti = 
-    target "compileYeti" [Depends compileJava, InLivecycle compile] 
-           do p:
-                if (file dir.src)#exists() then
-                    antTask "yetic"
-                            ["srcdir":dir.src,
-                             "includes": "**/*.yeti",
-                             "destdir" : dir.targetClasses]
-                            [el "classpath" [:] (antPathElements compilePath)]
-                            p;
-                fi
-           done;
-
-testCompileYeti = 
-    target "testCompileYeti" [Depends compileJava, InLivecycle compile] 
-           do p:
-                if (file dir.test)#exists() then
-                    antTask "yetic"
-                            ["srcdir":dir.test,
-                             "includes": "**/*.yeti",
-                             "destdir" : dir.targetTestClasses]
-                            [el "classpath" [:] (antPathElements testPath)]
-                            p;
-                fi
-           done;
-           
 // compileYeti = 
     // target "compileYeti" [Depends compileJava, InLivecycle compile] 
            // do p:
                 // if (file dir.src)#exists() then
-                    // yeticTask dir.targetClasses dir.src compilePath p;
+                    // antTask "yetic"
+                            // ["srcdir":dir.src,
+                             // "includes": "**/*.yeti",
+                             // "destdir" : dir.targetClasses]
+                            // [el "classpath" [:] (antPathElements compilePath)]
+                            // p;
+                // fi
+           // done;
+
+// testCompileYeti = 
+    // target "testCompileYeti" [Depends compileJava, InLivecycle compile] 
+           // do p:
+                // if (file dir.test)#exists() then
+                    // antTask "yetic"
+                            // ["srcdir":dir.test,
+                             // "includes": "**/*.yeti",
+                             // "destdir" : dir.targetTestClasses]
+                            // [el "classpath" [:] (antPathElements testPath)]
+                            // p;
                 // fi
            // done;
            
-// testCompileYeti = 
-    // target "testCompileYeti" 
-           // [Depends testCompileJava, InLivecycle testCompile] 
-           // do p:
-                // if (file dir.test)#exists() then
-                    // yeticTask dir.targetTestClasses dir.test testPath p;
-                // fi;
-           // done;
+compileYeti = 
+    target "compileYeti" [Depends compileJava, InLivecycle compile] 
+           do p:
+                if (file dir.src)#exists() then
+                    yeticTask dir.targetClasses dir.src compilePath p;
+                fi
+           done;
+           
+testCompileYeti = 
+    target "testCompileYeti" 
+           [Depends testCompileJava, InLivecycle testCompile] 
+           do p:
+                if (file dir.test)#exists() then
+                    yeticTask dir.targetTestClasses dir.test testPath p;
+                fi;
+           done;
                         
 yetidoc = 
     target "yetidoc" 
