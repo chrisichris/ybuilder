@@ -1,7 +1,31 @@
+////////////////////////////////////////////////////////////////////////////////
+// The ybuilder project build file
+//
+// Ybuilder is a simple build tool for yeti. Together with the ybuilder.jar this file
+// specifies the build-process of ybuilder.
+//
+// This file is a normal yeti program, which gets executed through ybuilder.jar.
+//
+// It does four things:
+// 1. load module(s) with predefined build prozesses (tasks, pathes etc)
+// 2. customize mandatory settings (ie project name)
+// 3. declare dependencies on other jars etc (optionally)
+// 4. add your own build tasks
+//
+// Finally the commands passed through ybuilder.jar get executed by invoking 
+// 'load ybuilder.core.run' module on the last line.
+
+
+////////////////////////////////////////////////////////////////////////////////
+//Load build modules with general setups
+
 //the base module sets up all the targets, pathes etc for a basic yeti build
 load ybuilder.core.base;
 
-//---General setup
+
+////////////////////////////////////////////////////////////////////////////////
+//General setup
+
 //FIXME: change following values to fit your project
 
 project.name := "FIXME: projects-name";
@@ -10,17 +34,25 @@ project.artifactId := "FIXME: project artifactId";
 project.version := "FIXME: 0.1-alpha";
 project.description := "FIXME: project description";
 
-
+////////////////////////////////////////////////////////////////////////////////
 //---Library Dependencies ---			
 // add your library dependencies in maven style
 // use: dependency "groupId" "artifactId" "version" [options]
 //      options = ProvidedScope(), TestScope(), SystemScope()
 //      default scope is compile scope
 
-// dependency "org.apache.commons" "commons-io" "1.3.2" [];
+// You must have the version of yeti which you want to use on your projects path
+// (Instead of declaring the dependency you can also copy yeti.jar 
+// to the ./lib directory and remove the following line)
+dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [];
+
+// examples for other dependencies
+// dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
 // dependency "junit" "junit" "3.8.2" [TestScope()];
 // dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
+
+////////////////////////////////////////////////////////////////////////////////
 //---custom targets --
 
 // add custom targets here
@@ -29,17 +61,19 @@ project.description := "FIXME: project description";
 // load ybuilder.core.build;
 // myInit = 
 //    target "myInit" 
-//           [InLivecycle livecycleTargets.initialize, Depends baseTargets.initBuildPathes] 
-//           do p:
-//                antTask "delete" ["dir":"target/foo"] [] p;
+//           [InLivecycle livecycleTargets.initialize, 
+//              Depends baseTargets.initDirs] 
+//           do project:
+//                antTask "delete" ["dir":"target/foo"] [] project;
 //        
 //                antTask "copy" ["todir":"target/foo"] 
 //                        [el "fileset" ["dir":"foo-source"] 
 //                            [el "include" ["name":"**/*.java"] []]] 
-//                          p;
+//                          project;
 //           done;
 
 
+////////////////////////////////////////////////////////////////////////////////
 //---End--
 
 // leave the final load! 

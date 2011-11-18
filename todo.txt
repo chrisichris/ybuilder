@@ -1,7 +1,4 @@
 //todo
-* update yeti compile to not use yeti task but command line + good messages
-  ie files to compile
-* add project dependency
 * yetidoc fails when application on path (remove hack regarding ybuilder.yeti)
 * add yebspec support
 * single test method
@@ -31,3 +28,6 @@
 + continues compilation
 + extensiontest should run tests
 + add .gitignore to newProject, update project.yeti and dependencies.yeti
++ update yeti compile to not use yeti task but command line + good messages
+  ie files to compile
++ add project dependency
