@@ -1,0 +1,8 @@
+module mfoo3.foo3;
+
+import org.apache.commons.lang3.StringUtils;
+
+x = load mfoo.foo2;
+
+StringUtils#chomp("hier");
+

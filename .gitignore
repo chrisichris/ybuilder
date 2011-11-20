@@ -1,9 +1,9 @@
 lib/managed
 lib/ybuilder/extlib_managed
-src
-resources
-etprojects
-test
+/src
+/resources
+/etprojects
+/test
 target
 ybuilder/extlib_managed
 ybuilder.jar

@@ -88,7 +88,7 @@ runExtensionTests project = (
         else
             rs = (file extensionTestDir)#list();
             if defined? rs then 
-                map string rs 
+                (sort . map string . list . wrapArray) rs;
             else
                 []
             fi;

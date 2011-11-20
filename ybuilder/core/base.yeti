@@ -214,8 +214,8 @@ dependency groupId artifactId version opts =
     done;
     
     v2 = if (strLength projectPath) > 0 then
-        if not (strStarts? projectPath "/") then
-            projectPath := "/" ^ projectPath;
+        if not (strEnds? projectPath "/") then
+            projectPath := projectPath ^ "/";
         fi;
         Project {projectPath = projectPath, artifact = v};
     else
