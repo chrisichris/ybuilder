@@ -715,7 +715,30 @@ yetidoc =
                 yetidocTask dir.yetidoc fileSet p;
             fi;
         done;
-
+        
+//Test target
+junitTarget = 
+    target "junitTest" [InLivecycle test] do p:
+        hasJunit = try 
+            (createAntClassLoader testPath [])
+                #loadClass("junit.framework.Test");
+            true;
+        catch Exception e:
+            false;
+        yrt;
+            
+        if (file dir.test)#exists() and hasJunit then
+            antTask "mkdir" ["dir":dir.reports ^ "tests"] [] p;
+            antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
+                   [el "classpath" [:] (antPathElements testPath),
+                    el "formatter" ["type":"plain"] [],
+                    el "batchtest" ["fork":"yes", 
+                                    "todir": dir.reports ^ "tests"] 
+                       [el "fileset" ["dir": dir.test] 
+                           [el "include" ["name":"**/*Test.java"] []]]] p;
+        fi
+    done;
+        
 _mvnInstallOrDeploy fileName project = 
    (if contains? ":install" project.args then
         mvnInstall fileName project;
@@ -916,6 +939,7 @@ livecycleTargets = {
         compileJava,
         testCompileJava,
         javadoc,
+        junitTarget,
         jetty,
         compileYeti,
         testCompileYeti,

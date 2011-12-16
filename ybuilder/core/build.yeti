@@ -16,7 +16,7 @@
 
 module ybuilder.core.build;
 
-import java.lang:System,Thread;
+import java.lang:System,Thread, ClassLoader;
 import java.io.File;
 
 import org.xml.sax: Attributes, Locator, SAXParseException;
@@ -31,7 +31,7 @@ import org.apache.tools.ant.helper: AntXMLContext, ProjectHelper2,
 import org.apache.tools.ant.input.DefaultInputHandler;
 import org.apache.tools.ant: BuildLogger, DemuxInputStream, NoBannerLogger, 
                              Project, RuntimeConfigurable, Target, Task, 
-                             UnknownElement;
+                             UnknownElement,AntClassLoader;
 
 
 typedef xmlelement = Text string 
@@ -433,11 +433,26 @@ antPathElements patts =
     list (root ++ filesets ++ dirsets)); 
     
 
-createAntPath patts	= 
+_createAntPath project patts	= 
    (name="foox";
-    project = createProject();
     antTask "path" ["id" : name] (antPathElements patts) project;
     (project.antProject#getReference(name)) unsafely_as ~Path);
+
+createAntPath patts = _createAntPath (createProject ()) patts;
+    
+createAntClassLoader patts opts =
+   (var parentClassLoader = ClassLoader#getSystemClassLoader()#getParent();
+    var parentFirst = true;
+    for opts do opt:
+        case opt of
+        ParentFirst bo : parentFirst := bo;
+        Parent cl : parentClassLoader := cl;
+        esac
+    done;
+    proj = createProject ();
+    path = _createAntPath proj patts;
+    new AntClassLoader(parentClassLoader, proj.antProject,path,parentFirst));
+    
     
 createAntFileSet dir patts	= 
    (name="foox";
@@ -491,7 +506,9 @@ cmdYbuilderVersion =
     cmdYbuilderVersion,
     basedir,
 
-    createAntPath, createAntFileSet, createAntDirSet, getAntPathFromProject, 
+    createAntPath, 
+    createAntClassLoader,
+    createAntFileSet, createAntDirSet, getAntPathFromProject, 
     getAntAbstractFileSetFromProject,
     targetToString,
 
