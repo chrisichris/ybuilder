@@ -29,9 +29,72 @@ args = list _argv;
 buildDepsFile = dir.ybuilder ^ "buildDependencies.yeti"; 
 buildLibsDir = dir.ybuilder ^ "extlib_managed/";
 
-if (file buildDepsFile)#exists() 
-    and (not (file buildLibsDir)#exists()) then
-    yeti#main(array(buildDepsFile :: args));
+retrieveBuildDependencies () =
+   (cLines = readFile "project.yeti" "utf-8" getLines;
+    deps = (map do s:
+        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"\s*$' s) ();//"
+        if empty? a then 
+            failWith "Error in @buildDependency: Arguemntes wrong: \(s)";
+        else
+            a
+        fi;
+    done
+    . concatMap do l:
+        a = (like '//\s*@buildDependency\s' l)();
+        if empty? a then [] else [a.[1]] fi;
+    done) cLines;
+
+    reps = (map do s:
+        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
+        if empty? a then 
+            failWith "Error in @buildRepository: Arguemntes wrong: \(s)";
+        else
+            a
+        fi;
+    done
+    . concatMap do l:
+        a = (like '//\s*@buildRepository\s' l)();
+        if empty? a then [] else [a.[1]] fi;
+    done) cLines;
+    
+    //retrieve the libs
+    (load ybuilder.core.build;
+    maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
+    project = createProject();
+    
+    antTask "delete" ["dir":buildLibsDir] [] project;
+    antTask "mkdir" ["dir":buildLibsDir] [] project;
+    if not empty? deps then
+        antTask (maven "dependencies") 
+                ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
+                ([el (maven "localRepository") 
+                     ["layout":"default", 
+                      "path":"${user.home}/.m2/repository"] []] 
+                 ++ (map do rr: 
+                        el (maven "remoteRepository") 
+                           ["id":rr.[0], "url":rr.[1],"layout":"default"] 
+                           [] 
+                     done reps) 
+                 ++ (map do dep: 
+                        el (maven "dependency") 
+                           ["groupId" : dep.[0],
+                            "artifactId" : dep.[1],
+                            "version" : dep.[2],
+                            "scope" : "runtime"]
+                           []
+                     done deps)) 
+                project;
+                    
+        antTask "copy" ["todir":buildLibsDir] 
+                [el "fileset" ["refid":"dependenciesFS"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+    fi;
+    ));
+    
+
+if not (file buildLibsDir)#exists() then
+    retrieveBuildDependencies ();
 fi;	
 
 if (not empty? args) and ((head args) == "newProject") then
@@ -44,7 +107,7 @@ if (not empty? args) and ((head args) == "newProject") then
             basedir 
         fi;
     createNewYetiProject projectName (createProject ()); 
-    yeti#main(array [buildDepsFile]);
+    retrieveBuildDependencies ();
 elif (not (file "project.yeti")#exists()) then
     println '
 ybuilder is a simple build-enviroment for YETI the functional 
@@ -68,7 +131,7 @@ elif (not empty? args) and ((head args) == "buildLibs") then
     if (file buildDepsFile)#exists() then
         load ybuilder.core.build;
         antTask "delete" ["dir":buildLibsDir][] (createProject());
-        yeti#main(array(buildDepsFile :: args));
+        retrieveBuildDependencies ();
     else
         failWith "There is no \(buildDepsFile) file";
     fi

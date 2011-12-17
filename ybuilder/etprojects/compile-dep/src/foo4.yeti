@@ -1,8 +1,0 @@
-module foo4;
-
-x = load foo;
-
-import org.apache.commons.lang3.StringUtils;
-
-StringUtils#chomp("hier");
-

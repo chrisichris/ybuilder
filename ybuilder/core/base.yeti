@@ -244,13 +244,6 @@ createNewYetiProject projectDir project =
              do d: 
                 antTask "mkdir" ["dir":(projectDir ^ d)] [] project 
         done;
-        antTask "copy" 
-                ["todir": projectDir ^ dir.ybuilder, 
-                 "overwrite":"false"] 
-                [el "javaresource" 
-                    ["name":"ybuilder/core/buildDependencies.yeti"][],
-                 el "mapper" ["type":"flatten"] []] 
-                project;
                 
         antTask "copy" ["todir":projectDir, "overwrite":"false"] 
                 [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
