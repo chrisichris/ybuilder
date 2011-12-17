@@ -1,0 +1,10 @@
+module testfoo;
+
+import org.apache.commons.lang3.StringUtils;
+import junit.framework.Assert;
+
+Assert#assertEquals(true,true);
+
+StringUtils#chomp("hier");
+
+

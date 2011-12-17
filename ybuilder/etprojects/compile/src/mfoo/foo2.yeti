@@ -1,0 +1,6 @@
+module mfoo.foo2;
+
+import org.apache.commons.lang3.StringUtils;
+
+StringUtils#chomp("hier");
+
