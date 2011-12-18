@@ -715,6 +715,8 @@ junitTarget =
         hasJunit = try 
             (createAntClassLoader testPath [])
                 #loadClass("junit.framework.Test");
+            ((p.antProject)#getClass()#getClassLoader())
+                           #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
             true;
         catch Exception e:
             false;

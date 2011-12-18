@@ -32,15 +32,30 @@ buildLibsDir = dir.ybuilder ^ "extlib_managed/";
 retrieveBuildDependencies () =
    (cLines = readFile "project.yeti" "utf-8" getLines;
     deps = (map do s:
-        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"\s*$' s) ();//"
+        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)$' s) ();//"
         if empty? a then 
-            failWith "Error in @buildDependency: Arguemntes wrong: \(s)";
+            failWith "Error in @buildDependency: Arguments wrong: \(s)";
         else
-            a
+            rs = strTrim (a.[4]);
+            if strLength rs == 0 then
+                {dep = a, exc = []};
+            else
+                a2 = (like '\[(.*)\]' rs) ();
+                if empty? a2 then
+                    failWith "Error in @buildDependency: Arguments wrong: \(s)"
+                else
+                    exs = a2.[1];
+                    exc = matchAll '\s*exclusion\s*"([^"]*)"\s*"([^"]*)"\s*,?\s*' do s: 
+                        pair s.[1] s.[2] done
+                        \(failWith "Error in @buildDependency: Arguments wrong: \(s)")
+                        exs;
+                    {dep = a, exc};
+                fi
+            fi;            
         fi;
     done
     . concatMap do l:
-        a = (like '//\s*@buildDependency\s' l)();
+        a = (like '//\s*@buildDependency\s(.*)' l)();
         if empty? a then [] else [a.[1]] fi;
     done) cLines;
 
@@ -53,10 +68,11 @@ retrieveBuildDependencies () =
         fi;
     done
     . concatMap do l:
-        a = (like '//\s*@buildRepository\s' l)();
+        a = (like '//\s*@buildRepository\s(.*)' l)();
         if empty? a then [] else [a.[1]] fi;
     done) cLines;
-    
+    println "Dependencies";
+    for deps println;
     //retrieve the libs
     (load ybuilder.core.build;
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
@@ -72,16 +88,20 @@ retrieveBuildDependencies () =
                       "path":"${user.home}/.m2/repository"] []] 
                  ++ (map do rr: 
                         el (maven "remoteRepository") 
-                           ["id":rr.[0], "url":rr.[1],"layout":"default"] 
+                           ["id":rr.[1], "url":rr.[2],"layout":"default"] 
                            [] 
                      done reps) 
-                 ++ (map do dep: 
+                 ++ (map do d: 
                         el (maven "dependency") 
-                           ["groupId" : dep.[0],
-                            "artifactId" : dep.[1],
-                            "version" : dep.[2],
+                           ["groupId" : d.dep.[1],
+                            "artifactId" : d.dep.[2],
+                            "version" : d.dep.[3],
                             "scope" : "runtime"]
-                           []
+                            (map do exc: 
+                                 el (maven "exclusion") 
+                                    ["groupId":exc.fst, 
+                                     "artifactId":exc.snd] [] 
+                                 done d.exc) 
                      done deps)) 
                 project;
                     
@@ -93,7 +113,7 @@ retrieveBuildDependencies () =
     ));
     
 
-if not (file buildLibsDir)#exists() then
+if (file "project.yeti")#exists() and not (file buildLibsDir)#exists() then
     retrieveBuildDependencies ();
 fi;	
 

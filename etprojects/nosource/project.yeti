@@ -1,8 +1,8 @@
 //the base module sets up all the targets, pathes etc for a basic yeti build
 load ybuilder.core.base;
 load ybuilder.core.build;
+//@buildDependency "org.apache.ant" "ant-junit" "1.8.1" [exclusion "junit" "junit", exclusion "org.apache.ant" "ant"]
 _ = load ybuilder.core.extensiontest;
-_ = load ybuilder.core.junit;
 
 //---General setup
 //FIXME: change following values to fit your project

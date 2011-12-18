@@ -15,6 +15,16 @@
 // Finally the commands passed through ybuilder.jar get executed by invoking 
 // 'load ybuilder.core.run' module on the last line.
 
+////////////////////////////////////////////////////////////////////////////////
+// Build dependencies
+//
+// If your build depends on apis not provided with ybuilder.jar you can load
+// them via maven in declaring them here in a comment. We do that with
+// the java junit task. 
+//
+//@buildDependency "org.apache.ant" "ant-junit" "1.8.1" [exclusion "junit" "junit", exclusion "org.apache.ant" "ant"]
+//
+// note that the dependency delcaration including the exclusion all must be on one line
 
 ////////////////////////////////////////////////////////////////////////////////
 //Load build modules with general setups
