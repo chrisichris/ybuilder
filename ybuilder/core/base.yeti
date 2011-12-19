@@ -733,6 +733,18 @@ junitTarget =
                            [el "include" ["name":"**/*Test.java"] []]]] p;
         fi
     done;
+    
+yebspecTarget =
+    target "yebspec" [InLivecycle test] do p:
+        hasSpec = try
+            (createAntClassLoader testPath [])
+                #loadClass("org.yeb.yebspec")
+        catch Exception e:
+            false;
+        yrt;
+        testDir = file dir.test;
+        if (file dir.test)#exists() and has Spec then
+            
         
 _mvnInstallOrDeploy fileName project = 
    (if contains? ":install" project.args then

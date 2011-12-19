@@ -22,7 +22,8 @@
 // them via maven in declaring them here in a comment. We do that with
 // the java junit task. 
 //
-//@buildDependency "org.apache.ant" "ant-junit" "1.8.1" [exclusion "junit" "junit", exclusion "org.apache.ant" "ant"]
+//@buildDependency "org.apache.ant" "ant-junit" "1.8.1" 
+//    [exclusion "junit" "junit", exclusion "org.apache.ant" "ant"];
 //
 // note that the dependency delcaration including the exclusion all must be on one line
 

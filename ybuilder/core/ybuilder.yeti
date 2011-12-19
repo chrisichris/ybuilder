@@ -30,49 +30,53 @@ buildDepsFile = dir.ybuilder ^ "buildDependencies.yeti";
 buildLibsDir = dir.ybuilder ^ "extlib_managed/";
 
 retrieveBuildDependencies () =
-   (cLines = readFile "project.yeti" "utf-8" getLines;
-    deps = (map do s:
-        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)$' s) ();//"
-        if empty? a then 
-            failWith "Error in @buildDependency: Arguments wrong: \(s)";
-        else
-            rs = strTrim (a.[4]);
-            if strLength rs == 0 then
-                {dep = a, exc = []};
-            else
-                a2 = (like '\[(.*)\]' rs) ();
-                if empty? a2 then
-                    failWith "Error in @buildDependency: Arguments wrong: \(s)"
-                else
-                    exs = a2.[1];
-                    exc = matchAll '\s*exclusion\s*"([^"]*)"\s*"([^"]*)"\s*,?\s*' do s: 
-                        pair s.[1] s.[2] done
-                        \(failWith "Error in @buildDependency: Arguments wrong: \(s)")
-                        exs;
-                    {dep = a, exc};
-                fi
-            fi;            
-        fi;
-    done
-    . concatMap do l:
-        a = (like '//\s*@buildDependency\s(.*)' l)();
-        if empty? a then [] else [a.[1]] fi;
-    done) cLines;
+   (import java.util.regex: Pattern;
+    //content = readFile "project.yeti" "utf-8" getContents;
+    inLines = readFile "project.yeti" "utf-8" getLines;
+    content = strJoin "" ((map ((flip strRight) 2) . filter ((flip strStarts?) "//")) inLines) ;
 
-    reps = (map do s:
-        a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
-        if empty? a then 
-            failWith "Error in @buildRepository: Arguemntes wrong: \(s)";
-        else
-            a
-        fi;
-    done
-    . concatMap do l:
-        a = (like '//\s*@buildRepository\s(.*)' l)();
-        if empty? a then [] else [a.[1]] fi;
-    done) cLines;
-    println "Dependencies";
-    for deps println;
+    deps = array (catSome (matchAll '\s*@buildDependency\s([^;]*);' do smatch:
+            s = smatch.[1];
+            a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)' s) ();//"
+            if empty? a then 
+                failWith "Error in @buildDependency: Arguments wrong: \(s)";
+            else
+                rs = strTrim (a.[4]);
+                if strLength rs == 0 then
+                    Some {dep = a, exc = []};
+                else
+                    a2 = (like '\[(.*)\]' rs) ();
+                    if empty? a2 then
+                        Some {dep = a, exc = []};
+                    else
+                        exs = a2.[1];
+                        exc = matchAll 
+                            '\s*exclusion\s*"([^"]*)"\s*"([^"]*)"\s*,?\s*' do s: 
+                                pair s.[1] s.[2] 
+                            done
+                            do ws:
+                                failWith "Error in @buildDependency: Exclusion Arguments wrong: \(s):[\(ws)]"
+                            done
+                            exs;
+                        Some {dep = a, exc};
+                    fi
+                fi;            
+            fi;
+        done
+        \none
+        content));
+    reps = array (catSome (matchAll '\s*@buildRepository\s([^;]*);' do smatch:
+            s = smatch.[1];
+            a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
+            if empty? a then 
+                failWith "Error in @buildRepository: Arguments wrong: \(s)";
+            else
+                Some a
+            fi;
+        done
+        \none
+        content));
+
     //retrieve the libs
     (load ybuilder.core.build;
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
