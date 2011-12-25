@@ -27,7 +27,7 @@ load ybuilder.core.build;
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 localRepository = { 
     var layout = "default", 
-    var path = "${user.home}/.m2/repository"
+    var path = "${user.home}/.m2"
 };
 
 
@@ -992,6 +992,7 @@ livecycleTargets = {
         testCompileJava,
         javadoc,
         junitTarget,
+        yebspecTarget,
         jetty,
         compileYeti,
         testCompileYeti,
