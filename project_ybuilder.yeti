@@ -6,8 +6,8 @@ load ybuilder.core.build;
 
 import java.lang.System;
 
+project.groupId :="org.ybuilder";
 project.artifactId := "ybuilder";
-project.groupId :="ybuilder";
 project.version := ybuilderVersion;
 project.description := "A simple build tool for yeti";
 
@@ -66,7 +66,8 @@ _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
                     el "attribute" 
                        ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] 
                        []]]) 
-            p;	
+            p;
+    mvnInstallOrDeploy jarFile p;            
 done;
             
 

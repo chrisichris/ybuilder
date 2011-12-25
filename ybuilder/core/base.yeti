@@ -251,7 +251,6 @@ createNewYetiProject projectDir project =
                  el "mapper" ["type":"flatten"] []] 
                 project;
     );
-    
 yetiMainTask args path fork dir project = 
    if fork then
         antTask "java" 
@@ -304,27 +303,6 @@ yeticTask targetDir srcDir path project =
     args = ["-d", "../"^targetDir] ++ fs;
     yetiMainTask args path true srcDir project);    
 
-mvnInstall fileName project = 
-    antTask (maven "install") ["file": fileName]
-            [el "pom" ["refId":"pom"][]]
-            project;
-
-mvnDeploy fileName project =
-   (if defined? deployRepository.providerArtifactId then
-        antTask (maven "install-provider") 
-                ["artifactId":deployRepository.providerArtifactId,
-                 "version":deployRepository.providerVersion] 
-                [] project;
-    fi;
-    antTask (maven "deploy") ["file":fileName]
-            (if defined? deployRepository.url then
-                [el "remoteRepository" ["url":deployRepository.url]
-                    (list deployRepository.params)]
-             else
-                []
-             fi)
-             project);
-                 
             
     
 //lifecycle targets
@@ -432,6 +410,42 @@ _mvnDependencyTags () =
                  done dep.exclusions) 
     done ad);
 
+
+writePom file project =
+    (antTask "delete" ["file":file] [] project;
+     antTask (maven "writepom")
+             ["pomRefId" : "pom", "file":file] [] project);
+    
+mvnInstall fileName project = 
+   (pomfile = dir.target ^ "pom.xml";
+    writePom pomfile project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "install") ["file": fileName]
+            [el "pom" ["refid":"installPom"] []]
+            project);
+
+mvnDeploy fileName project =
+   (if defined? deployRepository.providerArtifactId then
+        antTask (maven "install-provider") 
+                ["artifactId":deployRepository.providerArtifactId,
+                 "version":deployRepository.providerVersion] 
+                [] project;
+    fi;
+    pomfile = dir.target ^"pom.xml";
+    writePom pomfile project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "deploy") ["file":fileName]
+            (if defined? deployRepository.url then
+                [el "remoteRepository" ["url":deployRepository.url]
+                    (list deployRepository.params)]
+             else
+                []
+             fi
+             ++ [el "pom" ["refid":"installPom"] []])
+             project);
+                 
+
+                 
 initPom = 
     target "initPom" [InLivecycle initialize] 
         do p:
@@ -450,13 +464,13 @@ initPom =
                     []
                  fi 
                  ++  _mvnDependencyTags ())
-                p
+                p;
         done;
-
+        
+             
 pom =
     target "pom" [Depends initPom, Description "Writes a pom.xml"] 
-           (antTask (maven "writepom") 
-                    ["pomRefId" : "pom", "file":"pom.xml"] []);  
+           (writePom (dir.target ^ "pom.xml"));
 
           
 addProjectDeps =
@@ -738,13 +752,38 @@ yebspecTarget =
     target "yebspec" [InLivecycle test] do p:
         hasSpec = try
             (createAntClassLoader testPath [])
-                #loadClass("org.yeb.yebspec")
+                #loadClass("org.yeb.yebspec");
+            true;
         catch Exception e:
             false;
         yrt;
-        testDir = file dir.test;
-        if (file dir.test)#exists() and has Spec then
-            
+        modules = if empty? p.args then
+            if (file dir.test)#exists() and hasSpec then
+                map string ((createAntFileSet dir.test [Include "**/*Spec.yeti"])
+                    #getDirectoryScanner()#getIncludedFiles());
+            else
+                []
+            fi    
+        else
+            if not hasSpec then
+                failWith "No yebspec jar on path, can not run yebspec tests"
+            fi;
+            list p.args
+        fi;
+        antTask "mkdir" ["dir":dir.reports ^ "yebspec"] [] p;
+
+        if not empty? modules then
+            code = "ys = load org.yeb.yebspec;" ^ (strJoin "" . map do mo:
+                "(res = ys.resultString ((load \(mo)) none);
+                println res; 
+                _ = writeFile \(mo).txt 'utf-8' do h: h.write res done;);";
+            done) modules;
+            yetiMainTask [code] testPath true "." p;
+        fi;
+    done;
+        
+      
+                
         
 _mvnInstallOrDeploy fileName project = 
    (if contains? ":install" project.args then
@@ -757,7 +796,7 @@ _mvnInstallOrDeploy fileName project =
     
 jar = 
     target "jar" 
-           [Depends preparePackage, 
+           [Depends preparePackage, Depends initPom,
             Description "Makes a jar file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"] 
            do p:
                 destfl = dir.target ^ project.artifactId ^ ".jar";
@@ -927,6 +966,7 @@ livecycleTargets = {
     mvnInstall, 
     mvnDeploy, 
     deployRepository,    
+    mvnInstallOrDeploy = _mvnInstallOrDeploy,
     
     artifactDependencies, 
     localRepository, 
