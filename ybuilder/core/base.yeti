@@ -174,8 +174,11 @@ deployRepository = {
     var url = undef_str,
     var providerArtifactId = undef_str,
     var providerVersion = "1.0-beta2",
-    params = (array []) is array<xmlelement>
+    params = (array []) is array<xmlelement>,
+    var uniqueVersion = false
 };
+
+
 
 //dependency management
 artifactDependencies = array[];					  
@@ -420,21 +423,23 @@ mvnInstall fileName project =
    (pomfile = dir.target ^ "pom.xml";
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
-    antTask (maven "install") ["file": fileName]
+    antTask (maven "install") 
+            ["file": fileName]
             [el "pom" ["refid":"installPom"] []]
             project);
 
 mvnDeploy fileName project =
    (if defined? deployRepository.providerArtifactId then
         antTask (maven "install-provider") 
-                ["artifactId":deployRepository.providerArtifactId,
-                 "version":deployRepository.providerVersion] 
+                ["artifactId":deployRepository.providerArtifactId] 
                 [] project;
     fi;
     pomfile = dir.target ^"pom.xml";
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
-    antTask (maven "deploy") ["file":fileName]
+    antTask (maven "deploy") 
+            ["file":fileName,
+             "uniqueVersion":string deployRepository.uniqueVersion]
             (if defined? deployRepository.url then
                 [el "remoteRepository" ["url":deployRepository.url]
                     (list deployRepository.params)]
