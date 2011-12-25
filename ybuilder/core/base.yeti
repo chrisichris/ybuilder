@@ -431,15 +431,15 @@ mvnInstall fileName project =
 mvnDeploy fileName project =
    (if defined? deployRepository.providerArtifactId then
         antTask (maven "install-provider") 
-                ["artifactId":deployRepository.providerArtifactId] 
+                ["artifactId":deployRepository.providerArtifactId,
+                 "version":deployRepository.providerVersion] 
                 [] project;
     fi;
     pomfile = dir.target ^"pom.xml";
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
-            ["file":fileName,
-             "uniqueVersion":string deployRepository.uniqueVersion]
+            ["file":fileName]
             (if defined? deployRepository.url then
                 [el "remoteRepository" ["url":deployRepository.url]
                     (list deployRepository.params)]
