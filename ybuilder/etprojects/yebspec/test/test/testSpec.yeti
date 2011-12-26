@@ -1,0 +1,26 @@
+module test.testSpec;
+
+load org.yeb.yebspec;
+
+specificationsFor "the yeti.lang.std module which is implicitly loaded in yeti"\(
+
+    specification "for the list manipulation funtions" \(
+        baseList = [1 .. 20];
+
+        describe "map" \(
+            should "apply function to each element" \(
+                r = map (+2) baseList;
+                assertEquals [3..22] r;
+            );
+            should "work on empty lists as well" \(
+                assertEquals [] (map id []);
+            );
+        );
+    );
+
+    specification "for the string functions" \(
+        describe "strLength" \(
+            should "give right length" \(assertEquals 3 (strLength "123"));
+        );
+    );
+);
