@@ -775,15 +775,29 @@ yebspecTarget =
             fi;
             list p.args
         fi;
-        antTask "mkdir" ["dir":dir.reports ^ "yebspec"] [] p;
+        antTask "mkdir" ["dir":dir.reports] [] p;
+        repFile = dir.reports ^"yebspecResults.txt";
+        antTask "delete" ["file":repFile] [] p;
 
         if not empty? modules then
-            code = "ys = load org.yeb.yebspec;" ^ (strJoin "" . map do mo:
-                "(res = ys.resultString ((load \(mo)) none);
-                println res; 
-                _ = writeFile \(mo).txt 'utf-8' do h: h.write res done;);";
-            done) modules;
-            yetiMainTask [code] testPath true "." p;
+            code = "ys = load org.yeb.yebspec;"
+                ^ "res = (ys.specSuite '' [" 
+                ^ (strJoin "," . map do mo:
+                    mn = if strEnds? mo ".yeti" then 
+                        n = strLeft mo ((strLength mo) - 5);
+                        n2 = strReplace '/' '.' n;
+                        strReplace '\' '.' n2;
+                    else
+                        mo
+                    fi;
+                    "load \(mn)"
+                done) modules
+                ^ "]) none;"
+                ^ "resStr = ys.resultString res;"
+                ^ "println resStr;"
+                ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;";
+            println ("----sepec:"^code);
+            yetiMainTask ["-e",code] testPath true "." p;
         fi;
     done;
         
