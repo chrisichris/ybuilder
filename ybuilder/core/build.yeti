@@ -230,7 +230,7 @@ help =
         [Description "Shows help"] 
         do p:
         if empty? p.args then
-            println "----\n ybuilder version: \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion) \n";
+            println "\nybuilder version: \(ybuilderVersion) \n";
             println '
 ybuilder is a simple build-enviroment for YETI the functional 
 programming-language for the JVM.
@@ -498,7 +498,7 @@ assert text cond = if not cond then failWith text else () fi;
 cmdYbuilderVersion = 
     target "-ybuilderVersion" 
         [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
-        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion)"] []);
+        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion)"] []);
 
 {
     assert,

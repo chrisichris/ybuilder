@@ -133,7 +133,7 @@ if (not empty? args) and ((head args) == "newProject") then
     createNewYetiProject projectName (createProject ()); 
     retrieveBuildDependencies ();
 elif (not (file "project.yeti")#exists()) then
-    yv = (load ybuilder.core.build).ybuilderVersion ^ " yeti-version: \(yetiRuntimeVersion)";
+    yv = (load ybuilder.core.build).ybuilderVersion ;
     println "ybuilder - version \(yv)\n";
     println ' 
 ybuilder is a simple build-enviroment for YETI the functional 
