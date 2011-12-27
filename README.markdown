@@ -23,8 +23,18 @@ the box with a bit customization in 90 % of the usecases
 
 ## Installation
 
-Just copy the `ybuilder.jar` to the root-directory of your project. Now you can
-use it with `java -jar ybuilder`.
+There is no real installation. Just download the `ybuilder.jar` from 
+[here](http:) and copy it to the root-directory of your project. 
+
+You can than run ybuilder with
+ 
+    java -jar ybuilder
+
+## Support
+
+Join the discussion mailing list at:
+
+<http://groups.google.com/group/yeti-lang>
  
 ## Creating a yeti project using ybuilder
 
@@ -360,6 +370,15 @@ one provided:
 `ybuilder` comes with the ant.jar and the maven-ant.jar on the classpath if
 you need other tasks then put their jars in the `lib/ybuilder/extlib` directory.
 `ybuilder` will pick them up from there.
+
+##Building ybuilder from source
+
+The main sourcode is in `ybuilder/core` dir.
+
+To build it use:
+
+    java -Xmx512M -cp "lib/unmanaged/*" yeti.lang.compiler.yeti project_ybuilder.yeti clean, jary
+ 
  
     
  

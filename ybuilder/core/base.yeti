@@ -441,7 +441,6 @@ mvnDeploy fileName project =
     antTask (maven "deploy") 
             ["file":fileName, "uniqueVersion": string deployRepository.uniqueVersion]
             (if defined? deployRepository.url then
-                println "Remote repositroy url: \(deployRepository.url)";
                 [el "remoteRepository" ["url":deployRepository.url]
                     (list deployRepository.params)]
              else
@@ -450,7 +449,6 @@ mvnDeploy fileName project =
                     []
                 else
                     rep = head (tail args);
-                    println "Remote repositroy url: \(rep)";
                     [el "remoteRepository" ["url":rep] []]
                 fi
              fi
