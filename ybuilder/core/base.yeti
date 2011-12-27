@@ -795,8 +795,9 @@ yebspecTarget =
                 ^ "]) none;"
                 ^ "resStr = ys.resultString res;"
                 ^ "println resStr;"
-                ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;";
-            println ("----sepec:"^code);
+                ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;"
+                ^ "if (res.exceptions + res.fails) > 0 then System#exit(1) fi;";
+            //println ("----sepec:"^code);
             yetiMainTask ["-e",code] testPath true "." p;
         fi;
     done;
@@ -1006,7 +1007,7 @@ livecycleTargets = {
         testCompileJava,
         javadoc,
         junitTarget,
-        yebspecTarget,
+        yebspec = yebspecTarget,
         jetty,
         compileYeti,
         testCompileYeti,
