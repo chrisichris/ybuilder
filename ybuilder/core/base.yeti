@@ -730,7 +730,7 @@ yetidoc =
         
 //Test target
 junitTarget = 
-    target "junitTest" [InLivecycle test] do p:
+    target "junit" [DependencyOf test] do p:
         hasJunit = try 
             (createAntClassLoader testPath [])
                 #loadClass("junit.framework.Test");
@@ -754,7 +754,7 @@ junitTarget =
     done;
     
 yebspecTarget =
-    target "yebspec" [InLivecycle test] do p:
+    target "yebspec" [DependencyOf test] do p:
         hasSpec = try
             (createAntClassLoader testPath [])
                 #loadClass("org.yeb.yebspec");
@@ -1006,7 +1006,7 @@ livecycleTargets = {
         compileJava,
         testCompileJava,
         javadoc,
-        junitTarget,
+        junit = junitTarget,
         yebspec = yebspecTarget,
         jetty,
         compileYeti,
