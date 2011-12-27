@@ -24,7 +24,8 @@ the box with a bit customization in 90 % of the usecases
 ## Installation
 
 There is no real installation. Just download the `ybuilder.jar` from 
-[here](http:) and copy it to the root-directory of your project. 
+<http://chrisichris.github.com/chrisis-maven-repo/ybuilder.jar> 
+and copy it to the root-directory of your project. 
 
 You can than run ybuilder with
  
@@ -359,7 +360,7 @@ one provided:
 
     load ybuilder.core.build;
     
-    foo = target "copyTest" [] do project:
+    copyTest = target "copyTest" [] do project:
         antTask "mkdir" ["dir":"some-dir"] [] project;
         antTask "copy" ["todir":"some-dir"]
                 [el "fileset" ["dir":"src/test"]
@@ -378,6 +379,10 @@ The main sourcode is in `ybuilder/core` dir.
 To build it use:
 
     java -Xmx512M -cp "lib/unmanaged/*" yeti.lang.compiler.yeti project_ybuilder.yeti clean, jary
+
+or on Windows use the ybuilder.bat file
+
+    ybuilder clean, jary
  
  
     
