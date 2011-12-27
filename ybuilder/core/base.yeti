@@ -439,12 +439,20 @@ mvnDeploy fileName project =
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
-            ["file":fileName]
+            ["file":fileName, "uniqueVersion": string deployRepository.uniqueVersion]
             (if defined? deployRepository.url then
+                println "Remote repositroy url: \(deployRepository.url)";
                 [el "remoteRepository" ["url":deployRepository.url]
                     (list deployRepository.params)]
              else
-                []
+                args = list project.args;
+                if (length args) < 2 then
+                    []
+                else
+                    rep = head (tail args);
+                    println "Remote repositroy url: \(rep)";
+                    [el "remoteRepository" ["url":rep] []]
+                fi
              fi
              ++ [el "pom" ["refid":"installPom"] []])
              project);
