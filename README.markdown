@@ -21,10 +21,14 @@ While the base of yubilder is similar to ant the modules on top are similar to
 maven in that they provide predefined builds which are meant to be used out of 
 the box with a bit customization in 90 % of the usecases 
 
-## Installation
+## Downlaod and Installation
 
-There is no real installation. Just download the `ybuilder.jar` from 
+There is no real installation. 
+
+Just download the `ybuilder.jar` from
+ 
 <http://chrisichris.github.com/chrisis-maven-repo/ybuilder.jar> 
+
 and copy it to the root-directory of your project. 
 
 You can than run ybuilder with
