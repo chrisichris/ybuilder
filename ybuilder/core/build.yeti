@@ -85,6 +85,7 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
+ybuilderVersion = "0.1-alpha";
 
 basedir = "./";
 
@@ -229,8 +230,8 @@ help =
         [Description "Shows help"] 
         do p:
         if empty? p.args then
+            println "----\n ybuilder version: \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion) \n";
             println '
-----
 ybuilder is a simple build-enviroment for YETI the functional 
 programming-language for the JVM.
 ----
@@ -494,7 +495,6 @@ antPathById name project =
 file name = new File(name is string);
 assert text cond = if not cond then failWith text else () fi;
 
-ybuilderVersion = "0.1-alpha";
 cmdYbuilderVersion = 
     target "-ybuilderVersion" 
         [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
