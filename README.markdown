@@ -23,9 +23,10 @@ the box with a bit customization in 90 % of the usecases
 
 ## Download and Installation
 
-There is no real installation. Just download the `ybuilder.jar` from
+There is no real installation. Just download the `ybuilder.jar` from the
+downloads section at github/ybuilder
  
-<http://chrisichris.github.com/chrisis-maven-repo/ybuilder.jar> 
+<https://github.com/chrisichris/ybuilder/downloads> 
 
 and copy it to the root-directory of your project. 
 
