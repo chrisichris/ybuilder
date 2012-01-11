@@ -29,7 +29,16 @@ _ = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
             el "include" ["name":"core/*.yeti"] []]] p;
 
     antTask "copy" ["todir":dir.resources] [
-        el "fileset" ["dir":ybuilderSrcDir ^ "resources"] []] p;
+        el "fileset" ["dir":ybuilderSrcDir ^ "resources", 
+                      "defaultexcludes":"no"] 
+                     []] p;
+
+done;
+
+_ = target "copygit" [DependencyOf baseTargets.copyResources] do p:
+    antTask "copy" ["todir":dir.targetClasses] 
+                    [el "fileset" ["dir":dir.resources, "defaultexcludes":"no"] 
+                        []] p;
 done;
 
 // compileRes = 
@@ -43,11 +52,12 @@ done;
     // done;
     
 jarFile = "ybuilder.jar";
+
     
 _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
-    jars = ["ant-1.8.1.jar","ant-launcher.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
+    jars = ["ant-1.8.2.jar","ant-launcher-1.8.2.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
     
-    antTask "jar" ["jarfile":jarFile,"basedir":dir.targetClasses] 
+    antTask "jar" ["jarfile":jarFile,"basedir":dir.targetClasses, "defaultexcludes":"no"] 
             ((map do j:	
                     el "zipfileset" 
                        ["src": "\(dir.lib)\(j)","excludes":"MANIFEST.MF"] [] 

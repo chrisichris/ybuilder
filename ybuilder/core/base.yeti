@@ -129,7 +129,6 @@ javacAttributes =
      "destdir":dir.targetClasses,
      "includes":"**/*.java",
      "debug": "on", 
-     "debuglevel" : "lines, vars, source",
      "includeAntRuntime":"false",
      "fork": "true"];
      
@@ -140,7 +139,6 @@ javacTestAttributes =
      "destdir": dir.targetTestClasses,
      "includes": "**/*.java",
      "debug": "on", 
-     "debuglevel" : "lines, vars, source", 
      "includeAntRuntime": "false",
      "fork": "true"];
 
