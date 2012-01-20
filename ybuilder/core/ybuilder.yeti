@@ -153,14 +153,8 @@ For detailed description google ybuilder yeti (there is no homepage yet)
 elif (not empty? args) and ((head args) == "cleanBuildLibs") then
     load ybuilder.core.build;
     antTask "delete" ["dir":buildLibsDir][] (createProject());
-elif (not empty? args) and ((head args) == "buildLibs") then
-    if (file buildDepsFile)#exists() then
-        load ybuilder.core.build;
-        antTask "delete" ["dir":buildLibsDir][] (createProject());
-        retrieveBuildDependencies ();
-    else
-        failWith "There is no \(buildDepsFile) file";
-    fi
+elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
+    retrieveBuildDependencies ();
 else
     load ybuilder.core.build;
     import org.apache.tools.ant.AntClassLoader;
