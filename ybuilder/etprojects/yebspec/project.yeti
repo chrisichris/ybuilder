@@ -37,7 +37,8 @@ _ =
           do p:
             repFile = dir.reports ^"yebspecResults.txt";
             println "--tesing";
-            assert "java-file" (file repFile)#exists();
+            assert "yepscep file" (file repFile)#exists();
+            assert "stest file" (file (dir.reports ^ "stests/tempSTest.txt"))#exists();
             /*
             assert "yeti-file" (file (dir.targetClasses ^ "foo.class"))#exists();
             assert "yeti-file2" (file (dir.targetClasses ^ "mfoo/foo2.class"))#exists();

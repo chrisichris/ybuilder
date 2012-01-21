@@ -806,6 +806,51 @@ yebspecTarget =
         fi;
     done;
         
+simpleTestTarget =
+    target "simpleTest" [DependencyOf test] do p:
+        modules = if empty? p.args then
+            if (file dir.test)#exists() then
+                map string ((createAntFileSet dir.test [Include "**/*STest.yeti"])
+                    #getDirectoryScanner()#getIncludedFiles());
+            else
+                []
+            fi    
+        else
+            list p.args
+        fi;
+        
+        repDir = dir.reports ^"stests/";
+        antTask "delete" ["dir":repDir] [] p;
+        antTask "mkdir" ["dir":repDir] [] p;
+
+        
+        if not empty? modules then
+            code = "(var fails = 0;(" 
+                ^ (modules |> map do mo:
+                    if strEnds? mo ".yeti" then
+                        n = strLeft mo ((strLength mo) - 5);
+                        n2 = strReplace '/' '.' n;
+                        strReplace '\' '.' n2;
+                    else
+                        mo
+                    fi
+                done
+                |> map do moduleName:
+                    resFile = repDir ^ moduleName ^".txt";
+                    "(res = (load \(moduleName))();"
+                    ^ "if ((strLength res) > 6) and"
+                    ^ "((strLower (strLeft res 7)) == 'failure') then"
+                    ^ " fails := fails + 1 fi;"
+                    ^ "println 'TestResult of \(moduleName)';"  
+                    ^ "println res;"
+                    ^ "_ = writeFile '\(resFile)' 'utf-8' do h: "
+                    ^ " h.write res done;);";
+                done
+                |> strJoin "")
+                ^ "); if fails > 0 then System#exit(1) fi;);";
+            yetiMainTask ["-e", code] testPath true "." p;
+        fi;
+    done;
       
                 
         
@@ -1012,6 +1057,7 @@ livecycleTargets = {
         javadoc,
         junit = junitTarget,
         yebspec = yebspecTarget,
+        simpleTest = simpleTestTarget,
         jetty,
         compileYeti,
         testCompileYeti,
