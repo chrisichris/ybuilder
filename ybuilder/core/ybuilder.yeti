@@ -26,7 +26,6 @@ import yeti.lang.compiler.yeti;
 file n = new File(n is string);
 args = list _argv;
 
-buildDepsFile = dir.ybuilder ^ "buildDependencies.yeti"; 
 buildLibsDir = dir.ybuilder ^ "extlib_managed/";
 
 retrieveBuildDependencies () =
