@@ -250,8 +250,8 @@ createNewYetiProject projectDir project =
                 [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
                  el "javaresource" ["name":"ybuilder/core/.gitignore"] [],
                  el "mapper" ["type":"flatten"] []] 
-                project;
-    );
+                project);
+                
 yetiMainTask args path fork dir project = 
    if fork then
         antTask "java" 
@@ -920,11 +920,11 @@ jetty =
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
         
-        ap = getAntPathFromProject "runtimePath" project;
+        ap = (createAntPath runtimePath)#list();
         path = if not defined? ap then 
             ""
         else 
-            (strJoin ", " . map string . wrapArray) (ap#list());
+            (strJoin ", " . map string . wrapArray) (ap);
         fi;
         context#setExtraClasspath(path);
         
