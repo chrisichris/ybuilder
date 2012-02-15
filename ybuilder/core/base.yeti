@@ -700,7 +700,7 @@ javadoc =
                             // p;
                 // fi
            // done;
-           
+
 compileYeti = 
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
            do p:
