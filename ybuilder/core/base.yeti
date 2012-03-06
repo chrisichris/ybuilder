@@ -315,7 +315,6 @@ yeticTask targetDir srcDir includes sourceReaderCode path project =
                ^ "['"
                ^ (strJoin "','" files)
                ^ "']";
-        println code;
         args = ["-e", code];
         yetiMainTask args path true "." project
     fi);    
@@ -1055,6 +1054,8 @@ livecycleTargets = {
         test = testPath,
         testRuntime = testRuntimePath,
     },
+    
+        
 
     taskProps = {
         yetic = yeticAttributes,
@@ -1084,6 +1085,7 @@ livecycleTargets = {
     remoteRepository,
 
     yetiMainTask,
+    yeticTask,
     createNewYetiProject,
 
     livecycleTargets,
