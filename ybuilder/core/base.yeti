@@ -134,6 +134,11 @@ javacAttributes =
      
 var javacCompilerarg = "";
 
+yeticAttributes = {
+    var includes = [Include "**/*.yeti"],
+    var sourceReaderCode = none is Some string | None ()
+};
+
 javacTestAttributes = 
     ["srcdir" : dir.test, 
      "destdir": dir.targetTestClasses,
@@ -294,16 +299,37 @@ yetidocTask targetDir fileSet project=
     args = ["-doc", "../"^targetDir] ++ fs;
     yetiMainTask args testPath true dir.src project);
     
-yeticTask targetDir srcDir path project =
+yeticTask targetDir srcDir includes sourceReaderCode path project =
    (fileSet =
-        createAntFileSet srcDir [Include "**/*.yeti"];
-    fs = map (strReplace File#separator "/" . string) 
+        createAntFileSet srcDir includes;
+    files = map (strReplace File#separator "/" . string) 
              (array (fileSet is ~FileSet)#getDirectoryScanner()
                     #getIncludedFiles());
-    println String#format("%1$11s Compiling \(length fs) files to \(targetDir)",array ["[yetic]"]);
-    args = ["-d", "../"^targetDir] ++ fs;
-    yetiMainTask args path true srcDir project);    
+    println String#format("%1$11s Compiling \(length files) files to \(targetDir)",array ["[yetic]"]);
+    
+    if not empty? files then
+        code = "eval = load yeti.lang.compiler.eval;"
+               ^ "eval.compileYetiFiles [To '\(targetDir)'"
+               ^ (sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
+               ^ "[SourceDir '\(srcDir)'] " 
+               ^ "['"
+               ^ (strJoin "','" files)
+               ^ "']";
+        println code;
+        args = ["-e", code];
+        yetiMainTask args path true "." project
+    fi);    
 
+    
+// yeticTask targetDir srcDir path project =
+   // (fileSet =
+        // createAntFileSet srcDir [Include "**/*.yeti"];
+    // fs = map (strReplace File#separator "/" . string) 
+             // (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    // #getIncludedFiles());
+    // println String#format("%1$11s Compiling \(length fs) files to \(targetDir)",array ["[yetic]"]);
+    // args = ["-d", "../"^targetDir] ++ fs;
+    // yetiMainTask args path true srcDir project);    
             
     
 //lifecycle targets
@@ -705,7 +731,13 @@ compileYeti =
     target "compileYeti" [Depends compileJava, InLivecycle compile] 
            do p:
                 if (file dir.src)#exists() then
-                    yeticTask dir.targetClasses dir.src compilePath p;
+                    yeticTask 
+                        dir.targetClasses 
+                        dir.src 
+                        yeticAttributes.includes 
+                        yeticAttributes.sourceReaderCode
+                        compilePath 
+                        p;
                 fi
            done;
            
@@ -714,7 +746,13 @@ testCompileYeti =
            [Depends testCompileJava, InLivecycle testCompile] 
            do p:
                 if (file dir.test)#exists() then
-                    yeticTask dir.targetTestClasses dir.test testPath p;
+                    yeticTask 
+                        dir.targetTestClasses 
+                        dir.test 
+                        yeticAttributes.includes 
+                        yeticAttributes.sourceReaderCode
+                        testPath 
+                        p;
                 fi;
            done;
                         
@@ -1019,6 +1057,7 @@ livecycleTargets = {
     },
 
     taskProps = {
+        yetic = yeticAttributes,
         javacAttributes,
         javacCompilerarg,
         javacTestAttributes,
