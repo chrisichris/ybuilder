@@ -308,27 +308,27 @@ yeticTask targetDir srcDir includes sourceReaderCode path project =
     println String#format("%1$11s Compiling \(length files) files to \(targetDir)",array ["[yetic]"]);
     
     if not empty? files then
-        code = "eval = load yeti.lang.compiler.eval;"
-               ^ "eval.compileYetiFiles [To '\(targetDir)'"
-               ^ (sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
-               ^ "[SourceDir '\(srcDir)'] " 
-               ^ "['"
-               ^ (strJoin "','" files)
-               ^ "']";
+        code = 
+"""import yeti.lang.compiler.CompileException;
+ret = try
+    eval = load yeti.lang.compiler.eval;
+    eval.compileYetiFiles [To '\(targetDir)'
+        \(sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
+        [SourceDir '\(srcDir)']
+        ['\(strJoin "','" files)'];
+        System#exit(0);
+catch CompileException ex: 
+    println ('Compile Error: \n' ^ ex#getMessage());
+    System#exit(1)
+yrt;
+ret 
+""";
+
         args = ["-e", code];
         yetiMainTask args path true "." project
     fi);    
 
     
-// yeticTask targetDir srcDir path project =
-   // (fileSet =
-        // createAntFileSet srcDir [Include "**/*.yeti"];
-    // fs = map (strReplace File#separator "/" . string) 
-             // (array (fileSet is ~FileSet)#getDirectoryScanner()
-                    // #getIncludedFiles());
-    // println String#format("%1$11s Compiling \(length fs) files to \(targetDir)",array ["[yetic]"]);
-    // args = ["-d", "../"^targetDir] ++ fs;
-    // yetiMainTask args path true srcDir project);    
             
     
 //lifecycle targets
