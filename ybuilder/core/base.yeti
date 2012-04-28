@@ -946,7 +946,9 @@ war =
 
             
 jetty =
-    target "jetty" [Description "runs jetty - note the jetty libs must be on the ybuilder path"] do project:
+    target "jetty" [Depends initialize,
+                    Description "runs jetty - note the jetty libs must be on the ybuilder path"] 
+    do project:
         import org.eclipse.jetty.server:Server;
         import org.eclipse.jetty.webapp:WebAppContext;
         
