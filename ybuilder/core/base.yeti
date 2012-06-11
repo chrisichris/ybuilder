@@ -949,10 +949,20 @@ jetty =
     target "jetty" [Depends initialize,
                     Description "runs jetty - note the jetty libs must be on the ybuilder path"] 
     do project:
-        import org.eclipse.jetty.server:Server;
+        import java.lang.System;
+        import org.eclipse.jetty.server:Server; 
+        import org.eclipse.jetty.server.nio:BlockingChannelConnector;
         import org.eclipse.jetty.webapp:WebAppContext;
-        
+
         server = new Server(8080);
+        if (strIndexOf (strLower (System#getProperty("os.name"))) 
+            "win" 0) > -1 then
+            blockingConnector = new BlockingChannelConnector();
+            blockingConnector#setPort(8080);
+            connectors = array [blockingConnector];
+            server#setConnectors(connectors);
+        fi;
+        
         context = new WebAppContext();
         context#setDescriptor((warAttributes.["webxml"]));
         context#setResourceBase(dir.webapp);
