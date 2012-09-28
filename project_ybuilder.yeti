@@ -14,7 +14,7 @@ project.description := "A simple build tool for yeti";
 ybuilderSrcDir = "ybuilder/";
 
 
-_ = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
+_ = target "ybuilderinit" [Before livecycleTargets.initialize] do p:
 
     antTask "delete" ["dir":dir.src] [] p;
     antTask "delete" ["dir":dir.resources] [] p;
@@ -35,14 +35,14 @@ _ = target "ybuilderinit" [InLivecycle livecycleTargets.initialize] do p:
 
 done;
 
-_ = target "copygit" [DependencyOf baseTargets.copyResources] do p:
+_ = target "copygit" [Before baseTargets.copyResources] do p:
     antTask "copy" ["todir":dir.targetClasses] 
                     [el "fileset" ["dir":dir.resources, "defaultexcludes":"no"] 
                         []] p;
 done;
 
 // compileRes = 
-    // target "compileRes" [InLivecycle livecycleTargets.testCompile] do p:
+    // target "compileRes" [Before livecycleTargets.testCompile] do p:
         // antTask "copy" ["todir": dir.target || "rscSources"]
                 // [antFileset (dir.targetClasses~) [Include "**/*.yeti"]] p;
         // antTask "yetic" ["srcdir":(dir.target || "rscSources"), "destdir": dir.target||"tempClasses"] 

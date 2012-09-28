@@ -334,12 +334,12 @@ ret
 //lifecycle targets
 preClean = 
     target "preClean" 
-           [Livecycle true, Description "invoked befroe main clean"] 
+           [Description "invoked befroe main clean"] 
            \();
            
 clean = 
     target "clean" 
-           [Depends preClean, Livecycle true, 
+           [Depends preClean,  
                 Description "cleans the build [\(dir.target)] dir"] 
            (antTask "delete" ["dir" : dir.target] []);
 
@@ -349,44 +349,44 @@ cleanLibs =
            (antTask "delete" ["dir":dir.libManaged] []);
 cleanAll = 
     target "cleanAll" 
-           [Livecycle true,Dependencies[cleanLibs, clean], 
+           [Dependencies[cleanLibs, clean], 
             Description "Cleans the project and all the libs"] 
            \();
            
            
 
-validate = target "validate" [Livecycle true] \();
+validate = target "validate" [] \();
 
 initializeBuild = 
-    target "initializeBuild" [Depends validate, Livecycle true] \();
+    target "initializeBuild" [Depends validate] \();
     
 initialize = 
-    target "initialize" [Depends initializeBuild, Livecycle true] 
+    target "initialize" [Depends initializeBuild] 
            (antTask "mkdir" ["dir": dir.target] []);
 
 generateResources = 
-    target "generateResources" [Depends initialize, Livecycle true] \();
+    target "generateResources" [Depends initialize] \();
 processResources = 
-    target "processResources" [Depends generateResources, Livecycle true] \();
+    target "processResources" [Depends generateResources] \();
 compile = 
-    target "compile" [Depends processResources, Livecycle true,
+    target "compile" [Depends processResources,
                       Description "Compiles the sources of the project"] \();
 processClasses = 
-    target "processClasses" [Depends compile, Livecycle true] \();
+    target "processClasses" [Depends compile] \();
 generateTestResources = 
-    target "generateTestResources" [Depends processClasses, Livecycle true] \();
+    target "generateTestResources" [Depends processClasses] \();
 processTestResources = 
     target "processTestResources" 
-        [Depends generateTestResources, Livecycle true] \();
+        [Depends generateTestResources] \();
 testCompile = 
-    target "testCompile" [Depends processTestResources, Livecycle true] \();
+    target "testCompile" [Depends processTestResources] \();
 processTestClasses = 
-    target "processTestClasses" [Depends testCompile, Livecycle true] \();
+    target "processTestClasses" [Depends testCompile] \();
 test = 
-    target "test" [Depends processTestClasses, Livecycle true,
+    target "test" [Depends processTestClasses,
                    Description "runs the tests of the project"] \();
 preparePackage = 
-    target "preparePackage" [Depends cleanAll, Depends test, Livecycle true,
+    target "preparePackage" [Depends cleanAll, Depends test,
                              DoPreDependencies
                                \(cp = copy artifactDependencies;
                                 clearArray artifactDependencies;
@@ -398,9 +398,9 @@ preparePackage =
                                 done)]
                             \();
                             
-preDoc = target "preDoc" [Depends initialize, Livecycle true] \();
+preDoc = target "preDoc" [Depends initialize] \();
 
-doc = target "doc" [Depends preDoc, Livecycle true,
+doc = target "doc" [Depends preDoc,
                     Description "Generates project documentation"] \();	
 
 //mvn things
@@ -481,7 +481,7 @@ mvnDeploy fileName project =
 
                  
 initPom = 
-    target "initPom" [InLivecycle initialize] 
+    target "initPom" [Before initialize] 
         do p:
             //println project.groupId;
             antTask (maven "pom") 
@@ -509,7 +509,7 @@ pom =
           
 addProjectDeps =
     target "addProjectDeps" 
-           [InLivecycle initialize,
+           [Before initialize,
             Description "add the pathes for dependend projects"]
            do p:
             sdeps = map do d:
@@ -555,7 +555,7 @@ addProjectDeps =
             
 prepareLibs = 
     target "prepareLibs" 
-        [InLivecycle initialize, Depends addProjectDeps, 
+        [Before initialize, Depends addProjectDeps, 
          Description "loads librararies in [\(dir.libManaged)]"] 
         do project:
             copyDeps scope = 
@@ -605,14 +605,14 @@ prepareLibs =
 
 //path targets    
 initDirs = 
-    target "initDirs" [InLivecycle initialize,Depends prepareLibs] 
+    target "initDirs" [Before initialize,Depends prepareLibs] 
             do project:
                 antTask "mkdir" ["dir":dir.targetClasses] [] project;
                 antTask "mkdir" ["dir":dir.targetTestClasses][] project;
             done;
     
 initBuildPathes = 
-    target "initBuildPathes" [InLivecycle initializeBuild,Depends prepareLibs] 
+    target "initBuildPathes" [Before initializeBuild,Depends prepareLibs] 
           (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
 
 //java targets
@@ -620,7 +620,7 @@ resourcesPatterns =
     [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"];
 copyResources = 
     target "copyResources" 
-           [InLivecycle processResources,
+           [Before processResources,
             Description "Copies resources from [\(dir.src), \(dir.resources)] to [\(dir.targetClasses)]"]
            do p:
                 if (file dir.resources)#exists() then
@@ -637,7 +637,7 @@ copyResources =
            
 copyTestResources = 
     target "copyTestResources" 
-           [InLivecycle processTestResources, 
+           [Before processTestResources, 
             Description "Copies test resources to test classes dir"]
            do p:
                 if (file dir.resourcesTest)#exists() then
@@ -654,7 +654,7 @@ copyTestResources =
 
 compileJava = 
     target "compileJava" 
-           [InLivecycle compile, Description "Compiles java sources"]
+           [Before compile, Description "Compiles java sources"]
            do p:
                 if (file dir.src)#exists() then
                     antTask "javac" javacAttributes 
@@ -666,7 +666,7 @@ compileJava =
 
 testCompileJava = 
     target "testCompileJava" 
-           [InLivecycle testCompile, Description "compiles java test sources"]
+           [Before testCompile, Description "compiles java test sources"]
            do p:
                 if (file dir.test)#exists() then
                     antTask "javac" javacTestAttributes 
@@ -677,7 +677,7 @@ testCompileJava =
            done;
 javadoc = 
     target "javadoc" 
-           [InLivecycle doc, 
+           [Before doc, 
             Description "create javadocs from [\(dir.src)] to [\(dir.javadoc)]"] 
             do p:
                 if (file dir.src)#exists() then
@@ -727,7 +727,7 @@ javadoc =
            // done;
 
 compileYeti = 
-    target "compileYeti" [Depends compileJava, InLivecycle compile] 
+    target "compileYeti" [Depends compileJava, Before compile] 
            do p:
                 if (file dir.src)#exists() then
                     yeticTask 
@@ -742,7 +742,7 @@ compileYeti =
            
 testCompileYeti = 
     target "testCompileYeti" 
-           [Depends testCompileJava, InLivecycle testCompile] 
+           [Depends testCompileJava, Before testCompile] 
            do p:
                 if (file dir.test)#exists() then
                     yeticTask 
@@ -757,7 +757,7 @@ testCompileYeti =
                         
 yetidoc = 
     target "yetidoc" 
-        [InLivecycle doc, Depends initDirs, Description "creates yetidoc"] 
+        [Before doc, Depends initDirs, Description "creates yetidoc"] 
         do p:
             if (file dir.test)#exists() then
                 antTask "delete" ["dir":dir.yetidoc] [] p;
@@ -771,7 +771,7 @@ yetidoc =
         
 //Test target
 junitTarget = 
-    target "junit" [DependencyOf test] do p:
+    target "junit" [Before test] do p:
         hasJunit = try 
             (createAntClassLoader testPath [])
                 #loadClass("junit.framework.Test");
@@ -795,7 +795,7 @@ junitTarget =
     done;
     
 yebspecTarget =
-    target "yebspec" [DependencyOf test] do p:
+    target "yebspec" [Before test] do p:
         hasSpec = try
             (createAntClassLoader testPath [])
                 #loadClass("org.yeb.yebspec");
@@ -844,7 +844,7 @@ yebspecTarget =
     done;
         
 simpleTestTarget =
-    target "simpleTest" [DependencyOf test] do p:
+    target "simpleTest" [Before test] do p:
         modules = if empty? p.args then
             if (file dir.test)#exists() then
                 map string ((createAntFileSet dir.test [Include "**/*STest.yeti"])

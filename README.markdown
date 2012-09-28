@@ -235,11 +235,8 @@ To define your own targets use the `target` function from the `build` module:
 - name is the name of the target and has to be unique in the project.
 - [options] is a list of following options:
     - Depends target: target which should be executed before
-    - InLivecyle target: adds the defined target to Livecycle and adds the 
-       livecycle before the named livecycle to the dependencies of this target
     - Description text: description of this target printed in help
-    - DependecyOf target: adds this target to the dependencies of the given target
-    - Livecycle boolean: marks the target as livecycle
+    - Before (or DependencyOf which is deprecated) target: adds this target to the dependencies of the given target
     - DoPreDependencies fn: a fuction which is executed before the dependencies
             get executed
 - code-function is project -> (): the code which gets executed (once) when
@@ -263,38 +260,15 @@ This target will first invoke compile and than print "hello":
 ### Livecycle targets
 
 Similar to maven the `ybuilder.core.base` module defines different predefined 
-livecylce-targets which form a linear dependency build-order.
+targets which form a linear dependency build-order.
 
-Livecycles are just normal targets with the livecylce flag. Which indecates
-that these targets should be executed before other sibling-dependencies. 
-(All targets on which a livecycle target itself depends are of course still
-executed before the livecycle target)
+Livecycles are just normal predefined targets.
 
 These are thought to make extension of the core build-process easier. Ie
 if yout want to add some target which depends on the result of the compile
-process you just make it depend on the `compile` livecycle. If later you add
-another compile-target (ie a scala compiler) you just put it in the `compile` 
-livecycle and you do not have to update all targets which depend on `compile`.
+process you just make it depend on the `compile` livecycle. 
 
-To put a target in a livecycle use the InLivecycle option when defining the 
-target:
-
-    target "mytest" [InLivecycle test] do p: ... done;
-
-This does two things:
-
-1.) adds "mytest" to the dependencies of "test" so that when the "test" target 
-(livecycle) is executed also "mytest" is executed
-
-2.) adds the livecylc before "test" (which is processTestClasses) to the
-dependecies of "mytest" so that when "mytest" is run every livecycle up to
-"test" (but not test itself) is run first
-
-To list all livecycles in the poject use:
-
-    java -jar ybuilder livecycles
-
-### The predefined livecycles    
+### The predefined livecycle targets:    
 ##### clean:
 
 * preClean 

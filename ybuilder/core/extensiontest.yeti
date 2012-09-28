@@ -98,7 +98,7 @@ runExtensionTests project = (
 );
 
 extensionTest = 
-    target "extensionTest" [InLivecycle livecycleTargets.test] runExtensionTests;
+    target "extensionTest" [Before livecycleTargets.test] runExtensionTests;
 
 push targetsInHelp extensionTest;   
 push targetsInHelp createExtensionTestProject;   

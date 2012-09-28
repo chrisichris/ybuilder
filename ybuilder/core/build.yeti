@@ -52,13 +52,10 @@ typedef projectType = {
                     
 typedef targetType = {
     name is string, 
-    isLivecycle is boolean,
     pos is number,
     depends is array<targetType>,
-    livecycles is array<targetType>,
+    var preDependenciesFn is projectType -> (),
     var description is string,
-    var doPreDependencies is projectType -> (),
-    var preFn is projectType -> (), 
     var fn is projectType -> (), 
     var postFn is projectType -> ()
 };
@@ -119,12 +116,6 @@ tel name atts text = el name atts [Text text];
 
 targets is hash<string,targetType> = [:];
 
-isLivecycleTarget? target = (target is targetType).isLivecycle;
-    
-
-addTargetToLivecycle target livecycle = 
-    (push target.livecycles livecycle;
-     push livecycle.depends target);
 
 var _targetCounter = 0;
     
@@ -136,19 +127,10 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
     t = {
         name, 
         depends = array [],
-        isLivecycle = 
-            fold do v le: 
-                    v or case le of 
-                         Livecycle x:x; _:false 
-                         esac 
-                 done false opts,
-                 
-        livecycles = array [],
         pos = synchronized _targetCounter 
             \(_targetCounter := _targetCounter +1; _targetCounter),
         var description = "",
-        var doPreDependencies = \(),
-        var preFn = \(), 
+        var preDependenciesFn = \(),
         var fn = fn1, 
         var postFn = \()
     } is targetType;
@@ -159,36 +141,18 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
         Dependencies ds: for ds (push t.depends);
         Description d : t.description := d;
         DependencyOf target : push (target is targetType).depends t;
-        InLivecycle lc: addTargetToLivecycle t lc;
-        Livecycle x: (); //already set in target construciton;
-        DoPreDependencies fn: t.doPreDependencies := fn;
+        Before target : push (target is targetType).depends t;
+        DoPreDependencies fn : t.preDependenciesFn := fn;
         esac 
     done;
-
     
     targets.[t.name] := t;
     t);
 
     
-forTargetDependencies target cont resFn = (
-    pu ta = (cont.[ta.name] := true; resFn ta);
-    emp = filter ((not) . (in cont) . (.name));
-    for target.livecycles do lc:
-        for (emp (filter isLivecycleTarget? lc.depends)) pu;
-    done;
-    for (emp (filter isLivecycleTarget? target.depends)) pu;
-    for (emp (filter ((not) . isLivecycleTarget?) target.depends)) pu;
-    ());
-    
 targetToString t = (
-    deps = array [];
-    forTargetDependencies t [:] (push deps);
+    deps = list t.depends;
     "---\n\(t.name)"
-    ^ if isLivecycleTarget? t then
-        " (Lifecycle Target)"
-    else
-        ""
-    fi
     ^ "\n"
     ^ if (strLength t.description) > 0 then
         "   \(t.description)\n"
@@ -203,11 +167,6 @@ cmdTargets =
         \(for (sortBy (on (<)(.pos)) (list targets)) 
             (println . targetToString));
     
-cmdLivecycles = 
-    target "livecycles" 
-        [Description "Shows all livecycles in current project"] 
-        \(for (sortBy (on (<)(.pos)) (filter isLivecycleTarget? (list targets))) 
-            (println . targetToString));
 
 printSimilarTargets name =
    (n = name;
@@ -223,7 +182,7 @@ printSimilarTargets name =
         done;
     fi);
             
-targetsInHelp = array [cmdTargets,cmdLivecycles];             
+targetsInHelp = array [cmdTargets];             
             
 help = 
     target "help" 
@@ -292,11 +251,14 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
         oldArgs = project.args;
         project.args := targetArgs;
 
-        target.doPreDependencies project;
-        forTargetDependencies target [:] do t: executeTarget t[] project done;
+        target.preDependenciesFn project;
+        
+        for target.depends do t:
+            executeTarget t [] project;
+        done;
         try
             //println "Exectuing target \(target.name)";
-            target.preFn project; target.fn project; target.postFn project;
+            target.fn project; target.postFn project;
         finally
             project.args := oldArgs;
         yrt
@@ -515,12 +477,10 @@ cmdYbuilderVersion =
     printSimilarTargets,
     
     cmdTargets,
-    cmdLivecycles,
     targetsInHelp,
     help,
     targets,
     target,
-    addTargetToLivecycle,
     runTarget,
     executeTarget,
     createProject,
