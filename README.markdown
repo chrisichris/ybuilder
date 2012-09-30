@@ -52,6 +52,10 @@ Join the discussion mailing list at:
 >   
 >   >java -jar ybuilder.jar newProject
 >
+>4a. Alternatively load a project template from github.
+>
+>   >java -jar ybuilder.jar new githubuser/templateproject
+>
 >5. edit `project.yeti` file to set the projects name, artifact id etc and add 
 >   dependencies 
 >

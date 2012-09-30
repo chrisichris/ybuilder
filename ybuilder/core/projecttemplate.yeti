@@ -1,0 +1,135 @@
+/*
+ * Copyright 2011 Christian Essl
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+module ybuilder.core.projecttemplate;
+base = load ybuilder.core.base;
+load ybuilder.core.build;
+
+
+//cloning a default project
+
+newFromTemplate nameOpt =
+   (project = createProject();
+    println "-----------------------------\nybuilder project template download\n";
+    println "installation happens in current directory";
+
+    name = case nameOpt of
+    None _: 
+        (print "\nPlease enter the location of the repository: ";
+         strTrim (readln ()));
+    Some n: n;
+    esac;
+   
+    //parse the name
+    {url,dir} = if strStarts? name "http::"
+       or strStarts? name "https::"
+       or strStarts? name "git::" then
+            cut = strLastIndexOf name '#' 0;
+            if cut < 0 then
+                {url = name, dir = ""}
+            else
+                {url = strLeft name cut, 
+                 dir = strRight name (cut + 1) }
+            fi
+    else
+        strs = like '\A([^/]+)/([^/#]+)(#(.+))?\z' name ();
+        if empty? strs then
+            failWith "please provide a full name for the repo";
+        else
+            {url = "git://github.com/\(strs.[1])/\(strs.[2])",
+             dir = strs.[4]}
+        fi
+    fi;
+
+    import java.nio.file:Files;
+    import java.io:File,
+                   FileReader;
+    import java.util.Properties;
+
+    tempDir = Files#createTempDirectory("ybuilder_projecttemplate", [])#toFile();
+    tempDir#deleteOnExit();
+    
+    println "Cloning \(url) to \(tempDir) ...";
+    try
+        //clone the project
+        import org.eclipse.jgit.api:Git;
+        _ = Git#cloneRepository()#setURI(url)#setDirectory(tempDir)#call();
+    catch Exception ex:
+        failWith "Could not clone repository at \(url): \(ex)";
+    yrt;
+    
+    //the directory form where to copy all files
+    sourceDir = if dir == "" then   
+            tempDir
+        else
+            new File(tempDir, dir);
+        fi;
+
+    println "Succesfully Cloned \(url) to \(tempDir)";   
+        
+    if not sourceDir#isDirectory() then
+        failWith "No subdir in project \(url) of name \(dir)";
+    fi;
+    
+
+    
+    //properties to replace
+    props = (
+        propsFile = new File(sourceDir, "ybtemplate.properties");
+        if propsFile#exists() then
+            r = new FileReader(propsFile);
+            props = new Properties();
+            try 
+                props#load(r);
+            finally
+                r#close();
+            yrt;
+        else
+            new Properties();
+        fi);
+    
+    println "\nPlease enter the replacement values:\n";
+    
+    //treat the 'name' property special in that to set to current dir name
+    props#put("name",(new File('.'))#getCanonicalFile()#getName());
+    resProps = [:];
+    forJavaMap props do k v:
+        println "\(k) [\(v)]:";
+        rv = readln ();
+        ov = if rv == "" then string v
+             else rv fi;
+            
+        resProps.[string k] := ov;
+    done;
+    
+    
+    antTask "copy" ["todir":".", "verbose":"true"] [
+        el "fileset" ["dir":string sourceDir] [],
+        el "filterchain" [:] [
+            el "replacetokens" [:] 
+                (mapHash do k v:
+                    el "token" ["key":k, "value":v] [] done resProps)
+        ]
+    ] project;
+
+    antTask "delete" ["dir":base.dir.ybuilderLibsManaged] [] project;
+    
+    println "\nInstallation of template \(url) was succesful";
+    );
+
+ {
+    newFromTemplate
+ }

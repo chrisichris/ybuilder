@@ -55,6 +55,7 @@ dir = {
     reports = "target/reports/",
     doc = "target/doc/",
     ybuilder = "lib/ybuilder/",
+    ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
     targetClasses = "target/classes/",
     targetTestClasses = "target/testclasses/",
 
