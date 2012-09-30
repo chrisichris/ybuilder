@@ -64,6 +64,7 @@ retrieveBuildDependencies () =
         done
         \none
         content));
+        
     reps = array (catSome (matchAll '\s*@buildRepository\s([^;]*);' do smatch:
             s = smatch.[1];
             a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
@@ -76,6 +77,16 @@ retrieveBuildDependencies () =
         \none
         content));
 
+    //push to deps also jgit and stringtemplate
+    //push reps ["jgit-repository", "http://download.eclipse.org/jgit/maven"];
+    
+    push deps {
+        dep = array ["","org.eclipse.jgit", "org.eclipse.jgit","1.3.0.201202151440-r"],
+        exc = []};
+    push deps {
+        dep = array ["","org.antlr", "stringtemplate","4.0.2"],
+        exc = []};
+    
     //retrieve the libs
     (load ybuilder.core.build;
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
