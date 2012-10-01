@@ -82,7 +82,7 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-ybuilderVersion = "0.1-alpha";
+ybuilderVersion = "0.5";
 
 basedir = "./";
 
