@@ -15,9 +15,29 @@
  */
 
 module ybuilder.core.projecttemplate;
+
+import java.util:Properties, 
+                 LinkedHashSet,
+                 Enumeration,
+                 Collections,
+                 Set;
+
 base = load ybuilder.core.base;
 load ybuilder.core.build;
 
+class LinkedProperties extends Properties
+    keysSet = new LinkedHashSet(),
+    
+    Enumeration keys()
+        Collections#enumeration(keysSet),
+        
+    Object put(Object key, Object value)
+        _ = keysSet#add(key);
+        super#put(key,value),
+        
+    Set stringPropertyNames() 
+        keysSet
+end;
 
 //cloning a default project
 
@@ -92,19 +112,16 @@ newFromTemplate nameOpt =
 
     
     //properties to replace
-    props = (
-        propsFile = new File(sourceDir, "ybtemplate.properties");
-        if propsFile#exists() then
-            r = new FileReader(propsFile);
-            props = new Properties();
-            try 
-                props#load(r);
-            finally
-                r#close();
-            yrt;
-        else
-            new Properties();
-        fi);
+    props = new LinkedProperties ();
+    (propsFile = new File(sourceDir, "ybtemplate.properties");
+     if propsFile#exists() then
+        r = new FileReader(propsFile);
+        try 
+            props#load(r);
+        finally
+            r#close();
+        yrt;
+     fi);
     
     println "\nPlease enter the replacement values:\n";
     
@@ -122,7 +139,7 @@ newFromTemplate nameOpt =
                 if empty? va then
                     vue
                 else
-                    readProp vue
+                    readProp va.[1]
                 fi);
                 
             println "\(k) [\(v)]:";
@@ -137,12 +154,12 @@ newFromTemplate nameOpt =
             ov;
         fi;
         
+    enum = props#keys();
+    (enum#hasMoreElements())loop (_ = readProp (string enum#nextElement()));
     
-    forJavaMap props do k v: _ = readProp (string k) done;
     
-    
-    antTask "copy" ["todir":".", "verbose":"true","includeEmtpyDirs":"true"] [
-        el "fileset" ["dir":string sourceDir, "includes":"**.*.*"] [],
+    antTask "copy" ["todir":".", "verbose":"true","includeEmptyDirs":"true"] [
+        el "fileset" ["dir":string sourceDir, "includes":"**/*.*"] [],
         el "filterchain" [:] [
             el "replacetokens" [:] 
                 (mapHash do k v:
