@@ -141,8 +141,8 @@ newFromTemplate nameOpt =
     forJavaMap props do k v: _ = readProp (string k) done;
     
     
-    antTask "copy" ["todir":".", "verbose":"true"] [
-        el "fileset" ["dir":string sourceDir] [],
+    antTask "copy" ["todir":".", "verbose":"true","includeEmtpyDirs":"true"] [
+        el "fileset" ["dir":string sourceDir, "includes":"**.*.*"] [],
         el "filterchain" [:] [
             el "replacetokens" [:] 
                 (mapHash do k v:
@@ -150,9 +150,6 @@ newFromTemplate nameOpt =
         ]
     ] project;
 
-    antTask "delete" ["dir":base.dir.ybuilderLibsManaged,
-                      "failonerror":"false",
-                      "deleteonexit":"true"] [] project;
     
     antTask "delete" ["file":"ybtemplate.properties", 
                       "failonerror":"false",

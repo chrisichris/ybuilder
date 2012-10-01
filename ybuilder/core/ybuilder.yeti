@@ -85,12 +85,6 @@ retrieveBuildDependencies () =
     //push to deps also jgit and stringtemplate
     //push reps ["jgit-repository", "http://download.eclipse.org/jgit/maven"];
     
-    push deps {
-        dep = array ["","org.eclipse.jgit", "org.eclipse.jgit","1.3.0.201202151440-r"],
-        exc = []};
-    push deps {
-        dep = array ["","org.antlr", "stringtemplate","4.0.2"],
-        exc = []};
     
     //retrieve the libs
     (load ybuilder.core.build;
@@ -131,28 +125,23 @@ retrieveBuildDependencies () =
     fi;
     ));
     
-_withBuildClassLoader fn = 
+_withBuildClassLoader dirPrefix antFileSet fn = 
    (load ybuilder.core.build;
     import org.apache.tools.ant.AntClassLoader;
+    import org.apache.tools.ant.types: FileSet;
     oL = Thread#currentThread()#getContextClassLoader();
     
     flUrl = (classOf AntClassLoader)#getProtectionDomain()
                                     #getCodeSource()#getLocation();
         
-    antFiles = 
-        (createAntFileSet "."
-            [Include "\(dir.ybuilder)extlib/*.jar", 
-             Include "\(dir.ybuilderLibsManaged)*.jar"])
-        #getDirectoryScanner();
         
+    antFiles = (antFileSet is ~FileSet)#getDirectoryScanner();
     antFiles#scan();
-    urls = map do n: (new File(string n))#toURL() done 
+    urls = map do n: (new File(dirPrefix ^ string n))#toURL() done 
                (array antFiles#getIncludedFiles());
-//	println ("urls" ^ urls);
     ctxtLoader = if empty? urls then
             oL
         else
-    //		println "urls \(urls)";
             import java.lang.ClassLoader;
             new URLClassLoader(array (flUrl::urls),
                                ClassLoader#getSystemClassLoader()#getParent()); 
@@ -181,11 +170,48 @@ if (not (file "project.yeti")#exists()) and (not empty? args) and ((head args) =
     createNewYetiProject projectName (createProject ()); 
     retrieveBuildDependencies ();
 elif (not empty? args) and ((head args) == "new") then
-    retrieveBuildDependencies ();
+    build = load ybuilder.core.build;
+    
     name = if length args > 1 then
                 "(Some '\((array args).[1])')"
            else "none" fi;
-    _withBuildClassLoader do ctxtLoader:
+    
+    ///retrieve git dependencies
+    import java.nio.file.Files;
+    tempDir = Files#createTempDirectory("ybuilder_gitjars", [])#toFile();
+    tempDir#deleteOnExit();
+    
+    project = build.createProject ();
+ 
+    deps = [{dep = array ["","org.eclipse.jgit", "org.eclipse.jgit","1.3.0.201202151440-r"],
+             exc = []},
+            {dep = array ["","org.antlr", "stringtemplate","4.0.2"],
+             exc = []}];
+    maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
+ 
+    build.antTask (maven "dependencies") 
+            ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
+            [build.el (maven "localRepository") 
+                 ["layout":"default", 
+                  "path":"${user.home}/.m2/repository"] [], 
+             build.el (maven "dependency") 
+                   ["groupId" : "org.eclipse.jgit",
+                    "artifactId" : "org.eclipse.jgit",
+                    "version" :"1.3.0.201202151440-r",
+                    "scope" : "runtime"]
+                   []]
+            project;
+                
+    build.antTask "copy" ["todir":string tempDir] 
+            [build.el "fileset" ["refid":"dependenciesFS"][],
+             build.el "mapper" ["type":"flatten"] []] 
+            project;
+
+     antFiles = 
+        (build.createAntFileSet (string tempDir)
+            [Include "*.jar"]);
+   
+    _withBuildClassLoader (string tempDir ^ string File#separator) antFiles do ctxtLoader:
         try
         m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
                       #getMethod("main",array [classOf java.lang.String[]]);
@@ -207,10 +233,8 @@ programming-language for JVM.
 To use ybuilder create a new ybuilder project:
 
 1.) copy the "ybuilder.jar" file to a new directory and 
-2.) run "java -jar ybuilder.jar newProject" to create the needed files and 
-    directories
-2a.) or run "java -jar ybuilder.jar new template-name" to create a new project
-    from a template    
+2.) run "java -jar ybuilder.jar new chrisichris/basic" to create the needed files and 
+    directories from the basic template
 3.) edit the "project.yeti" file as described in the comments
 4.) run "java -jar ybuilder.jar" again to get a detailed help message
 
@@ -223,7 +247,12 @@ elif (not empty? args) and ((head args) == "cleanBuildLibs") then
 elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
     retrieveBuildDependencies ();
 else
-    _withBuildClassLoader do ctxtLoader:
+    antFiles = 
+        ((load ybuilder.core.build).createAntFileSet) "."
+            [Include "\(dir.ybuilder)extlib/*.jar", 
+             Include "\(dir.ybuilderLibsManaged)*.jar"];
+
+    _withBuildClassLoader "" antFiles do ctxtLoader:
         m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
                       #getMethod("main",array [classOf java.lang.String[]]);
         m#invoke((),
