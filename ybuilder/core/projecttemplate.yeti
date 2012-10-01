@@ -49,7 +49,12 @@ newFromTemplate nameOpt =
         if empty? strs then
             failWith "please provide a full name for the repo";
         else
-            {url = "git://github.com/\(strs.[1])/\(strs.[2])",
+            np = if not strEnds? strs.[2] ".ybtr" then
+                    strs.[2]^".ybtr";
+                else 
+                    strs.[2];
+                fi;
+            {url = "git://github.com/\(strs.[1])/\(np)",
              dir = strs.[4]}
         fi
     fi;
@@ -59,7 +64,7 @@ newFromTemplate nameOpt =
                    FileReader;
     import java.util.Properties;
 
-    tempDir = Files#createTempDirectory("ybuilder_projecttemplate", [])#toFile();
+    tempDir = Files#createTempDirectory("ybuilder_templateproject", [])#toFile();
     tempDir#deleteOnExit();
     
     println "Cloning \(url) to \(tempDir) ...";
@@ -106,14 +111,34 @@ newFromTemplate nameOpt =
     //treat the 'name' property special in that to set to current dir name
     props#put("name",(new File('.'))#getCanonicalFile()#getName());
     resProps = [:];
-    forJavaMap props do k v:
-        println "\(k) [\(v)]:";
-        rv = readln ();
-        ov = if rv == "" then string v
-             else rv fi;
+    
+    readProp k =
+        if k in resProps then
+            resProps.[k];
+        else    
+            vue = string (props#get(name));
+            v = 
+               (va = like '^@([^@]+)@$' vue ();
+                if empty? va then
+                    vue
+                else
+                    readProp vue
+                fi);
+                
+            println "\(k) [\(v)]:";
+            rv = readln ();
+            ov = if rv == "" then 
+                    v
+                 else 
+                    rv 
+                 fi;
             
-        resProps.[string k] := ov;
-    done;
+            resProps.[k] := ov;
+            ov;
+        fi;
+        
+    
+    forJavaMap props do k v: _ = readProp (string k) done;
     
     
     antTask "copy" ["todir":".", "verbose":"true"] [
@@ -125,7 +150,13 @@ newFromTemplate nameOpt =
         ]
     ] project;
 
-    antTask "delete" ["dir":base.dir.ybuilderLibsManaged] [] project;
+    antTask "delete" ["dir":base.dir.ybuilderLibsManaged,
+                      "failonerror":"false",
+                      "deleteonexit":"true"] [] project;
+    
+    antTask "delete" ["file":"ybtemplate.properties", 
+                      "failonerror":"false",
+                      "deleteonexit":"true"][] project;
     
     println "\nInstallation of template \(url) was succesful";
     );
