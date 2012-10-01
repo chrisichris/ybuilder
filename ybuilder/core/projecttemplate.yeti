@@ -159,7 +159,9 @@ newFromTemplate nameOpt =
     
     
     antTask "copy" ["todir":".", "verbose":"true","includeEmptyDirs":"true"] [
-        el "fileset" ["dir":string sourceDir, "includes":"**/*.*"] [],
+        el "fileset" ["dir":string sourceDir, 
+                      "defaultexcludes":"false", 
+                      "excludes":"**/.git/**"] [],
         el "filterchain" [:] [
             el "replacetokens" [:] 
                 (mapHash do k v:
