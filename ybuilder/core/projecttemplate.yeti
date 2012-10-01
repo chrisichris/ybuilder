@@ -54,7 +54,7 @@ newFromTemplate nameOpt =
                 else 
                     strs.[2];
                 fi;
-            {url = "git://github.com/\(strs.[1])/\(np)",
+            {url = "git://github.com/\(strs.[1])/\(np).git",
              dir = strs.[4]}
         fi
     fi;
@@ -113,10 +113,10 @@ newFromTemplate nameOpt =
     resProps = [:];
     
     readProp k =
-        if k in resProps then
+        if (k is string) in resProps then
             resProps.[k];
         else    
-            vue = string (props#get(name));
+            vue = string (props#get(k as ~Object));
             v = 
                (va = like '^@([^@]+)@$' vue ();
                 if empty? va then

@@ -48,15 +48,13 @@ Join the discussion mailing list at:
 >
 >3. cd to the new directory
 >
->4. To create the directory layout invoke:
->   
->   >java -jar ybuilder.jar newProject
+>4. Load a project template from github.
 >
->4a. Alternatively load a project template from github.
+>   >java -jar ybuilder.jar new chrisichris/basic
 >
->   >java -jar ybuilder.jar new githubuser/templateproject
+>5. Enter the values you are promted for and the project will be created
 >
->5. edit `project.yeti` file to set the projects name, artifact id etc and add 
+>6. edit `project.yeti` file to set the projects name, artifact id etc and add 
 >   dependencies 
 >
 >    project.name := "first-test";
@@ -70,9 +68,9 @@ Join the discussion mailing list at:
 >    dependency "junit" "junit" "3.8.2" [TestScope()];
 >    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 >
->6. run `java -jar ybuilder.jar` to get help and see that project.yeti compiles
+>7. run `java -jar ybuilder.jar` to get help and see that project.yeti compiles
 >
->7. add a source file to the src/ directory 
+>8. add a source file to the src/ directory 
 >    
 >    file: src/foo.yeti:
 >    module foo.yeti;
@@ -80,15 +78,15 @@ Join the discussion mailing list at:
 >    println "Hello world!";
 >    0;
 >
->8. compile it
+>9. compile it
 >
 >   >java -jar ybuilder.jar compile
 >   
->9. jar it
+>10. jar it
 >
 >    >java -jar ybuilder.jar clean, jar
 >    
->10. find the result in target/first-test.jar
+>11. find the result in target/first-test.jar
     
 
 ## Usage
