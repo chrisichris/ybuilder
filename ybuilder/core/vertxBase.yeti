@@ -75,14 +75,16 @@ zipModule = target "zip-module"
                       [antFileset modsDir [Include (moduleName^"/**")]] p;
     done;
 
-{
-    tasks = { 
+yb = load ybuilder.core.base;
+
+yb with {
+    baseTargets = yb.baseTargets with { 
         zipModule,
         vertxCompile
     },
-    dir = {
+    dir = yb.dir with {
         vertxHome,
         modsDir,
     },
-    moduleName
+    vertxModuleName = moduleName,
 }   
