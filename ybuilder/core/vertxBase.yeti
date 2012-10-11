@@ -1,0 +1,88 @@
+/*
+ * Copyright 2012 Christian Essl
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+module ybuilder.core.vertxBase;
+
+load ybuilder.core.build;
+b = load ybuilder.core.projectBase;
+
+
+modsDir = "mods/";
+
+moduleName = "\(b.project.groupId).\(b.project.artifactId)-v\(b.project.version)"; 
+
+//check for vert.x
+
+import java.lang.System;
+vertxHome = System#getenv("VERTX_HOME");
+if not defined? vertxHome then
+    failWith "VERTX_HOME enviroment variable must be defined and point to the root of the vert.x installation"
+fi;
+
+//add all the vert.x dependencies
+push b.pathSet.lib (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
+
+//fn to copy module libs to module dir
+moduleLibsFn p=
+    (targetDir = modsDir^moduleName^"/lib/";
+    antTask "delete" ["dir":targetDir] [] p;
+    antTask "mkdir" ["dir":targetDir] [] p;
+    antTask "copy" ["todir":targetDir^"lib"]
+                   [antFileset (b.dir.libManaged^"compile/") [Include  "*.jar"]] p;
+    antTask "copy" ["todir":targetDir^"lib", 
+                    "flatten":"true"]
+                   [antFileset b.dir.lib [Include "**/*.jar"]] p);
+
+//add fn to retrieveDependencies target
+b.baseTargets.retrieveLibs.fn := do p: 
+    b.baseTargets.retrieveLibs.fn p;
+    moduleLibsFn  p;
+done;
+
+
+
+vertxCompile = target "vertxCompile" [
+            Depends b.livecycleTargets.compile,
+            Depends b.baseTargets.jarOnly,
+            Before b.livecycleTargets.preparePackage,
+            Description "Makes jar for the vertxModule and copies it in there"]
+    do p:
+        targetDir = modsDir^moduleName^"/";
+        antTask "mkdir" ["dir":targetDir] [] p;
+        antTask "copy" ["todir":targetDir^"lib"]
+                       [antFileset b.dir.target [Include "\(b.project.artifactId).jar"]] p;
+    done;    
+
+zipModule = target "zip-module"
+            [Depends b.livecycleTargets.preparePackage,
+             Description "bundles creates the vertx module and 
+                          copies it to target"]
+    do p:
+        antTask "zip" ["destfile":b.dir.target^moduleName]
+                      [antFileset modsDir [Include (moduleName^"/**")]] p;
+    done;
+
+{
+    tasks = { 
+        zipModule,
+        vertxCompile
+    },
+    dir = {
+        vertxHome,
+        modsDir,
+    },
+    moduleName
+}   

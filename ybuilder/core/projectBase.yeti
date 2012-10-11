@@ -1,0 +1,807 @@
+
+/*
+ * Copyright 2011 Christian Essl
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+module ybuilder.core.projectBase;
+
+import java.lang.Thread;
+import java.io.File;
+import org.apache.tools.ant.types: FileSet;
+
+
+
+load ybuilder.core.build;
+
+maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
+localRepository = { 
+    var layout = "default", 
+    var path = "${user.home}/.m2"
+};
+
+
+//general settings
+project = {
+    var name = "",
+    var version = "", 
+    var artifactId = "", 
+    var groupId = "",
+    var description = "",
+    var organization = "",
+    var homePage = "",
+    var license = "",
+    var licenseURL = "",
+};
+ 	
+
+//directories
+dir = {
+    libManaged = "lib/managed/",
+    lib = "lib/unmanaged/",	
+    target = "target/",
+    src = "src/",
+    test = "test/",
+    reports = "target/reports/",
+    doc = "target/doc/",
+    ybuilder = "lib/ybuilder/",
+    ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
+    targetClasses = "target/classes/",
+    targetTestClasses = "target/testclasses/",
+
+    webapp = "webapp/",
+    resources = "resources/",
+    resourcesTest = "test-resources/",
+    javadoc = "target/doc/javadoc/",
+    yetidoc = "target/doc/yetidoc/",
+
+    buildExtlib = "lib/ybuilder/extlib/",
+};
+
+libPathSet is pathPatternType = 
+    array [Fileset [dir.lib : [Include "**/*.jar"]]]; 
+
+//setPathes
+pathSet = {
+    lib = libPathSet,
+    compile is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/compile/**/*.jar"]],
+               Location dir.targetClasses,
+               Patterns \libPathSet],
+    
+    runtime is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/runtime/**/*.jar"]],
+               Patterns \libPathSet],
+
+    system is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/system/**/*.jar"]],
+               Patterns \libPathSet],
+
+    provided is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/provided/**/*.jar"]],
+               Patterns \libPathSet],
+
+    test is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/test/**/*.jar"]],
+               Location dir.targetTestClasses,
+               Patterns \libPathSet],
+};               
+
+
+//pathes
+buildExtPath is pathPatternType = 
+    array [Fileset [dir.buildExtlib : [Include "**/*.jar"]], 
+           Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
+           
+runtimePath is pathPatternType = 
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.runtime,
+           Patterns \pathSet.system];
+           
+compilePath is pathPatternType = 
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.provided,
+           Patterns \pathSet.system];
+           
+testPath is pathPatternType = 
+    array [Patterns \pathSet.compile,
+           Patterns \pathSet.provided,
+           Patterns \pathSet.system,
+           Patterns \pathSet.runtime,
+           Patterns \pathSet.test];
+           
+testRuntimePath is pathPatternType = 
+    array [Patterns \testPath];
+
+//jar properties
+
+jarManifest = [:] is hash<string,string>;
+jarAttributes is hash<string,string> = [:];
+                         
+jarFileset = [ dir.targetClasses : []];
+
+
+warAttributes = ["webxml": dir.webapp ^ "WEB-INF/web.xml"];
+
+warLibset = 
+     [dir.lib : [Include "**/*.jar"],
+      dir.libManaged : [Include "compile/**/*.jar",
+                        Include "runtime/**/*.jar"]];
+                       
+warClassesset =
+    [dir.targetClasses : [Include "**/*.*"]];
+
+warFileset = [dir.webapp : [Include "**/*.*"]];
+
+deployRepository = {
+    var url = undef_str,
+    var providerArtifactId = undef_str,
+    var providerVersion = "1.0-beta2",
+    params = (array []) is array<xmlelement>,
+    var uniqueVersion = false
+};
+
+
+//dependency management
+artifactDependencies = array[];					  
+remoteRepositories = array [];
+
+
+dependency groupId artifactId version opts = 
+   (v = {
+        groupId is string,
+        artifactId is string,
+        var version = version is string,
+        var type = "jar", 
+        var classifier = undef_str,
+        var scope = "compile",
+        var systemPath = undef_str,
+        exclusions = array [],
+        var optional = false,
+    };
+    var projectPath = "";
+    
+    for opts do opt: 
+        case opt of
+        Type t: v.type := t;
+        Classifier b: v.classifier := b;
+        TestScope (): v.scope := "test";
+        CompileScope (): v.scope := "compile";
+        ProvidedScope (): v.scope := "provided";
+        SystemScope (): v.scope := "system";
+        RuntimeScope (): v.scope := "runtime";
+        Optional b: v.optional := b;
+        SystemPath b: v.systemPath := b;
+        Project str: projectPath := str;
+        Exclusion {groupId, artifactId} : 
+            push v.exclusions {groupId is string, artifactId is string}; 
+        esac;
+    done;
+    
+    v2 = if (strLength projectPath) > 0 then
+        if not (strEnds? projectPath "/") then
+            projectPath := projectPath ^ "/";
+        fi;
+        Project {projectPath = projectPath, artifact = v};
+    else
+        Artifact v;
+    fi;
+    
+    push artifactDependencies v2;
+    ());
+
+remoteRepository idstr url = 
+    push remoteRepositories {
+            id = idstr is string, 
+            url is string, 
+            var layout = "default"
+        };
+
+remoteRepository "chrisichris-snapshots" "http://chrisichris.github.com/chrisis-maven-repo/snapshots";
+remoteRepository "chrisichris" "http://chrisichris.github.com/chrisis-maven-repo/releases";
+        
+exclusion groupId artifactId = 
+    Exclusion {groupId is string, artifactId is string};
+
+
+
+
+//helper functions
+                
+yetiMainTask args path fork dir project = 
+   if fork then
+        antTask "java" 
+                ["classname":"yeti.lang.compiler.yeti", 
+                 "fork":"true",
+                 "dir": dir,
+                 "failonerror":"true"]
+                ((el "classpath" [:] (antPathElements path) 
+                 :: (map do a: el "arg" ["value":a] [] done args))) 
+                project;
+    else
+        urls = 
+            (map do n: (file n)#toURL() done . map string)
+                (wrapArray (createAntPath path)#list());
+        
+        import java.lang.ClassLoader;
+        import java.net.URLClassLoader;
+        cl = new URLClassLoader(array urls, 
+                                ClassLoader#getSystemClassLoader()#getParent());
+        
+        oldCl = Thread#currentThread()#getContextClassLoader();
+        Thread#currentThread()#setContextClassLoader(cl);
+        try
+            m = cl#loadClass("yeti.lang.compiler.yeti")
+                          #getMethod("main",array [classOf java.lang.String[]]);
+            m#invoke((),
+                    (array [(array (args is list?<string>)) as ~String[]]
+                        ) as ~String[][])
+        finally 
+            Thread#currentThread()#setContextClassLoader(oldCl);
+        yrt;
+        ();
+    fi;
+    
+    
+yetidocTask targetDir fileSet project=     
+   (fs = map (strReplace File#separator "/" . string) 
+             (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    #getIncludedFiles());
+    args = ["-doc", "../"^targetDir] ++ fs;
+    yetiMainTask args testPath true dir.src project);
+    
+yeticTask targetDir srcDir includes sourceReaderCode path project =
+   (fileSet =
+        createAntFileSet srcDir includes;
+    files = map (strReplace File#separator "/" . string) 
+             (array (fileSet is ~FileSet)#getDirectoryScanner()
+                    #getIncludedFiles());
+    println String#format("%1$11s Compiling \(length files) files to \(targetDir)",array ["[yetic]"]);
+    
+    if not empty? files then
+        code = 
+"""import yeti.lang.compiler.CompileException;
+ret = try
+    eval = load yeti.lang.compiler.eval;
+    eval.compileYetiFiles [To '\(targetDir)'
+        \(sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
+        [SourceDir '\(srcDir)']
+        ['\(strJoin "','" files)'];
+        System#exit(0);
+catch CompileException ex: 
+    println ('Compile Error: \n' ^ ex#getMessage());
+    System#exit(1)
+yrt;
+ret 
+""";
+
+        args = ["-e", code];
+        yetiMainTask args path true "." project
+    fi);    
+
+    
+            
+    
+continuesDirs = array [dir.src];
+continues = 
+    target "continues" 
+           [Description "Continuesly runs the target given as argument"]
+           do p:
+                if empty? p.args then
+                    failWith "No command to run for continue please pvoide one as arg";
+                fi;
+                cmd = head (list p.args);
+                if not cmd in targets then
+                    failWith "[\(cmd)] is no target";
+                fi;
+                
+                tar = targets.[cmd];
+                args = tail (list p.args);
+                props = p.properties;
+                
+                println "---\nStarting continues target [\(cmd) \(args)]\n";
+
+                fsc dirs time =
+                   (var ntime = time;
+                    for (dirs is list<~File>) do dir:
+                        if dir#exists() then
+                            ntime := max ntime (dir#lastModified());
+                            if (dir is ~File)#isDirectory() then
+                                ntime := fsc (list(wrapArray(dir#listFiles()))) 
+                                             ntime;
+                            fi
+                        fi
+                    done;
+                    ntime);
+
+                var oldTime = System#currentTimeMillis();
+                scf = map file continuesDirs;
+
+                true loop 
+                   (nt = fsc scf oldTime;
+                    if nt > oldTime then
+                        println "---\nSource changed running [\(cmd) \(args)], (\(nt),\(oldTime))\n";
+                        oldTime := nt;
+                        
+                        
+                        runTarget tar [Args args,
+                                     Properties props]
+                    fi;
+                    Thread#sleep(1000));
+           done;
+    
+//lifecycle targets
+preClean = 
+    target "preClean" 
+           [Description "invoked befroe main clean"] 
+           \();
+           
+clean = 
+    target "clean" 
+           [Depends preClean,  
+                Description "cleans the build [\(dir.target)] dir"] 
+           (antTask "delete" ["dir" : dir.target] []);
+
+cleanLibs = 
+    target "cleanLibs" 
+           [Description "Cleans the retrieved dependencies in [\(dir.libManaged)] directory"] 
+           (antTask "delete" ["dir":dir.libManaged] []);
+cleanAll = 
+    target "cleanAll" 
+           [Dependencies[cleanLibs, clean], 
+            Description "Cleans the project and all the libs"] 
+           \();
+           
+           
+
+validate = target "validate" [] \();
+
+initializeBuild = 
+    target "initializeBuild" [Depends validate] \();
+    
+initialize = 
+    target "initialize" [Depends initializeBuild] 
+           (antTask "mkdir" ["dir": dir.target] []);
+
+generateResources = 
+    target "generateResources" [Depends initialize] \();
+processResources = 
+    target "processResources" [Depends generateResources] \();
+compile = 
+    target "compile" [Depends processResources,
+                      Description "Compiles the sources of the project"] \();
+processClasses = 
+    target "processClasses" [Depends compile] \();
+generateTestResources = 
+    target "generateTestResources" [Depends processClasses] \();
+processTestResources = 
+    target "processTestResources" 
+        [Depends generateTestResources] \();
+testCompile = 
+    target "testCompile" [Depends processTestResources] \();
+processTestClasses = 
+    target "processTestClasses" [Depends testCompile] \();
+test = 
+    target "test" [Depends processTestClasses,
+                   Description "runs the tests of the project"] \();
+preparePackage = 
+    target "preparePackage" [Depends cleanAll, Depends test,
+                             DoPreDependencies
+                               \(cp = copy artifactDependencies;
+                                clearArray artifactDependencies;
+                                for cp do a:
+                                    push artifactDependencies (case a of
+                                        Project p: Artifact p.artifact;
+                                        Artifact a: Artifact a;
+                                    esac)
+                                done)]
+                            \();
+                            
+preDoc = target "preDoc" [Depends initialize] \();
+
+doc = target "doc" [Depends preDoc,
+                    Description "Generates project documentation"] \();	
+
+//mvn things
+_mvnDependencyTags () =     
+   (ads = map do v:
+        case v of
+            Project x : none;
+            Artifact y : Some y;
+        esac
+    done artifactDependencies;
+    ad = catSome ads;
+    map do dep: 
+        atts = 
+           ["groupId" : dep.groupId,
+            "artifactId" : dep.artifactId,
+            "version" : dep.version,
+            "type" : dep.type,
+            "scope" : dep.scope,
+            "systemPath": dep.systemPath,
+            "optional" : string dep.optional];
+        if defined? dep.classifier then
+            atts.["classifier"] := dep.classifier
+        fi;
+        if defined? dep.systemPath then
+            atts.["systemPath"] := dep.systemPath;
+        fi;
+        
+        el (maven "dependency") atts 
+            (map do exc: 
+                 el (maven "exclusion") 
+                    ["groupId":exc.groupId, 
+                     "artifactId":exc.artifactId] [] 
+                 done dep.exclusions) 
+    done ad);
+
+
+writePom file project =
+    (antTask "delete" ["file":file] [] project;
+     antTask (maven "writepom")
+             ["pomRefId" : "pom", "file":file] [] project);
+    
+mvnInstall fileName project = 
+   (pomfile = dir.target ^ "pom.xml";
+    writePom pomfile project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "install") 
+            ["file": fileName]
+            [el "pom" ["refid":"installPom"] []]
+            project);
+
+mvnDeploy fileName project =
+   (if defined? deployRepository.providerArtifactId then
+        antTask (maven "install-provider") 
+                ["artifactId":deployRepository.providerArtifactId,
+                 "version":deployRepository.providerVersion] 
+                [] project;
+    fi;
+    pomfile = dir.target ^"pom.xml";
+    writePom pomfile project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "deploy") 
+            ["file":fileName, "uniqueVersion": string deployRepository.uniqueVersion]
+            (if defined? deployRepository.url then
+                [el "remoteRepository" ["url":deployRepository.url]
+                    (list deployRepository.params)]
+             else
+                args = list project.args;
+                if (length args) < 2 then
+                    []
+                else
+                    rep = head (tail args);
+                    [el "remoteRepository" ["url":rep] []]
+                fi
+             fi
+             ++ [el "pom" ["refid":"installPom"] []])
+             project);
+                 
+
+                 
+initPom = 
+    target "initPom" [Before initialize] 
+        do p:
+            //println project.groupId;
+            antTask (maven "pom") 
+                ["id" : "pom",
+                 "groupId" : project.groupId,
+                 "artifactId" : project.artifactId,
+                 "version" : project.version,
+                 "name" : project.name]
+                (if (strLength project.license) > 0 
+                     and (strLength project.licenseURL) > 0 then
+                    [el "license" ["name":project.license,
+                                  "url": project.licenseURL] []]
+                 else
+                    []
+                 fi 
+                 ++  _mvnDependencyTags ())
+                p;
+        done;
+        
+             
+pom =
+    target "pom" [Depends initPom, Description "Writes a pom.xml"] 
+           (writePom (dir.target ^ "pom.xml"));
+
+          
+addProjectDeps =
+    target "addProjectDeps" 
+           [Before initialize,
+            Description "add the pathes for dependend projects"]
+           do p:
+            sdeps = map do d:
+                        case d of
+                            Project p: Some p;
+                            Artifact _ : none;
+                        esac
+                    done artifactDependencies;
+            deps = catSome sdeps;
+            for deps do {projectPath, artifact}:
+                {scope} = artifact;
+                push libPathSet 
+                    (Fileset [(projectPath ^ dir.lib) : [Include "**/*.jar"]]); 
+                pushLoc pS =
+                    push pS (Location (projectPath ^ dir.targetClasses));
+                pushTD pS dpS =
+                    push pS 
+                         (Fileset [projectPath ^ dir.libManaged 
+                                  : [Include "/\(dpS)/**/*.jar"]]);
+                //scope dependencies according to maven:
+                //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
+                if scope == "compile" then
+                    pushLoc pathSet.compile;
+                    pushTD pathSet.compile "compile";
+                    pushTD pathSet.runtime "runtime";
+                elif scope == "provided" then
+                    pushLoc pathSet.provided;
+                    pushTD pathSet.provided "compile";
+                    pushTD pathSet.provided "provided";
+                    pushTD pathSet.provided "runtime";
+                elif scope == "runtime" then
+                    pushLoc pathSet.runtime;
+                    pushTD pathSet.runtime "compile";
+                    pushTD pathSet.runtime "runtime";
+                elif scope == "test" then
+                    pushLoc pathSet.test;
+                    pushTD pathSet.test "compile";
+                    pushTD pathSet.test "runtime";
+                fi;
+            done;
+           done;
+
+            
+prepareLibs = 
+    target "prepareLibs" 
+        [Before initialize, Depends addProjectDeps, 
+         Description "loads librararies in [\(dir.libManaged)]"] 
+        do project:
+            copyDeps scope = 
+               (antTask "mkdir" ["dir":"\(dir.libManaged)\(scope)"] [] project;
+                if not empty? artifactDependencies then
+                    antTask (maven "dependencies") 
+                            ["filesetId" : "dependenciesFS-"^scope, 
+                             "scopes":scope] 
+                            ([el (maven "localRepository") 
+                                ["layout":localRepository.layout, 
+                                    "path":localRepository.path] []] 
+                            
+                             ++ (map do rr: 
+                                    el (maven "remoteRepository") 
+                                       ["id":rr.id, "url":rr.url,
+                                        "layout":rr.layout] 
+                                       [] 
+                                   done remoteRepositories) 
+                             ++ (_mvnDependencyTags ()) ) 
+                            project;
+                            
+                    antTask "copy" ["todir":"\(dir.libManaged)\(scope)"] [
+                            el "fileset" ["refid":"dependenciesFS-" ^ scope][],
+                            el "mapper" ["type":"flatten"] []] project;
+                fi);
+            
+            if not (file dir.lib)#exists() then
+                antTask "mkdir" ["dir":dir.lib] [] project;
+            fi;
+            
+            scopes =["test","compile","system","provided","runtime"];
+            
+            if not (file dir.libManaged)#exists() then
+                for scopes copyDeps;
+            else
+                for scopes do scope:
+                    antTask "mkdir" ["dir":dir.libManaged ^ scope] [] project
+                done
+            fi;
+        done;
+ retrieveLibs =
+    target "retrieveLibs" [Description "loads libraries in [\(dir.libManaged)]"]
+        do p:
+            antTask "delete" ["dir":dir.libManaged] [] p;
+            _ =executeTarget prepareLibs [RunAlways true] p;
+        done;
+
+
+_mvnInstallOrDeploy fileName project = 
+   (if contains? ":install" project.args then
+        mvnInstall fileName project;
+    fi;
+    if contains? ":deploy" project.args then
+        mvnDeploy fileName project;
+    fi);
+
+    
+    
+jarOnly = 
+    target "jarOnly" 
+           [Description "Makes a jar file in dir.target"] 
+           do p:
+                destfl = dir.target ^ project.artifactId ^ ".jar";
+                antTask "jar" 
+                        (nh = copy jarAttributes;
+                         nh.["destfile"] := destfl;
+                         nh)
+                        (mapHash do dir ie:
+                            antFileset dir ie;
+                         done jarFileset
+                         ++ [el "manifest" [:] 
+                               (mapHash do k v: 
+                                 el "attribute" ["name":k, "value":v] [] 
+                               done jarManifest)] ) 
+                        p;
+           done;
+
+jar = 
+    target "jar" 
+           [Depends preparePackage, Depends initPom, Depends jarOnly,
+            Description "Makes a jar file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"] 
+    do p:
+        destfl = dir.target ^ project.artifactId ^ ".jar";
+        _mvnInstallOrDeploy destfl p;
+    done;
+    
+war = 
+    target "war" 
+           [Depends preparePackage, 
+            Description "Makes a war file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"]
+            do p:
+                destfl = dir.target ^ project.artifactId ^ ".war";
+                antTask "war" 
+                        (nh = copy warAttributes;
+                         nh.["destfile"] := destfl;
+                         nh)
+                        ((mapHash do dir ie:
+                                el "lib" ["dir":dir] (antPatterns ie);
+                          done warLibset)
+                         ++ (mapHash do dir ie:
+                                el "classes" ["dir" :dir] (antPatterns ie);
+                          done warClassesset)
+                         ++ (mapHash do dir ie:
+                                antFileset dir ie;
+                          done warFileset))
+                        p;
+                _mvnInstallOrDeploy destfl p;
+            done;
+
+            
+jetty =
+    target "jetty" [Depends initialize,
+                    Description "runs jetty - note the jetty libs must be on the ybuilder path"] 
+    do project:
+        import java.lang.System;
+        import org.eclipse.jetty.server:Server; 
+        import org.eclipse.jetty.server.nio:BlockingChannelConnector;
+        import org.eclipse.jetty.webapp:WebAppContext;
+
+        server = new Server(8080);
+        if (strIndexOf (strLower (System#getProperty("os.name"))) 
+            "win" 0) > -1 then
+            blockingConnector = new BlockingChannelConnector();
+            blockingConnector#setPort(8080);
+            connectors = array [blockingConnector];
+            server#setConnectors(connectors);
+        fi;
+        
+        context = new WebAppContext();
+        context#setDescriptor((warAttributes.["webxml"]));
+        context#setResourceBase(dir.webapp);
+        context#setContextPath("/");
+        context#setParentLoaderPriority(false);
+        
+        ap = (createAntPath runtimePath)#list();
+        path = if not defined? ap then 
+            ""
+        else 
+            (strJoin ", " . map string . wrapArray) (ap);
+        fi;
+        context#setExtraClasspath(path);
+        
+        server#setHandler(context);
+        server#start();
+        server#join();
+    done;
+
+//path targets    
+initDirs = 
+    target "initDirs" [Before initialize,Depends prepareLibs] 
+            do project:
+                antTask "mkdir" ["dir":dir.targetClasses] [] project;
+                antTask "mkdir" ["dir":dir.targetTestClasses][] project;
+            done;
+    
+initBuildPathes = 
+    target "initBuildPathes" [Before initializeBuild,Depends prepareLibs] 
+          (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
+
+
+for [clean, retrieveLibs, compile, test, jar, war, 
+     doc, pom, jetty, cleanLibs, cleanAll, continues]
+    (push targetsInHelp);
+        
+
+{
+    project,
+    
+    dir,
+    pathSet,
+    pathes = {
+        buildExt = buildExtPath,
+        runtime = runtimePath,
+        compile = compilePath,
+        test = testPath,
+        testRuntime = testRuntimePath,
+    },
+
+    livecycleTargets = {
+        preClean, 
+        clean, 
+        cleanAll, 
+        validate, 
+        initializeBuild, 
+        initialize, 
+        generateResources, 
+        processResources,
+        compile, 
+        processClasses, 
+        generateTestResources, 
+        processTestResources, 
+        testCompile, 
+        processTestClasses, 
+        test, 
+        preparePackage,
+        preDoc, 
+        doc,  
+    },	
+
+    taskProps = {
+        jarManifest,
+        jarAttributes,
+        warAttributes,
+        warLibset,
+        warClassesset,
+        warFileset,
+    },
+    
+    mvnInstall, 
+    mvnDeploy, 
+    deployRepository,    
+    mvnInstallOrDeploy = _mvnInstallOrDeploy,
+    
+    yetiMainTask,
+    yeticTask,
+    yetidocTask,
+
+    artifactDependencies, 
+    localRepository, 
+    remoteRepositories, 
+    dependency, 
+    exclusion,
+    remoteRepository,
+
+    
+    baseTargets = {
+        jetty,
+        initBuildPathes,
+        prepareLibs,
+        retrieveLibs, 
+        cleanLibs, 
+        initDirs,
+        war,
+        jar,
+        jarOnly,
+        pom,
+        initPom,
+    }
+}
