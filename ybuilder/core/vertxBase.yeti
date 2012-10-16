@@ -62,7 +62,8 @@ vertxCompile = target "vertxCompile" [
     do p:
         targetDir = modsDir^moduleName^"/";
         antTask "mkdir" ["dir":targetDir] [] p;
-        antTask "copy" ["todir":targetDir^"lib"]
+        antTask "copy" ["todir":targetDir^"lib",
+                        "overwrite":"true"]
                        [antFileset b.dir.target [Include "\(b.project.artifactId).jar"]] p;
     done;    
 

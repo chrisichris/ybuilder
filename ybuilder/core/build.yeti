@@ -57,7 +57,6 @@ typedef targetType = {
     var preDependenciesFn is projectType -> (),
     var description is string,
     var fn is projectType -> (), 
-    var postFn is projectType -> ()
 };
 
 
@@ -132,7 +131,6 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
         var description = "",
         var preDependenciesFn = \(),
         var fn = fn1, 
-        var postFn = \()
     } is targetType;
     
     for opts do opt: 
@@ -258,7 +256,7 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
         done;
         try
             //println "Exectuing target \(target.name)";
-            target.fn project; target.postFn project;
+            target.fn project;
         finally
             project.args := oldArgs;
         yrt
