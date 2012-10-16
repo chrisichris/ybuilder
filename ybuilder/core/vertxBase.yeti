@@ -18,6 +18,7 @@ module ybuilder.core.vertxBase;
 
 load ybuilder.core.build;
 b = load ybuilder.core.projectBase;
+bu = load ybuilder.core.build;
 
 
 modsDir = "mods/";
@@ -47,11 +48,7 @@ moduleLibsFn p=
                    [antFileset b.dir.lib [Include "**/*.jar"]] p);
 
 //add fn to retrieveDependencies target
-b.baseTargets.retrieveLibs.fn := do p: 
-    b.baseTargets.retrieveLibs.fn p;
-    moduleLibsFn  p;
-done;
-
+bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
 
 
 vertxCompile = target "vertxCompile" [

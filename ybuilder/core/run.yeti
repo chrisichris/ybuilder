@@ -78,7 +78,7 @@ evaluate argv =
                                     key = strSlice str 1 cut;
                                     a.properties.[key] := value;
                                 else
-                                    a.properties.[strRight str 1] := "";
+                                    push a.params str
                                 fi;
                             elif (strLength str) > 0 then
                                 push a.params str
@@ -94,22 +94,57 @@ evaluate argv =
                 done [{properties = [:], params = array []}] argv;
                 
             nargs = (reverse . filter ((not) . empty? . (.params))) nargs;
+
+            nargs = nargs 
+              |> map do {properties, params}:
+                    r = fold do rs p:
+                        if p == "-x" then
+                            rs with {ex = true}
+                        elif rs.ex then
+                            rs with {ex = false,
+                                     excludes = p :: rs.excludes};
+                        else
+                            rs with {names = p :: rs.names};
+                        fi
+                        done {ex = false, names = [], excludes = []}
+                        params;
+                    {properties,
+                     names = r.names,
+                     excludes = r.excludes}
+                 done;
             
             //println nargs;
             //for (keys targets) println;
             try 
                for nargs do ps:
-                    ns = list ps.params;
-                    n = head ns;
-                    if not n in targets then
+
+                    ns = list ps.names;
+                    var props = [];
+                    n = if (head ns) == "-x" then
+                            if not empty? (tail ns) then
+                                x = head (tail ns);
+                                props := [ExcludeByName x];
+                                x;
+                            else
+                                ""
+                            fi
+                        else
+                            (head ns)
+                        fi;
+                    if n == "" then
+                        () 
+                    elif not n in targets then
                         println "\n--target: [\(n)] is no target!\n";
                         printSimilarTargets n;
                         throw new YbuilderAntException("\(n) is no target",());
                     else
                         t = targets.[n];
                         println "--target: \(n)";
-                        runTarget t [Args (tail ns),
-                                     Properties ps.properties];
+                        if not empty? ps.excludes then
+                            println "  -x \(ps.excludes)";
+                        fi;
+                        runTarget t ([Args (tail ns), Properties ps.properties] 
+                                     ++ (map ExcludeByName ps.excludes));
                     fi 
                 done;
                 "Build successful";

@@ -147,7 +147,13 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
     targets.[t.name] := t;
     t);
 
-    
+doAfterTarget target fn =
+    (oFn = (target is targetType).fn;
+     target.fn := do p: 
+        oFn p;
+        fn p;
+     done);
+
 targetToString t = (
     deps = list t.depends;
     "---\n\(t.name)"
@@ -481,6 +487,7 @@ cmdYbuilderVersion =
     help,
     targets,
     target,
+    doAfterTarget,
     runTarget,
     executeTarget,
     createProject,
