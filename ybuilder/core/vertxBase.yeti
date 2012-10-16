@@ -65,7 +65,7 @@ vertxCompile = target "vertx:compile" [
                        [antFileset b.dir.target [Include "\(b.project.artifactId).jar"]] p;
     done;    
 
-zipModule = target "vertx:zipModule"
+vertxZipModule = target "vertx:zipModule"
             [Depends b.livecycleTargets.preparePackage,
              Description "bundles creates the vertx module and 
                           copies it to target"]
@@ -81,12 +81,63 @@ zipModule = target "vertx:zipModule"
                       [antFileset modsDir [Include (moduleName^"/**")]] p;
     done;
 
+
+vertxTask args p = 
+   (jythonHome =System#getenv("JYTHON_HOME");  
+   jrubyHome =System#getenv("JRUBY_HOME");  
+  
+   
+   cpP is pathPatternType = array
+        [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]],
+         Location (vertxHome^"/conf")];
+   if defined? jythonHome then
+       push cpP (Location (jythonHome^"/jython.jar"));
+   fi;
+   if defined? jrubyHome then
+       push cpP (Location (jrubyHome^"/lib/jruby.jar"))
+   fi;
+   sysProps =
+    ["jruby.home" : if defined? jrubyHome then 
+                       jrubyHome 
+                    else
+                       ""
+                    fi,
+     "jython.home": if defined? jythonHome then
+                        jythonHome
+                    else
+                        ""
+                    fi,
+     "java.util.logging.config.file" :
+          vertxHome^"/conf/logging.properties"];
+
+   els = antPathElements cpP; 
+   antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
+                   "fork":"true",
+                   "failonerror":"true"]
+                   ([el "classpath" [:] (antPathElements cpP)]
+                    ++ (map do a: el "arg" ["value":a] [] done args)
+                    ++ (mapHash do k v:
+                            el "sysproperty" ["key" : k, "value":v] []
+                        done sysProps)) 
+                    p);
+
+vertxRun = target "vertx:run" 
+                [Description "runs the current vertx module"]
+                (vertxTask ["runmod", moduleName]);
+
+vertxTest = target "vertx:test"
+                [Before b.livecycleTargets.test,
+                 Description "runs the vertx test module"]
+                (vertxTask ["runmod", "test-v0"]);
+
 yb = load ybuilder.core.base;
 
 yb with {
     baseTargets = yb.baseTargets with { 
-        zipModule,
-        vertxCompile
+        vertxZipModule,
+        vertxCompile,
+        vertxRun,
+        vertxTest,
     },
     dir = yb.dir with {
         vertxHome,
@@ -94,4 +145,5 @@ yb with {
     },
     vertxBaseModuleName = moduleName,
     vertxModuleName = fullModuleName,
+    vertxTask,
 }   
