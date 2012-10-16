@@ -23,7 +23,8 @@ bu = load ybuilder.core.build;
 
 modsDir = "mods/";
 
-moduleName = "\(b.project.groupId).\(b.project.artifactId)-v\(b.project.version)"; 
+moduleName = "\(b.project.groupId).\(b.project.artifactId)-v0"; 
+fullModuleName = "\(b.project.groupId).\(b.project.artifactId)-v\(b.project.version)"; 
 
 //check for vert.x
 
@@ -41,9 +42,9 @@ moduleLibsFn p=
     (targetDir = modsDir^moduleName^"/lib/";
     antTask "delete" ["dir":targetDir] [] p;
     antTask "mkdir" ["dir":targetDir] [] p;
-    antTask "copy" ["todir":targetDir^"lib"]
+    antTask "copy" ["todir":targetDir]
                    [antFileset (b.dir.libManaged^"compile/") [Include  "*.jar"]] p;
-    antTask "copy" ["todir":targetDir^"lib", 
+    antTask "copy" ["todir":targetDir, 
                     "flatten":"true"]
                    [antFileset b.dir.lib [Include "**/*.jar"]] p);
 
@@ -51,7 +52,7 @@ moduleLibsFn p=
 bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
 
 
-vertxCompile = target "vertxCompile" [
+vertxCompile = target "vertx:compile" [
             Depends b.livecycleTargets.compile,
             Depends b.baseTargets.jarOnly,
             Before b.livecycleTargets.preparePackage,
@@ -64,12 +65,19 @@ vertxCompile = target "vertxCompile" [
                        [antFileset b.dir.target [Include "\(b.project.artifactId).jar"]] p;
     done;    
 
-zipModule = target "zip-module"
+zipModule = target "vertx:zipModule"
             [Depends b.livecycleTargets.preparePackage,
              Description "bundles creates the vertx module and 
                           copies it to target"]
     do p:
-        antTask "zip" ["destfile":b.dir.target^moduleName]
+        tDir = b.dir.target^modsDir^fullModuleName;
+        antTask "delete" ["dir":tDir] [] p;
+        antTask "mkdir" ["dir":tDir] [] p;
+
+        antTask "copy" ["todir":tDir] 
+                       [antFileset (modsDir^moduleName) []] p;
+
+        antTask "zip" ["destfile":b.dir.target^fullModuleName]
                       [antFileset modsDir [Include (moduleName^"/**")]] p;
     done;
 
@@ -84,5 +92,6 @@ yb with {
         vertxHome,
         modsDir,
     },
-    vertxModuleName = moduleName,
+    vertxBaseModuleName = moduleName,
+    vertxModuleName = fullModuleName,
 }   
