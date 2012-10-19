@@ -55,7 +55,7 @@ bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
 vertxCompile = target "vertx:compile" [
             Depends b.livecycleTargets.compile,
             Depends b.baseTargets.jarOnly,
-            Before b.livecycleTargets.preparePackage,
+            Before b.livecycleTargets.testCompile,
             Description "Makes jar for the vertxModule and copies it in there"]
     do p:
         targetDir = modsDir^moduleName^"/";
