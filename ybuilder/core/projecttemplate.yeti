@@ -99,7 +99,7 @@ newFromTemplate nameOpt =
 
     
     //properties to replace
-    props = readPropertiesList (new File(sourceDir, "ybtemplate.properties"));
+    props = readProperties (new File(sourceDir, "ybtemplate.properties"));
     {names, values} = if not "name" in props.values then
         {names = "name" :: props.names,
          values = (props.values.["name"] :=

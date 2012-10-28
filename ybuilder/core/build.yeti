@@ -466,7 +466,7 @@ cmdYbuilderVersion =
         [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion)"] []);
 
-readPropertiesList propsFile =        
+readProperties propsFile =        
    (import java.util:Properties,
                     LinkedHashSet,
                     Enumeration,
@@ -510,13 +510,8 @@ readPropertiesList propsFile =
     fi);
 
 {
-    readPropertiesList,
-/*    readProperties file =
-        (l = readPropertiesList file;
-        ret = [:];
-        for l do {k,v} = ret.[k] := v;
-        ret),
-*/    assert,
+    readProperties,
+    assert,
     ybuilderVersion,
     cmdYbuilderVersion,
     basedir,
