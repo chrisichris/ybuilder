@@ -25,6 +25,8 @@ import java.util:Properties,
 base = load ybuilder.core.base;
 load ybuilder.core.build;
 
+var properties = [:]
+
 class LinkedProperties extends Properties
     keysSet = new LinkedHashSet(),
     
@@ -43,7 +45,7 @@ end;
 
 newFromTemplate nameOpt =
    (project = createProject();
-    println "-----------------------------\nybuilder project template download\n";
+    println "--------------------------\nybuilder project template download\n";
     println "installation happens in current directory";
 
     name = case nameOpt of
@@ -173,10 +175,12 @@ newFromTemplate nameOpt =
     antTask "delete" ["file":"ybtemplate.properties", 
                       "failonerror":"false",
                       "deleteonexit":"true"][] project;
-    
+    properties := resProps;
+
     println "\nInstallation of template \(url) was succesful";
     );
 
  {
-    newFromTemplate
+    newFromTemplate,
+    properties
  }
