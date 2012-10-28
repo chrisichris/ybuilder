@@ -222,7 +222,7 @@ elif (not empty? args) and ((head args) == "new") then
     done;
 
     //run the newproject file
-    if (new File("newproject.yeti"))#exits() then
+    if (new File("newproject.yeti"))#exists() then
         antFiles = 
             ((load ybuilder.core.build).createAntFileSet) "."
                 [Include "\(dir.ybuilder)extlib/*.jar", 
@@ -231,13 +231,13 @@ elif (not empty? args) and ((head args) == "new") then
         _withBuildClassLoader "" antFiles do ctxtLoader:
             m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
                           #getMethod("main",array [classOf java.lang.String[]]);
-            m#invoke((),
+            _ = m#invoke((),
                     (array 
                         [(array ("newproject.yeti" :: args)) as ~String[]]
                     ) as ~String[][]);
         done;
         //delete the file
-        build.antTask "delete" ["file":"newproject.yeti"] [:] project;
+        build.antTask "delete" ["file":"newproject.yeti"] [] project;
     fi;
 
     println "new project successful";

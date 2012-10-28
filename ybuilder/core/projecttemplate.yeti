@@ -25,21 +25,6 @@ import java.util:Properties,
 base = load ybuilder.core.base;
 load ybuilder.core.build;
 
-var properties = [:]
-
-class LinkedProperties extends Properties
-    keysSet = new LinkedHashSet(),
-    
-    Enumeration keys()
-        Collections#enumeration(keysSet),
-        
-    Object put(Object key, Object value)
-        _ = keysSet#add(key);
-        super#put(key,value),
-        
-    Set stringPropertyNames() 
-        keysSet
-end;
 
 //cloning a default project
 
@@ -114,28 +99,23 @@ newFromTemplate nameOpt =
 
     
     //properties to replace
-    props = new LinkedProperties ();
-    (propsFile = new File(sourceDir, "ybtemplate.properties");
-     if propsFile#exists() then
-        r = new FileReader(propsFile);
-        try 
-            props#load(r);
-        finally
-            r#close();
-        yrt;
-     fi);
-    
-    println "\nPlease enter the replacement values:\n";
-    
-    //treat the 'name' property special in that to set to current dir name
-    props#put("name",(new File('.'))#getCanonicalFile()#getName());
+    props = readPropertiesList (new File(sourceDir, "ybtemplate.properties"));
+    {names, values} = if not "name" in props.values then
+        {names = "name" :: props.names,
+         values = (props.values.["name"] :=
+                    string ((file ".")#getCanonicalFile()#getName());
+                  props.values)}
+    else
+        props
+    fi;
+
     resProps = [:];
     
     readProp k =
         if (k is string) in resProps then
             resProps.[k];
         else    
-            vue = string (props#get(k as ~Object));
+            vue = values.[k];
             v = 
                (va = like '^@([^@]+)@$' vue ();
                 if empty? va then
@@ -155,9 +135,7 @@ newFromTemplate nameOpt =
             resProps.[k] := ov;
             ov;
         fi;
-        
-    enum = props#keys();
-    (enum#hasMoreElements())loop (_ = readProp (string enum#nextElement()));
+    for names (\() . readProp);    
     
     
     antTask "copy" ["todir":".", "verbose":"true","includeEmptyDirs":"true"] [
@@ -175,12 +153,21 @@ newFromTemplate nameOpt =
     antTask "delete" ["file":"ybtemplate.properties", 
                       "failonerror":"false",
                       "deleteonexit":"true"][] project;
-    properties := resProps;
-
-    println "\nInstallation of template \(url) was succesful";
+    
+    //write the properties
+    import java.io.FileWriter;
+    wr = new FileWriter("ybtr.properties");
+    propsObj = new Properties();
+    forHash resProps do k v:
+        _ = propsObj#put(k as ~Object, v as ~Object);
+    done;
+    try
+        propsObj#store(wr, "");
+    finally
+        wr#close();
+    yrt;
     );
 
  {
     newFromTemplate,
-    properties
  }

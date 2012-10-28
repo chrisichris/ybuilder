@@ -466,10 +466,57 @@ cmdYbuilderVersion =
         [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
         (antTask "echo" ["message":"ybuilder version \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion)"] []);
 
-        
-    
+readPropertiesList propsFile =        
+   (import java.util:Properties,
+                    LinkedHashSet,
+                    Enumeration,
+                    Collections,
+                    Set;
+    import java.io.FileReader;
+
+    if not (propsFile is ~File)#exists() then
+        {names = [], values = [:]};
+    else
+        class LinkedProperties extends Properties
+            keysSet = new LinkedHashSet(),
+            
+            Enumeration keys()
+                Collections#enumeration(keysSet),
+                
+            Object put(Object key, Object value)
+                _ = keysSet#add(key);
+                super#put(key,value),
+                
+            Set stringPropertyNames() 
+                keysSet
+        end;
+        props = new LinkedProperties();
+        r = new FileReader(propsFile);
+        try
+            props#load(r);
+        finally
+            r#close();
+        yrt;
+        nas = array [];
+        vas = [:];
+        enum = props#keys();
+        (enum#hasMoreElements()) loop (
+            k = string enum#nextElement();
+            v = string props#get(k);
+            push nas k;
+            vas.[k] := v);
+        {names = list nas,
+         values = vas};
+    fi);
+
 {
-    assert,
+    readPropertiesList,
+/*    readProperties file =
+        (l = readPropertiesList file;
+        ret = [:];
+        for l do {k,v} = ret.[k] := v;
+        ret),
+*/    assert,
     ybuilderVersion,
     cmdYbuilderVersion,
     basedir,
