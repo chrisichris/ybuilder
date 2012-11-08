@@ -27,7 +27,7 @@ do opts:
         UseVertxHomeOnPath b: useVertxHomeOnPath := b;
         esac;
     done;
-
+    
     modsDir = "mods/";
 
     moduleName = "\(b.project.groupId).\(b.project.artifactId)-v0"; 
@@ -37,11 +37,15 @@ do opts:
 
     import java.lang.System;
     vertxHome = System#getenv("VERTX_HOME");
+    if useVertxHomeOnPath and not defined? vertxHome then
+        failWith "Vertxhome is set to be on path but is not defined"
+    fi;
+
     if not defined? vertxHome then
         println "Warning: VERTX_HOME enviroment variable is not defined some tasks will not work"
     fi;
 
-    if useVertxHomeOnPath and defined? vertxHome then
+    if useVertxHomeOnPath then
         //add all the vert.x dependencies
         push b.pathSet.lib (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
@@ -95,31 +99,27 @@ do opts:
     vertxTask args p = 
        (jythonHome =System#getenv("JYTHON_HOME");  
        jrubyHome =System#getenv("JRUBY_HOME");  
-      
        
-       cpP is pathPatternType = array
-            [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]],
-             Location (vertxHome^"/conf")];
+       sysProps = [:]; 
+       cpP is pathPatternType = copy b.pathes.testRuntime; 
+        
+       if useVertxHomeOnPath then
+           push cpP (Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]);
+       fi;
+       if defined? vertxHome then
+           push cpP (Location (vertxHome^"/conf"));
+           sysProps.["java.util.logging.config.file"] 
+                := vertxHome^"/conf/logging.properties";
+       fi;
        if defined? jythonHome then
            push cpP (Location (jythonHome^"/jython.jar"));
+           sysProps.["jython.home"] := jythonHome;
        fi;
        if defined? jrubyHome then
-           push cpP (Location (jrubyHome^"/lib/jruby.jar"))
+           push cpP (Location (jrubyHome^"/lib/jruby.jar"));
+           sysProps.["jruby.home"] := jrubyHome;
        fi;
-       sysProps =
-        ["jruby.home" : if defined? jrubyHome then 
-                           jrubyHome 
-                        else
-                           ""
-                        fi,
-         "jython.home": if defined? jythonHome then
-                            jythonHome
-                        else
-                            ""
-                        fi,
-         "java.util.logging.config.file" :
-              vertxHome^"/conf/logging.properties"];
-
+       
        els = antPathElements cpP; 
        antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
                        "fork":"true",
