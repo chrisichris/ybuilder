@@ -95,21 +95,22 @@ do opts:
                           [antFileset modsDir [Include (moduleName^"/**")]] p;
         done;
 
-
+    
     vertxTask args p = 
        (jythonHome =System#getenv("JYTHON_HOME");  
        jrubyHome =System#getenv("JRUBY_HOME");  
        
        sysProps = [:]; 
-       cpP is pathPatternType = copy b.pathes.testRuntime; 
-        
-       if useVertxHomeOnPath then
-           push cpP (Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]);
+       cpP is pathPatternType = if useVertxHomeOnPath then
+           array [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]];
+       else
+           array [Patterns \b.pathSet.provided];
        fi;
+
        if defined? vertxHome then
-           push cpP (Location (vertxHome^"/conf"));
            sysProps.["java.util.logging.config.file"] 
                 := vertxHome^"/conf/logging.properties";
+           push cpP (Location (vertxHome^"/conf"));
        fi;
        if defined? jythonHome then
            push cpP (Location (jythonHome^"/jython.jar"));
@@ -119,7 +120,8 @@ do opts:
            push cpP (Location (jrubyHome^"/lib/jruby.jar"));
            sysProps.["jruby.home"] := jrubyHome;
        fi;
-       
+      
+        
        els = antPathElements cpP; 
        antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
                        "fork":"true",
@@ -131,14 +133,61 @@ do opts:
                             done sysProps)) 
                         p);
 
+    vertxRunPath () = 
+        (cp = array [Patterns \b.pathSet.compile,
+                     Location (b.dir.targetClasses)];
+        path = createAntPath cp;
+        strJoin ":" (wrapArray path#list()));
+    
+    vertxTestPath () =
+        (cp = array [Patterns \b.pathSet.compile, 
+                     Patterns \b.pathSet.test,
+                     Location (b.dir.targetClasses),
+                     Location (b.dir.targetTestClasses)];
+        path = createAntPath cp;
+        strJoin ":" (wrapArray path#list()));
+        
+
     vertxRun = target "vertx:run" 
                     [Description "runs the current vertx module"]
-                    (vertxTask ["runmod", moduleName]);
+        do p:
+            mn = if empty? p.args then
+                moduleName
+            else
+                head p.args
+            fi;
+            vertxTask ["runmod", mn] p;
+        done;
 
     vertxTest = target "vertx:test"
                     [Before b.livecycleTargets.test,
                      Description "runs the vertx test module"]
-                    (vertxTask ["runmod", "test-v0"]);
+        do p:
+            mn = if empty? p.args then
+                "text-v0"
+            else
+                head p.args
+            fi;
+            vertxTask ["runmod", mn] p;
+        done;
+    
+    vertxRunVerticle = target "vertx:runVerticle"
+        [Description "runs the current verx verticle"]
+        do p:
+            vn = if empty? p.args then
+                "server.yeti"
+            else
+                head p.args
+            fi;
+            dir = if length p.args < 2 then
+                "."
+            else
+                head (tail p.args)
+            fi;
+            cp = dir ^ ":" ^ (vertxRunPath ());
+            vertxTask ["run", vn, "-cp", cp] p
+        done;
+
 
     yb = load ybuilder.core.base;
 
