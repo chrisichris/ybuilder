@@ -73,7 +73,7 @@ copyResources =
                 fi;
                 if (file b.dir.src)#exists() then
                     antTask "copy" ["todir":b.dir.targetClasses]
-                        [antFileset b.dir.src resourcesPatterns]
+                        [antFilesetElement b.dir.src resourcesPatterns]
                         p
                 fi;
            done;
@@ -90,7 +90,7 @@ copyTestResources =
                 fi;
                 if (file b.dir.test)#exists() then
                     antTask "copy" ["todir":b.dir.targetTestClasses]
-                        [antFileset b.dir.test resourcesPatterns]
+                        [antFilesetElement b.dir.test resourcesPatterns]
                         p
                 fi;
            done;
@@ -170,8 +170,7 @@ yetidoc =
             if (file b.dir.test)#exists() then
                 antTask "delete" ["dir":b.dir.yetidoc] [] p;
                 antTask "mkdir" ["dir":b.dir.yetidoc] [] p;
-                fileSet = 
-                    createAntFileSet b.dir.src [Include "**/*.yeti", 
+                fileSet = listFiles b.dir.src [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
                 b.yetidocTask b.dir.yetidoc fileSet p;
             fi;
@@ -213,8 +212,7 @@ yebspecTarget =
         yrt;
         modules = if empty? p.args then
             if (file b.dir.test)#exists() and hasSpec then
-                map string ((createAntFileSet b.dir.test [Include "**/*Spec.yeti"])
-                    #getDirectoryScanner()#getIncludedFiles());
+                listFiles b.dir.test [Include "**/*Spec.yeti"];
             else
                 []
             fi    
@@ -255,8 +253,7 @@ simpleTestTarget =
     target "simpleTest" [Before b.livecycleTargets.test] do p:
         modules = if empty? p.args then
             if (file b.dir.test)#exists() then
-                map string ((createAntFileSet b.dir.test [Include "**/*STest.yeti"])
-                    #getDirectoryScanner()#getIncludedFiles());
+                listFiles b.dir.test [Include "**/*STest.yeti"];
             else
                 []
             fi    

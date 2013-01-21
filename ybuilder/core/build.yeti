@@ -62,13 +62,13 @@ typedef targetType = {
 
 typedef filePatternType = list?<Include string
                                 | Exclude string 
-                                | Patterns (() -> filePatternType) >;
+                                | Patterns ( () -> filePatternType) >;
                                 
 typedef pathPatternType = list?<Fileset hash<string, filePatternType>
                                 | Dirset hash<string, filePatternType> 
                                 | Location string 
                                 | Path string 
-                                | Patterns ( () -> pathPatternType) >;
+                                | Patterns ( () -> pathPatternType)>;
     
 
 class AntBuilderLocator extends Locator
@@ -362,19 +362,19 @@ antTask name atts subelements project =
     (_ = antTaskWithElement (el name atts subelements) project;
      ());
 
-antPatterns patts = 
+antInExcludeElements patts = 
     concatMap do pat: 
             case pat of
             Include name: [el "include" ["name":name][]];
             Exclude name: [el "exclude" ["name":name][]];
-            Patterns pa: antPatterns (pa ());
+            Patterns pa: antInExcludeElements (pa ());
             esac 
         done patts; 
 
-antFileset dir patts =  
-    el "fileset" ["dir" : dir] (antPatterns patts);
-antDirset dir patts =  
-    el "dirset" ["dir" : dir] (antPatterns patts);
+antFilesetElement dir patts =  
+    el "fileset" ["dir" : dir] (antInExcludeElements patts);
+antDirsetElement dir patts =  
+    el "dirset" ["dir" : dir] (antInExcludeElements patts);
 
 antPathElements patts = 
    (filesets = array [];
@@ -385,11 +385,11 @@ antPathElements patts =
                 case pat of
                 Fileset h: 
                     forHash h do k v: 
-                        push filesets (antFileset k v) 
+                        push filesets (antFilesetElement k v) 
                     done;
                 Dirset h: 
                     forHash h do k v:
-                        push dirsets (antDirset k v)
+                        push dirsets (antDirsetElement k v)
                     done;
                 Path str : push root (el "pathelement" ["path" : "${\(str)}"] []);
                 Location str: push root (el "pathelement" ["location" : str] []);
@@ -406,7 +406,9 @@ _createAntPath project patts	=
     (project.antProject#getReference(name)) unsafely_as ~Path);
 
 createAntPath patts = _createAntPath (createProject ()) patts;
-    
+
+listPath patts = map string (wrapArray (createAntPath patts)#list());   
+
 createAntClassLoader patts opts =
    (var parentClassLoader = ClassLoader#getSystemClassLoader()#getParent();
     var parentFirst = true;
@@ -421,41 +423,25 @@ createAntClassLoader patts opts =
     new AntClassLoader(parentClassLoader, proj.antProject,path,parentFirst));
     
     
-createAntFileSet dir patts	= 
+listFiles dir patts	= 
    (name="foox";
     project = createProject();
-    antTask "fileset" ["dir":dir, "id" : name] (antPatterns patts) project;
-    ((project.antProject#getReference(name)) unsafely_as ~FileSet));
+    antTask "fileset" ["dir":dir, "id" : name] (antInExcludeElements patts) 
+        project;
+    r = ((project.antProject#getReference(name)) unsafely_as ~FileSet)
+        #getDirectoryScanner()#getIncludedFiles();
+    map ((strReplace File#separator "/") . string) (wrapArray r));
 
-createAntDirSet dir patts	= 
+listDirs dir patts	= 
    (name="foox";
     project = createProject();
-    antTask "dirset" ["dir":dir, "id" : name] (antPatterns patts) project;
-    ((project.antProject#getReference(name)) unsafely_as ~DirSet));
+    antTask "dirset" ["dir":dir, "id" : name] (antInExcludeElements patts)
+        project;
+    r = ((project.antProject#getReference(name)) unsafely_as ~DirSet)
+        #getDirectoryScanner()#getIncludedFiles();
+    map ((strReplace File#separator "/") . string) (wrapArray r));
     
     
-getAntPathFromProject name project = 
-   (var ref = (project is projectType).antProject#getReference(name is string);
-    if not defined? ref then 
-        () unsafely_as ~Path;
-    elif not ref instanceof Path then 
-        failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
-    else 
-        ref unsafely_as ~Path 
-    fi;);
-    
-getAntAbstractFileSetFromProject name project = 
-   (var ref = (project is projectType).antProject#getReference(name is string);
-    if not defined? ref then 
-        () unsafely_as ~AbstractFileSet;
-    elif not ref instanceof AbstractFileSet then 
-        failWith "Under name [\(name)] is no path-ref but a [\(ref)]";
-    else 
-        ref unsafely_as ~AbstractFileSet 
-    fi);
-    
-antPathById name project =
-        strJoin ";" (wrapArray (getAntPathFromProject name project)#list());
 
     
 file name = new File(name is string);
@@ -517,9 +503,10 @@ readProperties propsFile =
     basedir,
 
     createAntPath, 
+    listPath,
     createAntClassLoader,
-    createAntFileSet, createAntDirSet, getAntPathFromProject, 
-    getAntAbstractFileSetFromProject,
+    listFiles,
+    listDirs,
     targetToString,
 
     printSimilarTargets,
@@ -537,11 +524,11 @@ readProperties propsFile =
     tel,
     antTaskWithElement,
     antTask,
-    antPatterns,
-    antFileset,
-    antDirset,
+    antInExcludeElements,
+    antFilesetElement,
+    antDirsetElement,
     antPathElements,
-    antPathById,
+    //antPathById,
     file,
 }
 

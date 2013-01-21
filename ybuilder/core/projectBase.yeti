@@ -231,8 +231,7 @@ yetiMainTask args path fork dir project =
                 project;
     else
         urls = 
-            (map do n: (file n)#toURL() done . map string)
-                (wrapArray (createAntPath path)#list());
+            map do n: (file n)#toURL() done (listPath path);
         
         import java.lang.ClassLoader;
         import java.net.URLClassLoader;
@@ -254,19 +253,12 @@ yetiMainTask args path fork dir project =
     fi;
     
     
-yetidocTask targetDir fileSet project=     
-   (fs = map (strReplace File#separator "/" . string) 
-             (array (fileSet is ~FileSet)#getDirectoryScanner()
-                    #getIncludedFiles());
-    args = ["-doc", "../"^targetDir] ++ fs;
+yetidocTask targetDir files project=     
+   (args = ["-doc", "../"^targetDir] ++ files;
     yetiMainTask args testPath true dir.src project);
     
 yeticTask targetDir srcDir includes sourceReaderCode path project =
-   (fileSet =
-        createAntFileSet srcDir includes;
-    files = map (strReplace File#separator "/" . string) 
-             (array (fileSet is ~FileSet)#getDirectoryScanner()
-                    #getIncludedFiles());
+   (files = listFiles srcDir includes;
     println String#format("%1$11s Compiling \(length files) files to \(targetDir)",array ["[yetic]"]);
     
     if not empty? files then
@@ -634,7 +626,7 @@ jarOnly =
                          nh.["destfile"] := destfl;
                          nh)
                         (mapHash do dir ie:
-                            antFileset dir ie;
+                            antFilesetElement dir ie;
                          done jarFileset
                          ++ [el "manifest" [:] 
                                (mapHash do k v: 
@@ -663,13 +655,13 @@ war =
                          nh.["destfile"] := destfl;
                          nh)
                         ((mapHash do dir ie:
-                                el "lib" ["dir":dir] (antPatterns ie);
+                            el "lib" ["dir":dir] (antInExcludeElements ie);
                           done warLibset)
                          ++ (mapHash do dir ie:
-                                el "classes" ["dir" :dir] (antPatterns ie);
+                            el "classes" ["dir" :dir] (antInExcludeElements ie);
                           done warClassesset)
                          ++ (mapHash do dir ie:
-                                antFileset dir ie;
+                            antFilesetElement dir ie;
                           done warFileset))
                         p;
                 _mvnInstallOrDeploy destfl p;
@@ -700,12 +692,7 @@ jetty =
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
         
-        ap = (createAntPath runtimePath)#list();
-        path = if not defined? ap then 
-            ""
-        else 
-            (strJoin ", " . map string . wrapArray) (ap);
-        fi;
+        path = strJoin ", " (listPath runtimePath);
         context#setExtraClasspath(path);
         
         server#setHandler(context);

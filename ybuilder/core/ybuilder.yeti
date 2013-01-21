@@ -125,7 +125,7 @@ retrieveBuildDependencies () =
     fi;
     ));
     
-_withBuildClassLoader dirPrefix antFileSet fn = 
+_withBuildClassLoader dirPrefix antFiles fn = 
    (load ybuilder.core.build;
     import org.apache.tools.ant.AntClassLoader;
     import org.apache.tools.ant.types: FileSet;
@@ -135,10 +135,7 @@ _withBuildClassLoader dirPrefix antFileSet fn =
                                     #getCodeSource()#getLocation();
         
         
-    antFiles = (antFileSet is ~FileSet)#getDirectoryScanner();
-    antFiles#scan();
-    urls = map do n: (new File(dirPrefix ^ string n))#toURL() done 
-               (array antFiles#getIncludedFiles());
+    urls = map do n: (new File(dirPrefix ^ string n))#toURL() done antFiles;
     ctxtLoader = if empty? urls then
             oL
         else
@@ -154,11 +151,13 @@ _withBuildClassLoader dirPrefix antFileSet fn =
     yrt);
 
     
-if (file "project.yeti")#exists() and not (file dir.ybuilderLibsManaged)#exists() then
+if (file "project.yeti")#exists() 
+    and not (file dir.ybuilderLibsManaged)#exists() then
     retrieveBuildDependencies ();
 fi;	
 
-if (not (file "project.yeti")#exists()) and (not empty? args) and ((head args) == "newProject") then
+if (not (file "project.yeti")#exists()) 
+    and (not empty? args) and ((head args) == "newProject") then
     load ybuilder.core.build;
     load ybuilder.core.base;
     projectName = 
@@ -208,11 +207,10 @@ elif (not empty? args) and ((head args) == "new") then
             project;
 
     //load the template
-     antFiles = 
-        (build.createAntFileSet (string tempDir)
-            [Include "*.jar"]);
+     antFiles = build.listFiles (string tempDir) [Include "*.jar"];
    
-    _withBuildClassLoader (string tempDir ^ string File#separator) antFiles do ctxtLoader:
+    _withBuildClassLoader (string tempDir ^ string File#separator) 
+            antFiles do ctxtLoader:
         m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
                       #getMethod("main",array [classOf java.lang.String[]]);
         _ = m#invoke((),
@@ -224,7 +222,7 @@ elif (not empty? args) and ((head args) == "new") then
     //run the newproject file
     if (new File("newproject.yeti"))#exists() then
         antFiles = 
-            ((load ybuilder.core.build).createAntFileSet) "."
+            ((load ybuilder.core.build).listFiles) "."
                 [Include "\(dir.ybuilder)extlib/*.jar", 
                  Include "\(dir.ybuilderLibsManaged)*.jar"];
 
@@ -267,7 +265,7 @@ elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
     retrieveBuildDependencies ();
 else
     antFiles = 
-        ((load ybuilder.core.build).createAntFileSet) "."
+        ((load ybuilder.core.build).listFiles) "."
             [Include "\(dir.ybuilder)extlib/*.jar", 
              Include "\(dir.ybuilderLibsManaged)*.jar"];
 

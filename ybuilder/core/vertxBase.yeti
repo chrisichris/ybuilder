@@ -57,10 +57,11 @@ do opts:
         antTask "delete" ["dir":targetDir] [] p;
         antTask "mkdir" ["dir":targetDir] [] p;
         antTask "copy" ["todir":targetDir]
-                       [antFileset (b.dir.libManaged^"compile/") [Include  "*.jar"]] p;
+            [antFilesetElement (b.dir.libManaged^"compile/") 
+                                [Include  "*.jar"]] p;
         antTask "copy" ["todir":targetDir, 
                         "flatten":"true"]
-                       [antFileset b.dir.lib [Include "**/*.jar"]] p);
+                       [antFilesetElement b.dir.lib [Include "**/*.jar"]] p);
 
     //add fn to retrieveDependencies target
     bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
@@ -70,13 +71,14 @@ do opts:
                 Depends b.livecycleTargets.compile,
                 Depends b.baseTargets.jarOnly,
                 Before b.livecycleTargets.testCompile,
-                Description "Makes jar for the vertxModule and copies it in there"]
+                Description "Makes jar for the vertxModule and copies it in"]
         do p:
             targetDir = modsDir^moduleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
             antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
-                           [antFileset b.dir.target [Include "\(b.project.artifactId).jar"]] p;
+                    [antFilesetElement b.dir.target 
+                        [Include "\(b.project.artifactId).jar"]] p;
         done;    
 
     vertxZipModule = target "vertx:zipModule"
@@ -89,10 +91,11 @@ do opts:
             antTask "mkdir" ["dir":tDir] [] p;
 
             antTask "copy" ["todir":tDir] 
-                           [antFileset (modsDir^moduleName) []] p;
+                           [antFilesetElement (modsDir^moduleName) []] p;
 
             antTask "zip" ["destfile":b.dir.target^fullModuleName]
-                          [antFileset modsDir [Include (moduleName^"/**")]] p;
+                          [antFilesetElement modsDir 
+                            [Include (moduleName^"/**")]] p;
         done;
 
     
