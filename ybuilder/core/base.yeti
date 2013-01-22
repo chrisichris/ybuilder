@@ -143,7 +143,7 @@ compileYeti =
     target "compileYeti" [Depends compileJava, Before b.livecycleTargets.compile] 
            do p:
                 if (file config.dir.src)#exists() then
-                    b.yeticTask 
+                    b.helpers.yeticTask 
                         config.dir.targetClasses 
                         config.dir.src 
                         config.yeticIncludes 
@@ -158,7 +158,7 @@ testCompileYeti =
            [Depends testCompileJava, Before b.livecycleTargets.testCompile] 
            do p:
                 if (file config.dir.test)#exists() then
-                    b.yeticTask 
+                    b.helpers.yeticTask 
                         config.dir.targetTestClasses 
                         config.dir.test 
                         config.yeticIncludes 
@@ -177,7 +177,7 @@ yetidoc =
                 antTask "mkdir" ["dir":config.dir.yetidoc] [] p;
                 fileSet = listFiles config.dir.src [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
-                b.yetidocTask config config.dir.yetidoc fileSet p;
+                b.helpers.yetidocTask config config.dir.yetidoc fileSet p;
             fi;
         done;
         
@@ -250,7 +250,7 @@ yebspecTarget =
                 ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;"
                 ^ "if (res.exceptions + res.fails) > 0 then System#exit(1) fi;";
             //println ("----sepec:"^code);
-            b.yetiMainTask ["-e",code] (b.pathes.test config) true "." p;
+            b.helpers.yetiMainTask ["-e",code] (b.pathes.test config) true "." p;
         fi;
     done;
         
@@ -295,7 +295,7 @@ simpleTestTarget =
                 done
                 |> strJoin "")
                 ^ "); if fails > 0 then System#exit(1) fi;);";
-            b.yetiMainTask ["-e", code] (b.pathes.test config) true "." p;
+            b.helpers.yetiMainTask ["-e", code] (b.pathes.test config) true "." p;
         fi;
     done;
       

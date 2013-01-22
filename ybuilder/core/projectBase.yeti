@@ -824,13 +824,17 @@ for [clean, retrieveLibs, compile, test, jar, war,
         doc,  
     },	
 
-    mvnInstall, 
-    mvnDeploy, 
-    mvnInstallOrDeploy = _mvnInstallOrDeploy,
-    
-    yetiMainTask,
-    yeticTask,
-    yetidocTask,
+    helpers = {
+        yetiMainTask,
+        yetidocTask,
+        yeticTask,
+        writePom,
+        mvnInstall,
+        mvnDeploy,
+        mvnInstallOrDeploy = _mvnInstallOrDeploy,
+    },
+        
+        
 
     localRepository, 
     dependency, 

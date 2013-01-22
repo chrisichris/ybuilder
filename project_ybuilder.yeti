@@ -77,7 +77,7 @@ _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
                        ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] 
                        []]]) 
             p;
-    mvnInstallOrDeploy config jarFile p;            
+    helpers.mvnInstallOrDeploy config jarFile p;            
 done;
             
 /*
