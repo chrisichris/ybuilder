@@ -129,7 +129,38 @@ config = config with {
 };
 
 createConfig baseConfig dependencies =
-    (var ad = array [];
+    (baseConfig = baseConfig with {
+        jarManifest = [:] is hash<string,string>,
+        jarAttributes is hash<string,string> = [:],
+                                 
+        jarFileset = [ config.dir.targetClasses : []],
+
+
+        warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"],
+
+        warLibset = 
+             [config.dir.lib : [Include "**/*.jar"],
+              config.dir.libManaged : [Include "compile/**/*.jar",
+                                Include "runtime/**/*.jar"]],
+                               
+        warClassesset =
+            [config.dir.targetClasses : [Include "**/*.*"]],
+
+        warFileset = [config.dir.webapp : [Include "**/*.*"]],
+
+        deployRepository = {
+            var url = undef_str,
+            var providerArtifactId = undef_str,
+            var providerVersion = "1.0-beta2",
+            params = (array []) is array<xmlelement>,
+            var uniqueVersion = false
+        },
+
+        continuesDirs = array [config.dir.src],
+    };
+    
+    //path and dependency things
+    var ad = array [];
     var pd = array [];
     var rp = array [
         {id = "chrisichris-snapshots",
