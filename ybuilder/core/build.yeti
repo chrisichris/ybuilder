@@ -495,6 +495,18 @@ readProperties propsFile =
          values = vas};
     fi);
 
+lazyConfig fn =
+    (var ho = none;
+    do v:
+        case ho of
+        Some va: va;
+        None _: 
+            (va = fn v;
+             ho = Some va;
+             va);
+        esac;
+    done);
+
 {
     readProperties,
     assert,
@@ -530,6 +542,7 @@ readProperties propsFile =
     antPathElements,
     //antPathById,
     file,
+    lazyConfig
 }
 
 
