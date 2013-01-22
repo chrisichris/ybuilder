@@ -121,8 +121,11 @@ config = config with {
         var providerVersion = "1.0-beta2",
         params = (array []) is array<xmlelement>,
         var uniqueVersion = false
-    }
+    },
 
+    artifactDependencies = array[],	
+    projectDependencies = array [],
+    remoteRepositories = array [],
 };
 
 //pathes
@@ -155,9 +158,6 @@ testRuntimePath config =
 
 
 //dependency management
-artifactDependencies = array[];	
-projectDependencies = array [];
-remoteRepositories = array [];
 
 
 dependency groupId artifactId version opts = 
@@ -195,15 +195,15 @@ dependency groupId artifactId version opts =
         if not (strEnds? projectPath "/") then
             projectPath := projectPath ^ "/";
         fi;
-        push projectDependencies 
+        push config.projectDependencies 
              {projectPath = projectPath, 
               artifact = v};
     else
-        push artifactDependencies v;
+        push config.artifactDependencies v;
     fi);
 
 remoteRepository idstr url = 
-    push remoteRepositories {
+    push config.remoteRepositories {
             id = idstr is string, 
             url is string, 
             var layout = "default"
@@ -396,8 +396,8 @@ test =
 preparePackage = 
     target "preparePackage" [Depends cleanAll, Depends test,
                              DoPreDependencies
-                               \(for projectDependencies do p:
-                                    push artifactDependencies p.artifact;
+                               \(for config.projectDependencies do p:
+                                    push config.artifactDependencies p.artifact;
                                 done)]
                             \();
                             
@@ -494,7 +494,7 @@ initPom =
                  else
                     []
                  fi 
-                 ++  _mvnDependencyTags artifactDependencies)
+                 ++  _mvnDependencyTags config.artifactDependencies)
                 p;
         done;
         
@@ -509,7 +509,7 @@ addProjectDeps =
            [Before initialize,
             Description "add the pathes for dependend projects"]
            do p:
-            for projectDependencies do {projectPath, artifact}:
+            for config.projectDependencies do {projectPath, artifact}:
                 {scope} = artifact;
                 push config.pathScopeLib 
                     (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
@@ -553,7 +553,7 @@ prepareLibs =
                         ["dir":"\(config.dir.libManaged)\(scope)"] 
                         [] 
                         project;
-                if not empty? artifactDependencies then
+                if not empty? config.artifactDependencies then
                     antTask (maven "dependencies") 
                             ["filesetId" : "dependenciesFS-"^scope, 
                              "scopes":scope] 
@@ -566,8 +566,8 @@ prepareLibs =
                                        ["id":rr.id, "url":rr.url,
                                         "layout":rr.layout] 
                                        [] 
-                                   done remoteRepositories) 
-                             ++ (_mvnDependencyTags artifactDependencies) ) 
+                                   done config.remoteRepositories) 
+                             ++ (_mvnDependencyTags config.artifactDependencies) ) 
                             project;
                             
                     antTask "copy" 
@@ -761,9 +761,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
     yeticTask,
     yetidocTask,
 
-    artifactDependencies, 
     localRepository, 
-    remoteRepositories, 
     dependency, 
     exclusion,
     remoteRepository,
