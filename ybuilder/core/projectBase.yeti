@@ -139,17 +139,83 @@ createConfig baseConfig dependencies =
         url = "http://chrisichris.github.com/chrisis-maven-repo/releases",
         layout = "default" }];
         
+    pathScopeLib is pathPatternType = 
+        array [Fileset [config.dir.lib : [Include "**/*.jar"]]]; 
+
+    pathScopeCompile is pathPatternType =
+        array [Fileset [config.dir.libManaged : [Include "/compile/**/*.jar"]],
+               Location config.dir.targetClasses];
+    
+    pathScopeRuntime is pathPatternType =
+        array [Fileset [config.dir.libManaged : [Include "/runtime/**/*.jar"]]];
+
+    pathScopeSystem is pathPatternType =
+        array [Fileset [config.dir.libManaged : [Include "/system/**/*.jar"]]];
+
+    pathScopeProvided is pathPatternType =
+        array [Fileset [config.dir.libManaged : [Include "/provided/**/*.jar"]]];
+
+    pathScopeTest is pathPatternType =
+        array [Fileset [config.dir.libManaged : [Include "/test/**/*.jar"]],
+               Location config.dir.targetTestClasses];
+
     for dependencies do d: case d of
         ProjectDependency d: push pd d;
         ArtifactDependency d : push ad d;
         Repository r : push rp r;
+        Lib pt : push pathScopeLib pt;
+        Compile pt: push pathScopeCompile pt;
+        Runtime pt: push pathScopeRuntime pt;
+        System pt: push pathScopeSystem pt;
+        Provided pt: push pathScopeProvided pt;
+        Test pt: push pathScopeTest pt;
     esac
     done;
+
+    //adjust porjectDependencies
+    for pd do {projectPath, artifact}:
+        {scope} = artifact;
+        push pathScopeLib 
+            (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
+        pushLoc pS =
+            push pS (Location (projectPath ^ config.dir.targetClasses));
+        pushTD pS dpS =
+            push pS 
+                 (Fileset [projectPath ^ config.dir.libManaged 
+                          : [Include "/\(dpS)/**/*.jar"]]);
+        //scope dependencies according to maven:
+        //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
+        if scope == "compile" then
+            pushLoc pathScopeCompile;
+            pushTD pathScopeCompile "compile";
+            pushTD pathScopeRuntime "runtime";
+        elif scope == "provided" then
+            pushLoc pathScopeProvided;
+            pushTD pathScopeProvided "compile";
+            pushTD pathScopeProvided "provided";
+            pushTD pathScopeProvided "runtime";
+        elif scope == "runtime" then
+            pushLoc pathScopeRuntime;
+            pushTD pathScopeRuntime "compile";
+            pushTD pathScopeRuntime "runtime";
+        elif scope == "test" then
+            pushLoc pathScopeTest;
+            pushTD pathScopeTest "compile";
+            pushTD pathScopeTest "runtime";
+        fi;
+    done;
+    
 
     baseConfig with {
         artifactDependencies = ad,
         projectDependencies = pd,
-        remoteRepositories = rp
+        remoteRepositories = rp,
+        pathScopeLib, 
+        pathScopeCompile,
+        pathScopeRuntime,
+        pathScopeSystem,
+        pathScopeProvided,
+        pathScopeTest,
     });
     
 
@@ -526,49 +592,9 @@ pom =
     target "pom" [Description "Writes a pom.xml"] 
            do p: writePom config p done;
 
-          
-addProjectDeps =
-    target "addProjectDeps" 
-           [Before initialize,
-            Description "add the pathes for dependend projects"]
-           do p:
-            for config.projectDependencies do {projectPath, artifact}:
-                {scope} = artifact;
-                push config.pathScopeLib 
-                    (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
-                pushLoc pS =
-                    push pS (Location (projectPath ^ config.dir.targetClasses));
-                pushTD pS dpS =
-                    push pS 
-                         (Fileset [projectPath ^ config.dir.libManaged 
-                                  : [Include "/\(dpS)/**/*.jar"]]);
-                //scope dependencies according to maven:
-                //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
-                if scope == "compile" then
-                    pushLoc config.pathScopeCompile;
-                    pushTD config.pathScopeCompile "compile";
-                    pushTD config.pathScopeRuntime "runtime";
-                elif scope == "provided" then
-                    pushLoc config.pathScopeProvided;
-                    pushTD config.pathScopeProvided "compile";
-                    pushTD config.pathScopeProvided "provided";
-                    pushTD config.pathScopeProvided "runtime";
-                elif scope == "runtime" then
-                    pushLoc config.pathScopeRuntime;
-                    pushTD config.pathScopeRuntime "compile";
-                    pushTD config.pathScopeRuntime "runtime";
-                elif scope == "test" then
-                    pushLoc config.pathScopeTest;
-                    pushTD config.pathScopeTest "compile";
-                    pushTD config.pathScopeTest "runtime";
-                fi;
-            done;
-           done;
-
-            
 prepareLibs = 
     target "prepareLibs" 
-        [Before initialize, Depends addProjectDeps, 
+        [Before initialize, 
          Description "loads librararies in [\(config.dir.libManaged)]"] 
         do project:
             copyDeps scope = 
