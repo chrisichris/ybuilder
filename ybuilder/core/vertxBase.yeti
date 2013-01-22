@@ -30,8 +30,8 @@ do opts:
     
     modsDir = "mods/";
 
-    moduleName = "\(b.project.groupId).\(b.project.artifactId)-v0"; 
-    fullModuleName = "\(b.project.groupId).\(b.project.artifactId)-v\(b.project.version)"; 
+    moduleName = "\(b.config.groupId).\(b.config.artifactId)-v0"; 
+    fullModuleName = "\(b.config.groupId).\(b.config.artifactId)-v\(b.config.version)"; 
 
     //check for vert.x
 
@@ -80,7 +80,7 @@ do opts:
             antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
                     [antFilesetElement b.config.dir.target 
-                        [Include "\(b.project.artifactId).jar"]] p;
+                        [Include "\(b.config.artifactId).jar"]] p;
         done;    
 
     vertxZipModule = target "vertx:zipModule"

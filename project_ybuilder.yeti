@@ -6,10 +6,10 @@ load ybuilder.core.build;
 
 import java.lang.System;
 
-project.groupId :="org.ybuilder";
-project.artifactId := "ybuilder";
-project.version := ybuilderVersion;
-project.description := "A simple build tool for yeti";
+config.groupId :="org.ybuilder";
+config.artifactId := "ybuilder";
+config.version := ybuilderVersion;
+config.description := "A simple build tool for yeti";
 
 ybuilderSrcDir = "ybuilder/";
 
@@ -64,14 +64,14 @@ _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 
-                        ["name":"Implementation-Vendor", "value":project.organization] 
+                        ["name":"Implementation-Vendor", "value":config.organization] 
                         [],
                     el "attribute" 
                        ["name":"Implementation-Title", 
-                        "value":"\(project.groupId)-\(project.artifactId)"] 
+                        "value":"\(config.groupId)-\(config.artifactId)"] 
                        [],
                     el "attribute" 
-                       ["name":"Implementation-Version", "value":project.version] 
+                       ["name":"Implementation-Version", "value":config.version] 
                        [],
                     el "attribute" 
                        ["name":"Main-Class", "value":"ybuilder.core.ybuilder"] 

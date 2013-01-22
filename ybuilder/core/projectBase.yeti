@@ -32,8 +32,10 @@ localRepository = {
 };
 
 
-//general settings
-project = {
+ 
+
+//directories
+config = {
     var name = "",
     var version = "", 
     var artifactId = "", 
@@ -43,11 +45,7 @@ project = {
     var homePage = "",
     var license = "",
     var licenseURL = "",
-};
- 	
-
-//directories
-config = {
+    
     dir = {
         libManaged = "lib/managed/",
         lib = "lib/unmanaged/",	
@@ -456,14 +454,14 @@ writePom p=
     antTask "mkdir" ["dir":config.dir.target] [] p;
     antTask (maven "pom") 
         ["id" : "pom",
-         "groupId" : project.groupId,
-         "artifactId" : project.artifactId,
-         "version" : project.version,
-         "name" : project.name]
-        (if (strLength project.license) > 0 
-             and (strLength project.licenseURL) > 0 then
-            [el "license" ["name":project.license,
-                          "url": project.licenseURL] []]
+         "groupId" : config.groupId,
+         "artifactId" : config.artifactId,
+         "version" : config.version,
+         "name" : config.name]
+        (if (strLength config.license) > 0 
+             and (strLength config.licenseURL) > 0 then
+            [el "license" ["name":config.license,
+                          "url": config.licenseURL] []]
          else
             []
          fi 
@@ -635,7 +633,7 @@ jarOnly =
     target "jarOnly" 
            [Description "Makes a jar file in dir.target"] 
            do p:
-                destfl = config.dir.target ^ project.artifactId ^ ".jar";
+                destfl = config.dir.target ^ config.artifactId ^ ".jar";
                 antTask "jar" 
                         (nh = copy config.jarAttributes;
                          nh.["destfile"] := destfl;
@@ -656,7 +654,7 @@ jar =
             Description ("Makes a jar file in dir.target - use :install "
                  ^"and/or :deploy param(s) to maven install/deploy the war")] 
     do p:
-        destfl = config.dir.target ^ project.artifactId ^ ".jar";
+        destfl = config.dir.target ^ config.artifactId ^ ".jar";
         _mvnInstallOrDeploy destfl p;
     done;
     
@@ -666,7 +664,7 @@ war =
             Description ("Makes a war file in dir.target - use :install" 
                ^"and/or :deploy param(s) to maven install/deploy the war")]
             do p:
-                destfl = config.dir.target ^ project.artifactId ^ ".war";
+                destfl = config.dir.target ^ config.artifactId ^ ".war";
                 antTask "war" 
                         (nh = copy config.warAttributes;
                          nh.["destfile"] := destfl;
@@ -738,7 +736,6 @@ for [clean, retrieveLibs, compile, test, jar, war,
         
 
 {
-    project,
     config, 
     pathes = {
         buildExt = buildExtPath,
