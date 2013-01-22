@@ -69,33 +69,28 @@ dir = {
     buildExtlib = "lib/ybuilder/extlib/",
 };
 
-libPathSet is pathPatternType = 
-    array [Fileset [dir.lib : [Include "**/*.jar"]]]; 
 
 //setPathes
-pathSet = {
-    lib = libPathSet,
-    compile is pathPatternType =
+config = {
+    pathScopeLib is pathPatternType = 
+        array [Fileset [dir.lib : [Include "**/*.jar"]]], 
+
+    pathScopeCompile is pathPatternType =
         array [Fileset [dir.libManaged : [Include "/compile/**/*.jar"]],
-               Location dir.targetClasses,
-               Patterns \libPathSet],
+               Location dir.targetClasses],
     
-    runtime is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/runtime/**/*.jar"]],
-               Patterns \libPathSet],
+    pathScopeRuntime is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/runtime/**/*.jar"]]],
 
-    system is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/system/**/*.jar"]],
-               Patterns \libPathSet],
+    pathScopeSystem is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/system/**/*.jar"]]],
 
-    provided is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/provided/**/*.jar"]],
-               Patterns \libPathSet],
+    pathScopeProvided is pathPatternType =
+        array [Fileset [dir.libManaged : [Include "/provided/**/*.jar"]]],
 
-    test is pathPatternType =
+    pathScopeTest is pathPatternType =
         array [Fileset [dir.libManaged : [Include "/test/**/*.jar"]],
-               Location dir.targetTestClasses,
-               Patterns \libPathSet],
+               Location dir.targetTestClasses],
 };               
 
 
@@ -105,21 +100,24 @@ buildExtPath is pathPatternType =
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
-    array [Patterns \pathSet.compile,
-           Patterns \pathSet.runtime,
-           Patterns \pathSet.system];
+    array [Patterns \config.pathScopeCompile,
+           Patterns \config.pathScopeRuntime,
+           Patterns \config.pathScopeSystem,
+           Patterns \config.pathScopeLib];
            
 compilePath is pathPatternType = 
-    array [Patterns \pathSet.compile,
-           Patterns \pathSet.provided,
-           Patterns \pathSet.system];
+    array [Patterns \config.pathScopeCompile,
+           Patterns \config.pathScopeProvided,
+           Patterns \config.pathScopeSystem,
+           Patterns \config.pathScopeLib];
            
 testPath is pathPatternType = 
-    array [Patterns \pathSet.compile,
-           Patterns \pathSet.provided,
-           Patterns \pathSet.system,
-           Patterns \pathSet.runtime,
-           Patterns \pathSet.test];
+    array [Patterns \config.pathScopeCompile,
+           Patterns \config.pathScopeProvided,
+           Patterns \config.pathScopeSystem,
+           Patterns \config.pathScopeRuntime,
+           Patterns \config.pathScopeTest,
+           Patterns \config.pathScopeLib];
            
 testRuntimePath is pathPatternType = 
     array [Patterns \testPath];
@@ -259,7 +257,9 @@ yetidocTask targetDir files project=
     
 yeticTask targetDir srcDir includes sourceReaderCode path project =
    (files = listFiles srcDir includes;
-    println String#format("%1$11s Compiling \(length files) files to \(targetDir)",array ["[yetic]"]);
+    println String#format(
+        "%1$11s Compiling \(length files) files to \(targetDir)", 
+        array ["[yetic]"]);
     
     if not empty? files then
         code = 
@@ -291,7 +291,8 @@ continues =
            [Description "Continuesly runs the target given as argument"]
            do p:
                 if empty? p.args then
-                    failWith "No command to run for continue please pvoide one as arg";
+                    failWith 
+                        "No command to run for continue please pvoide one as arg";
                 fi;
                 cmd = head (list p.args);
                 if not cmd in targets then
@@ -323,7 +324,8 @@ continues =
                 true loop 
                    (nt = fsc scf oldTime;
                     if nt > oldTime then
-                        println "---\nSource changed running [\(cmd) \(args)], (\(nt),\(oldTime))\n";
+                        println ("---\nSource changed running [\(cmd) \(args)],"
+                                ^" (\(nt),\(oldTime))\n");
                         oldTime := nt;
                         
                         
@@ -347,7 +349,8 @@ clean =
 
 cleanLibs = 
     target "cleanLibs" 
-           [Description "Cleans the retrieved dependencies in [\(dir.libManaged)] directory"] 
+           [Description ("Cleans the retrieved dependencies "
+                        ^"in [\(dir.libManaged)] directory")] 
            (antTask "delete" ["dir":dir.libManaged] []);
 cleanAll = 
     target "cleanAll" 
@@ -464,7 +467,8 @@ mvnDeploy fileName project =
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
-            ["file":fileName, "uniqueVersion": string deployRepository.uniqueVersion]
+            ["file":fileName, 
+             "uniqueVersion": string deployRepository.uniqueVersion]
             (if defined? deployRepository.url then
                 [el "remoteRepository" ["url":deployRepository.url]
                     (list deployRepository.params)]
@@ -523,7 +527,7 @@ addProjectDeps =
             deps = catSome sdeps;
             for deps do {projectPath, artifact}:
                 {scope} = artifact;
-                push libPathSet 
+                push config.pathScopeLib 
                     (Fileset [(projectPath ^ dir.lib) : [Include "**/*.jar"]]); 
                 pushLoc pS =
                     push pS (Location (projectPath ^ dir.targetClasses));
@@ -534,22 +538,22 @@ addProjectDeps =
                 //scope dependencies according to maven:
                 //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
                 if scope == "compile" then
-                    pushLoc pathSet.compile;
-                    pushTD pathSet.compile "compile";
-                    pushTD pathSet.runtime "runtime";
+                    pushLoc config.pathScopeCompile;
+                    pushTD config.pathScopeCompile "compile";
+                    pushTD config.pathScopeRuntime "runtime";
                 elif scope == "provided" then
-                    pushLoc pathSet.provided;
-                    pushTD pathSet.provided "compile";
-                    pushTD pathSet.provided "provided";
-                    pushTD pathSet.provided "runtime";
+                    pushLoc config.pathScopeProvided;
+                    pushTD config.pathScopeProvided "compile";
+                    pushTD config.pathScopeProvided "provided";
+                    pushTD config.pathScopeProvided "runtime";
                 elif scope == "runtime" then
-                    pushLoc pathSet.runtime;
-                    pushTD pathSet.runtime "compile";
-                    pushTD pathSet.runtime "runtime";
+                    pushLoc config.pathScopeRuntime;
+                    pushTD config.pathScopeRuntime "compile";
+                    pushTD config.pathScopeRuntime "runtime";
                 elif scope == "test" then
-                    pushLoc pathSet.test;
-                    pushTD pathSet.test "compile";
-                    pushTD pathSet.test "runtime";
+                    pushLoc config.pathScopeTest;
+                    pushTD config.pathScopeTest "compile";
+                    pushTD config.pathScopeTest "runtime";
                 fi;
             done;
            done;
@@ -638,7 +642,8 @@ jarOnly =
 jar = 
     target "jar" 
            [Depends preparePackage, Depends initPom, Depends jarOnly,
-            Description "Makes a jar file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"] 
+            Description ("Makes a jar file in dir.target - use :install "
+                 ^"and/or :deploy param(s) to maven install/deploy the war")] 
     do p:
         destfl = dir.target ^ project.artifactId ^ ".jar";
         _mvnInstallOrDeploy destfl p;
@@ -647,7 +652,8 @@ jar =
 war = 
     target "war" 
            [Depends preparePackage, 
-            Description "Makes a war file in dir.target - use :install and/or :deploy param(s) to maven install/deploy the war"]
+            Description ("Makes a war file in dir.target - use :install" 
+               ^"and/or :deploy param(s) to maven install/deploy the war")]
             do p:
                 destfl = dir.target ^ project.artifactId ^ ".war";
                 antTask "war" 
@@ -670,7 +676,8 @@ war =
             
 jetty =
     target "jetty" [Depends initialize,
-                    Description "runs jetty - note the jetty libs must be on the ybuilder path"] 
+                    Description ("runs jetty - note the jetty libs must be" 
+                        ^"on the ybuilder path")] 
     do project:
         import java.lang.System;
         import org.eclipse.jetty.server:Server; 
@@ -720,9 +727,8 @@ for [clean, retrieveLibs, compile, test, jar, war,
 
 {
     project,
-    
+    baseConfig = config, 
     dir,
-    pathSet,
     pathes = {
         buildExt = buildExtPath,
         runtime = runtimePath,

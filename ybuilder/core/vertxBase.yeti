@@ -42,12 +42,14 @@ do opts:
     fi;
 
     if not defined? vertxHome then
-        println "Warning: VERTX_HOME enviroment variable is not defined some tasks will not work"
+        println ("Warning: VERTX_HOME enviroment variable is not defined" 
+                    ^"some tasks will not work")
     fi;
 
     if useVertxHomeOnPath then
         //add all the vert.x dependencies
-        push b.pathSet.lib (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
+        push b.baseConfig.pathScopeLib 
+            (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
 
 
@@ -107,7 +109,7 @@ do opts:
        cpP is pathPatternType = if useVertxHomeOnPath then
            array [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]];
        else
-           array [Patterns \b.pathSet.provided];
+           array [Patterns \b.baseConfig.pathScopeProvided];
        fi;
 
        if defined? vertxHome then
@@ -137,14 +139,14 @@ do opts:
                         p);
 
     vertxRunPath () = 
-        (cp = array [Patterns \b.pathSet.compile,
+        (cp = array [Patterns \b.baseConfig.pathScopeCompile,
                      Location (b.dir.targetClasses)];
         path = createAntPath cp;
         strJoin ":" (wrapArray path#list()));
     
     vertxTestPath () =
-        (cp = array [Patterns \b.pathSet.compile, 
-                     Patterns \b.pathSet.test,
+        (cp = array [Patterns \b.baseConfig.pathScopeCompile, 
+                     Patterns \b.baseConfig.pathScopeTest,
                      Location (b.dir.targetClasses),
                      Location (b.dir.targetTestClasses)];
         path = createAntPath cp;
