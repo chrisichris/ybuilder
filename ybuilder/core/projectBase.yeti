@@ -121,6 +121,8 @@ config = config with {
         var uniqueVersion = false
     },
 
+    continuesDirs = array [config.dir.src],
+    
     artifactDependencies = [],	
     projectDependencies = [],
     remoteRepositories = [],
@@ -274,7 +276,7 @@ yetiMainTask args path fork dir project =
         ();
     fi;
      
-yetidocTask targetDir files project=     
+yetidocTask config targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
     yetiMainTask args (testPath config) true config.dir.src project);
     
@@ -305,10 +307,104 @@ ret
         yetiMainTask args path true "." project
     fi);    
 
+_mvnDependencyTags artifactDependencies =     
+    map do dep: 
+        atts = 
+           ["groupId" : dep.groupId,
+            "artifactId" : dep.artifactId,
+            "version" : dep.version,
+            "type" : dep.type,
+            "scope" : dep.scope,
+            "systemPath": dep.systemPath,
+            "optional" : string dep.optional];
+        if defined? dep.classifier then
+            atts.["classifier"] := dep.classifier
+        fi;
+        if defined? dep.systemPath then
+            atts.["systemPath"] := dep.systemPath;
+        fi;
+        
+        el (maven "dependency") atts 
+            (map do exc: 
+                 el (maven "exclusion") 
+                    ["groupId":exc.groupId, 
+                     "artifactId":exc.artifactId] [] 
+                 done dep.exclusions) 
+    done artifactDependencies;
+
+_pomName config = config.dir.target^"pom.xml";
+
+writePom config p=
+    (//first init pom
+    antTask "mkdir" ["dir":config.dir.target] [] p;
+    antTask (maven "pom") 
+        ["id" : "pom",
+         "groupId" : config.groupId,
+         "artifactId" : config.artifactId,
+         "version" : config.version,
+         "name" : config.name]
+        (if (strLength config.license) > 0 
+             and (strLength config.licenseURL) > 0 then
+            [el "license" ["name":config.license,
+                          "url": config.licenseURL] []]
+         else
+            []
+         fi 
+         ++  _mvnDependencyTags 
+                (config.artifactDependencies
+                ++ map (.artifact) config.projectDependencies))
+        p;
+    antTask "delete" ["file":_pomName config] [] p;
+    antTask (maven "writepom")
+             ["pomRefId" : "pom", "file":_pomName config] [] p);
     
+mvnInstall config fileName project = 
+   (pomfile = _pomName config;
+    writePom config project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "install") 
+            ["file": fileName]
+            [el "pom" ["refid":"installPom"] []]
+            project);
+
+mvnDeploy config fileName project =
+   (if defined? config.deployRepository.providerArtifactId then
+        antTask (maven "install-provider") 
+                ["artifactId":config.deployRepository.providerArtifactId,
+                 "version":config.deployRepository.providerVersion] 
+                [] project;
+    fi;
+    pomfile = _pomName config;
+    writePom config project;
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "deploy") 
+            ["file":fileName, 
+             "uniqueVersion": string config.deployRepository.uniqueVersion]
+            (if defined? config.deployRepository.url then
+                [el "remoteRepository" ["url":config.deployRepository.url]
+                    (list config.deployRepository.params)]
+             else
+                args = list project.args;
+                if (length args) < 2 then
+                    []
+                else
+                    rep = head (tail args);
+                    [el "remoteRepository" ["url":rep] []]
+                fi
+             fi
+             ++ [el "pom" ["refid":"installPom"] []])
+             project);
+    
+_mvnInstallOrDeploy config fileName project = 
+   (if contains? ":install" project.args then
+        mvnInstall config fileName project;
+    fi;
+    if contains? ":deploy" project.args then
+        mvnDeploy config fileName project;
+    fi);
+
             
     
-continuesDirs = array [config.dir.src];
 continues = 
     target "continues" 
            [Description "Continuesly runs the target given as argument"]
@@ -342,7 +438,7 @@ continues =
                     ntime);
 
                 var oldTime = System#currentTimeMillis();
-                scf = map file continuesDirs;
+                scf = map file config.continuesDirs;
 
                 true loop 
                    (nt = fsc scf oldTime;
@@ -422,100 +518,13 @@ doc = target "doc" [Depends preDoc,
                     Description "Generates project documentation"] \();	
 
 //mvn things
-_mvnDependencyTags artifactDependencies =     
-    map do dep: 
-        atts = 
-           ["groupId" : dep.groupId,
-            "artifactId" : dep.artifactId,
-            "version" : dep.version,
-            "type" : dep.type,
-            "scope" : dep.scope,
-            "systemPath": dep.systemPath,
-            "optional" : string dep.optional];
-        if defined? dep.classifier then
-            atts.["classifier"] := dep.classifier
-        fi;
-        if defined? dep.systemPath then
-            atts.["systemPath"] := dep.systemPath;
-        fi;
-        
-        el (maven "dependency") atts 
-            (map do exc: 
-                 el (maven "exclusion") 
-                    ["groupId":exc.groupId, 
-                     "artifactId":exc.artifactId] [] 
-                 done dep.exclusions) 
-    done artifactDependencies;
-
-_pomName config = config.dir.target^"pom.xml";
-
-writePom p=
-    (//first init pom
-    antTask "mkdir" ["dir":config.dir.target] [] p;
-    antTask (maven "pom") 
-        ["id" : "pom",
-         "groupId" : config.groupId,
-         "artifactId" : config.artifactId,
-         "version" : config.version,
-         "name" : config.name]
-        (if (strLength config.license) > 0 
-             and (strLength config.licenseURL) > 0 then
-            [el "license" ["name":config.license,
-                          "url": config.licenseURL] []]
-         else
-            []
-         fi 
-         ++  _mvnDependencyTags 
-                (config.artifactDependencies
-                ++ map (.artifact) config.projectDependencies))
-        p;
-    antTask "delete" ["file":_pomName config] [] p;
-    antTask (maven "writepom")
-             ["pomRefId" : "pom", "file":_pomName config] [] p);
-    
-mvnInstall fileName project = 
-   (pomfile = _pomName config;
-    writePom project;
-    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
-    antTask (maven "install") 
-            ["file": fileName]
-            [el "pom" ["refid":"installPom"] []]
-            project);
-
-mvnDeploy fileName project =
-   (if defined? config.deployRepository.providerArtifactId then
-        antTask (maven "install-provider") 
-                ["artifactId":config.deployRepository.providerArtifactId,
-                 "version":config.deployRepository.providerVersion] 
-                [] project;
-    fi;
-    pomfile = _pomName config;
-    writePom project;
-    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
-    antTask (maven "deploy") 
-            ["file":fileName, 
-             "uniqueVersion": string config.deployRepository.uniqueVersion]
-            (if defined? config.deployRepository.url then
-                [el "remoteRepository" ["url":config.deployRepository.url]
-                    (list config.deployRepository.params)]
-             else
-                args = list project.args;
-                if (length args) < 2 then
-                    []
-                else
-                    rep = head (tail args);
-                    [el "remoteRepository" ["url":rep] []]
-                fi
-             fi
-             ++ [el "pom" ["refid":"installPom"] []])
-             project);
                  
                  
         
              
 pom =
     target "pom" [Description "Writes a pom.xml"] 
-           do p: writePom p done;
+           do p: writePom config p done;
 
           
 addProjectDeps =
@@ -619,14 +628,6 @@ prepareLibs =
         done;
 
 
-_mvnInstallOrDeploy fileName project = 
-   (if contains? ":install" project.args then
-        mvnInstall fileName project;
-    fi;
-    if contains? ":deploy" project.args then
-        mvnDeploy fileName project;
-    fi);
-
     
     
 jarOnly = 
@@ -655,7 +656,7 @@ jar =
                  ^"and/or :deploy param(s) to maven install/deploy the war")] 
     do p:
         destfl = config.dir.target ^ config.artifactId ^ ".jar";
-        _mvnInstallOrDeploy destfl p;
+        _mvnInstallOrDeploy config destfl p;
     done;
     
 war = 
@@ -679,7 +680,7 @@ war =
                             antFilesetElement dir ie;
                           done config.warFileset))
                         p;
-                _mvnInstallOrDeploy destfl p;
+                _mvnInstallOrDeploy config destfl p;
             done;
 
             

@@ -172,7 +172,7 @@ yetidoc =
                 antTask "mkdir" ["dir":b.config.dir.yetidoc] [] p;
                 fileSet = listFiles b.config.dir.src [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
-                b.yetidocTask b.config.dir.yetidoc fileSet p;
+                b.yetidocTask b.config b.config.dir.yetidoc fileSet p;
             fi;
         done;
         
