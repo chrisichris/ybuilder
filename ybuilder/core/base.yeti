@@ -102,7 +102,7 @@ compileJava =
                 if (file b.baseConfig.dir.src)#exists() then
                     antTask "javac" javacAttributes 
                         [el "compilerarg" ["line": javacCompilerarg] [],
-                         el "classpath" [:] (antPathElements b.pathes.compile)] 
+                         el "classpath" [:] (antPathElements (b.pathes.compile b.baseConfig))] 
                         p;
                 fi;
            done; 
@@ -114,7 +114,7 @@ testCompileJava =
                 if (file b.baseConfig.dir.test)#exists() then
                     antTask "javac" javacTestAttributes 
                         [el "compilerarg" ["line":javacTestCompilerarg] [],
-                         el "classpath" [:] (antPathElements b.pathes.test)] 
+                         el "classpath" [:] (antPathElements (b.pathes.test b.baseConfig))] 
                         p
                 fi
            done;
@@ -127,7 +127,7 @@ javadoc =
                     antTask "delete" ["dir":b.baseConfig.dir.javadoc] [] p;
                     antTask "mkdir" ["dir":b.baseConfig.dir.javadoc] [] p;
                     antTask "javadoc" javadocAttributes 
-                            [el "classpath" [:] (antPathElements b.pathes.compile)] 
+                            [el "classpath" [:] (antPathElements (b.pathes.compile b.baseConfig))] 
                             p
                 fi
             done;
@@ -143,7 +143,7 @@ compileYeti =
                         b.baseConfig.dir.src 
                         yeticAttributes.includes 
                         yeticAttributes.sourceReaderCode
-                        b.pathes.compile 
+                        (b.pathes.compile b.baseConfig) 
                         p;
                 fi
            done;
@@ -158,7 +158,7 @@ testCompileYeti =
                         b.baseConfig.dir.test 
                         yeticAttributes.includes 
                         yeticAttributes.sourceReaderCode
-                        b.pathes.test 
+                        (b.pathes.test b.baseConfig) 
                         p;
                 fi;
            done;
@@ -180,7 +180,7 @@ yetidoc =
 junitTarget = 
     target "junit" [Before b.livecycleTargets.test] do p:
         hasJunit = try 
-            (createAntClassLoader b.pathes.test [])
+            (createAntClassLoader (b.pathes.test b.baseConfig) [])
                 #loadClass("junit.framework.Test");
             ((p.antProject)#getClass()#getClassLoader())
                            #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
@@ -192,7 +192,7 @@ junitTarget =
         if (file b.baseConfig.dir.test)#exists() and hasJunit then
             antTask "mkdir" ["dir":b.baseConfig.dir.reports ^ "tests"] [] p;
             antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
-                   [el "classpath" [:] (antPathElements b.pathes.test),
+                   [el "classpath" [:] (antPathElements (b.pathes.test b.baseConfig)),
                     el "formatter" ["type":"plain"] [],
                     el "batchtest" ["fork":"yes", 
                                     "todir": b.baseConfig.dir.reports ^ "tests"] 
@@ -204,7 +204,7 @@ junitTarget =
 yebspecTarget =
     target "yebspec" [Before b.livecycleTargets.test] do p:
         hasSpec = try
-            (createAntClassLoader b.pathes.test [])
+            (createAntClassLoader (b.pathes.test b.baseConfig) [])
                 #loadClass("org.yeb.yebspec");
             true;
         catch Exception e:
@@ -245,7 +245,7 @@ yebspecTarget =
                 ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;"
                 ^ "if (res.exceptions + res.fails) > 0 then System#exit(1) fi;";
             //println ("----sepec:"^code);
-            b.yetiMainTask ["-e",code] b.pathes.test true "." p;
+            b.yetiMainTask ["-e",code] (b.pathes.test b.baseConfig) true "." p;
         fi;
     done;
         
@@ -290,14 +290,17 @@ simpleTestTarget =
                 done
                 |> strJoin "")
                 ^ "); if fails > 0 then System#exit(1) fi;);";
-            b.yetiMainTask ["-e", code] b.pathes.test true "." p;
+            b.yetiMainTask ["-e", code] (b.pathes.test b.baseConfig) true "." p;
         fi;
     done;
       
                 
         
 createNewYetiProject projectDir project = 
-       (for [b.baseConfig.dir.lib, b.baseConfig.dir.src, b.baseConfig.dir.test, b.baseConfig.dir.buildExtlib] 
+       (for [b.baseConfig.dir.lib, 
+             b.baseConfig.dir.src, 
+             b.baseConfig.dir.test, 
+             b.baseConfig.dir.buildExtlib] 
              do d: 
                 antTask "mkdir" ["dir":(projectDir ^ d)] [] project 
         done;

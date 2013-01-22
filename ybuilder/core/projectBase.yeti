@@ -97,32 +97,32 @@ config = config with {
 
 
 //pathes
-buildExtPath is pathPatternType = 
-    array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
+buildExtPath config =  
+          array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
-runtimePath is pathPatternType = 
-    array [Patterns \config.pathScopeCompile,
+runtimePath config =  
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeRuntime,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
-compilePath is pathPatternType = 
-    array [Patterns \config.pathScopeCompile,
+compilePath config = 
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
-testPath is pathPatternType = 
-    array [Patterns \config.pathScopeCompile,
+testPath config = 
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeRuntime,
            Patterns \config.pathScopeTest,
            Patterns \config.pathScopeLib];
            
-testRuntimePath is pathPatternType = 
-    array [Patterns \testPath];
+testRuntimePath config = 
+         array [Patterns \(testPath config)];
 
 //jar properties
 
@@ -255,7 +255,7 @@ yetiMainTask args path fork dir project =
     
 yetidocTask targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
-    yetiMainTask args testPath true config.dir.src project);
+    yetiMainTask args (testPath config) true config.dir.src project);
     
 yeticTask targetDir srcDir includes sourceReaderCode path project =
    (files = listFiles srcDir includes;
@@ -712,7 +712,7 @@ jetty =
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
         
-        path = strJoin ", " (listPath runtimePath);
+        path = strJoin ", " (listPath (runtimePath config));
         context#setExtraClasspath(path);
         
         server#setHandler(context);
@@ -730,7 +730,8 @@ initDirs =
     
 initBuildPathes = 
     target "initBuildPathes" [Before initializeBuild,Depends prepareLibs] 
-          (antTask "path" ["id":"buildExtPath"] (antPathElements buildExtPath));
+          (antTask "path" ["id":"buildExtPath"] 
+                    (antPathElements (buildExtPath config)));
 
 
 for [clean, retrieveLibs, compile, test, jar, war, 

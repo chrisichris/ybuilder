@@ -52,7 +52,7 @@ evaluate argv =
         cl = 
             (load ybuilder.core.base;
              runTarget livecycleTargets.initialize [];
-             pat = createAntPath pathes.testRuntime;
+             pat = createAntPath (pathes.testRuntime baseConfig);
              new AntClassLoader(ClassLoader#getSystemClassLoader()#getParent(), 
                                 pat#getProject(), pat, false));
         _ = withCl cl 
