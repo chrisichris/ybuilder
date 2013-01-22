@@ -25,11 +25,13 @@ import org.apache.tools.ant.types: FileSet;
 load ybuilder.core.build;
 b = load ybuilder.core.projectBase;
 
+config = b.config;
+
 
 //task attributes
 javacAttributes = 
-    ["srcdir" : b.config.dir.src, 
-     "destdir":b.config.dir.targetClasses,
+    ["srcdir" : config.dir.src, 
+     "destdir":config.dir.targetClasses,
      "includes":"**/*.java",
      "debug": "on", 
      "includeAntRuntime":"false",
@@ -43,8 +45,8 @@ yeticAttributes = {
 };
 
 javacTestAttributes = 
-    ["srcdir" : b.config.dir.test, 
-     "destdir": b.config.dir.targetTestClasses,
+    ["srcdir" : config.dir.test, 
+     "destdir": config.dir.targetTestClasses,
      "includes": "**/*.java",
      "debug": "on", 
      "includeAntRuntime": "false",
@@ -53,8 +55,8 @@ javacTestAttributes =
 var javacTestCompilerarg = "";
 
 javadocAttributes = 
-    ["sourcepath" : b.config.dir.src,
-     "destdir": b.config.dir.javadoc];
+    ["sourcepath" : config.dir.src,
+     "destdir": config.dir.javadoc];
 
 
 
@@ -64,16 +66,16 @@ resourcesPatterns =
 copyResources = 
     target "copyResources" 
            [Before b.livecycleTargets.processResources,
-            Description "Copies resources from [\(b.config.dir.src), \(b.config.dir.resources)] to [\(b.config.dir.targetClasses)]"]
+            Description "Copies resources from [\(config.dir.src), \(config.dir.resources)] to [\(config.dir.targetClasses)]"]
            do p:
-                if (file b.config.dir.resources)#exists() then
-                    antTask "copy" ["todir":b.config.dir.targetClasses] 
-                        [el "fileset" ["dir":b.config.dir.resources] []]
+                if (file config.dir.resources)#exists() then
+                    antTask "copy" ["todir":config.dir.targetClasses] 
+                        [el "fileset" ["dir":config.dir.resources] []]
                         p
                 fi;
-                if (file b.config.dir.src)#exists() then
-                    antTask "copy" ["todir":b.config.dir.targetClasses]
-                        [antFilesetElement b.config.dir.src resourcesPatterns]
+                if (file config.dir.src)#exists() then
+                    antTask "copy" ["todir":config.dir.targetClasses]
+                        [antFilesetElement config.dir.src resourcesPatterns]
                         p
                 fi;
            done;
@@ -83,14 +85,14 @@ copyTestResources =
            [Before b.livecycleTargets.processTestResources, 
             Description "Copies test resources to test classes dir"]
            do p:
-                if (file b.config.dir.resourcesTest)#exists() then
-                    antTask "copy" ["todir":b.config.dir.targetTestClasses] 
-                            [el "fileset" ["dir":b.config.dir.resourcesTest] []]
+                if (file config.dir.resourcesTest)#exists() then
+                    antTask "copy" ["todir":config.dir.targetTestClasses] 
+                            [el "fileset" ["dir":config.dir.resourcesTest] []]
                             p
                 fi;
-                if (file b.config.dir.test)#exists() then
-                    antTask "copy" ["todir":b.config.dir.targetTestClasses]
-                        [antFilesetElement b.config.dir.test resourcesPatterns]
+                if (file config.dir.test)#exists() then
+                    antTask "copy" ["todir":config.dir.targetTestClasses]
+                        [antFilesetElement config.dir.test resourcesPatterns]
                         p
                 fi;
            done;
@@ -99,10 +101,10 @@ compileJava =
     target "compileJava" 
            [Before b.livecycleTargets.compile, Description "Compiles java sources"]
            do p:
-                if (file b.config.dir.src)#exists() then
+                if (file config.dir.src)#exists() then
                     antTask "javac" javacAttributes 
                         [el "compilerarg" ["line": javacCompilerarg] [],
-                         el "classpath" [:] (antPathElements (b.pathes.compile b.config))] 
+                         el "classpath" [:] (antPathElements (b.pathes.compile config))] 
                         p;
                 fi;
            done; 
@@ -111,23 +113,23 @@ testCompileJava =
     target "testCompileJava" 
            [Before b.livecycleTargets.testCompile, Description "compiles java test sources"]
            do p:
-                if (file b.config.dir.test)#exists() then
+                if (file config.dir.test)#exists() then
                     antTask "javac" javacTestAttributes 
                         [el "compilerarg" ["line":javacTestCompilerarg] [],
-                         el "classpath" [:] (antPathElements (b.pathes.test b.config))] 
+                         el "classpath" [:] (antPathElements (b.pathes.test config))] 
                         p
                 fi
            done;
 javadoc = 
     target "javadoc" 
            [Before b.livecycleTargets.doc, 
-            Description "create javadocs from [\(b.config.dir.src)] to [\(b.config.dir.javadoc)]"] 
+            Description "create javadocs from [\(config.dir.src)] to [\(config.dir.javadoc)]"] 
             do p:
-                if (file b.config.dir.src)#exists() then
-                    antTask "delete" ["dir":b.config.dir.javadoc] [] p;
-                    antTask "mkdir" ["dir":b.config.dir.javadoc] [] p;
+                if (file config.dir.src)#exists() then
+                    antTask "delete" ["dir":config.dir.javadoc] [] p;
+                    antTask "mkdir" ["dir":config.dir.javadoc] [] p;
                     antTask "javadoc" javadocAttributes 
-                            [el "classpath" [:] (antPathElements (b.pathes.compile b.config))] 
+                            [el "classpath" [:] (antPathElements (b.pathes.compile config))] 
                             p
                 fi
             done;
@@ -137,13 +139,13 @@ javadoc =
 compileYeti = 
     target "compileYeti" [Depends compileJava, Before b.livecycleTargets.compile] 
            do p:
-                if (file b.config.dir.src)#exists() then
+                if (file config.dir.src)#exists() then
                     b.yeticTask 
-                        b.config.dir.targetClasses 
-                        b.config.dir.src 
+                        config.dir.targetClasses 
+                        config.dir.src 
                         yeticAttributes.includes 
                         yeticAttributes.sourceReaderCode
-                        (b.pathes.compile b.config) 
+                        (b.pathes.compile config) 
                         p;
                 fi
            done;
@@ -152,13 +154,13 @@ testCompileYeti =
     target "testCompileYeti" 
            [Depends testCompileJava, Before b.livecycleTargets.testCompile] 
            do p:
-                if (file b.config.dir.test)#exists() then
+                if (file config.dir.test)#exists() then
                     b.yeticTask 
-                        b.config.dir.targetTestClasses 
-                        b.config.dir.test 
+                        config.dir.targetTestClasses 
+                        config.dir.test 
                         yeticAttributes.includes 
                         yeticAttributes.sourceReaderCode
-                        (b.pathes.test b.config) 
+                        (b.pathes.test config) 
                         p;
                 fi;
            done;
@@ -167,12 +169,12 @@ yetidoc =
     target "yetidoc" 
         [Before b.livecycleTargets.doc, Depends b.baseTargets.initDirs, Description "creates yetidoc"] 
         do p:
-            if (file b.config.dir.test)#exists() then
-                antTask "delete" ["dir":b.config.dir.yetidoc] [] p;
-                antTask "mkdir" ["dir":b.config.dir.yetidoc] [] p;
-                fileSet = listFiles b.config.dir.src [Include "**/*.yeti", 
+            if (file config.dir.test)#exists() then
+                antTask "delete" ["dir":config.dir.yetidoc] [] p;
+                antTask "mkdir" ["dir":config.dir.yetidoc] [] p;
+                fileSet = listFiles config.dir.src [Include "**/*.yeti", 
                                       Exclude "**/ybuilder.yeti" ];
-                b.yetidocTask b.config b.config.dir.yetidoc fileSet p;
+                b.yetidocTask config config.dir.yetidoc fileSet p;
             fi;
         done;
         
@@ -180,7 +182,7 @@ yetidoc =
 junitTarget = 
     target "junit" [Before b.livecycleTargets.test] do p:
         hasJunit = try 
-            (createAntClassLoader (b.pathes.test b.config) [])
+            (createAntClassLoader (b.pathes.test config) [])
                 #loadClass("junit.framework.Test");
             ((p.antProject)#getClass()#getClassLoader())
                            #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
@@ -189,14 +191,14 @@ junitTarget =
             false;
         yrt;
             
-        if (file b.config.dir.test)#exists() and hasJunit then
-            antTask "mkdir" ["dir":b.config.dir.reports ^ "tests"] [] p;
+        if (file config.dir.test)#exists() and hasJunit then
+            antTask "mkdir" ["dir":config.dir.reports ^ "tests"] [] p;
             antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
-                   [el "classpath" [:] (antPathElements (b.pathes.test b.config)),
+                   [el "classpath" [:] (antPathElements (b.pathes.test config)),
                     el "formatter" ["type":"plain"] [],
                     el "batchtest" ["fork":"yes", 
-                                    "todir": b.config.dir.reports ^ "tests"] 
-                       [el "fileset" ["dir": b.config.dir.test] 
+                                    "todir": config.dir.reports ^ "tests"] 
+                       [el "fileset" ["dir": config.dir.test] 
                            [el "include" ["name":"**/*Test.java"] []]]] p;
         fi
     done;
@@ -204,15 +206,15 @@ junitTarget =
 yebspecTarget =
     target "yebspec" [Before b.livecycleTargets.test] do p:
         hasSpec = try
-            (createAntClassLoader (b.pathes.test b.config) [])
+            (createAntClassLoader (b.pathes.test config) [])
                 #loadClass("org.yeb.yebspec");
             true;
         catch Exception e:
             false;
         yrt;
         modules = if empty? p.args then
-            if (file b.config.dir.test)#exists() and hasSpec then
-                listFiles b.config.dir.test [Include "**/*Spec.yeti"];
+            if (file config.dir.test)#exists() and hasSpec then
+                listFiles config.dir.test [Include "**/*Spec.yeti"];
             else
                 []
             fi    
@@ -222,8 +224,8 @@ yebspecTarget =
             fi;
             list p.args
         fi;
-        antTask "mkdir" ["dir":b.config.dir.reports] [] p;
-        repFile = b.config.dir.reports ^"yebspecResults.txt";
+        antTask "mkdir" ["dir":config.dir.reports] [] p;
+        repFile = config.dir.reports ^"yebspecResults.txt";
         antTask "delete" ["file":repFile] [] p;
 
         if not empty? modules then
@@ -245,15 +247,15 @@ yebspecTarget =
                 ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;"
                 ^ "if (res.exceptions + res.fails) > 0 then System#exit(1) fi;";
             //println ("----sepec:"^code);
-            b.yetiMainTask ["-e",code] (b.pathes.test b.config) true "." p;
+            b.yetiMainTask ["-e",code] (b.pathes.test config) true "." p;
         fi;
     done;
         
 simpleTestTarget =
     target "simpleTest" [Before b.livecycleTargets.test] do p:
         modules = if empty? p.args then
-            if (file b.config.dir.test)#exists() then
-                listFiles b.config.dir.test [Include "**/*STest.yeti"];
+            if (file config.dir.test)#exists() then
+                listFiles config.dir.test [Include "**/*STest.yeti"];
             else
                 []
             fi    
@@ -261,7 +263,7 @@ simpleTestTarget =
             list p.args
         fi;
         
-        repDir = b.config.dir.reports ^"stests/";
+        repDir = config.dir.reports ^"stests/";
         antTask "delete" ["dir":repDir] [] p;
         antTask "mkdir" ["dir":repDir] [] p;
 
@@ -290,17 +292,17 @@ simpleTestTarget =
                 done
                 |> strJoin "")
                 ^ "); if fails > 0 then System#exit(1) fi;);";
-            b.yetiMainTask ["-e", code] (b.pathes.test b.config) true "." p;
+            b.yetiMainTask ["-e", code] (b.pathes.test config) true "." p;
         fi;
     done;
       
                 
         
 createNewYetiProject projectDir project = 
-       (for [b.config.dir.lib, 
-             b.config.dir.src, 
-             b.config.dir.test, 
-             b.config.dir.buildExtlib] 
+       (for [config.dir.lib, 
+             config.dir.src, 
+             config.dir.test, 
+             config.dir.buildExtlib] 
              do d: 
                 antTask "mkdir" ["dir":(projectDir ^ d)] [] project 
         done;
