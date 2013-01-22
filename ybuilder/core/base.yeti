@@ -27,42 +27,42 @@ b = load ybuilder.core.projectBase;
 
 config = b.config;
 
+config = config with {
+    //task attributes
+    javacAttributes = 
+        ["srcdir" : config.dir.src, 
+         "destdir":config.dir.targetClasses,
+         "includes":"**/*.java",
+         "debug": "on", 
+         "includeAntRuntime":"false",
+         "fork": "true"],
+         
+    javacCompilerarg = "",
 
-//task attributes
-javacAttributes = 
-    ["srcdir" : config.dir.src, 
-     "destdir":config.dir.targetClasses,
-     "includes":"**/*.java",
-     "debug": "on", 
-     "includeAntRuntime":"false",
-     "fork": "true"];
-     
-var javacCompilerarg = "";
+    yeticIncludes = [Include "**/*.yeti"],
+    yeticSourceReaderCode = none is Some string | None (),
 
-yeticAttributes = {
-    var includes = [Include "**/*.yeti"],
-    var sourceReaderCode = none is Some string | None ()
+    javacTestAttributes = 
+        ["srcdir" : config.dir.test, 
+         "destdir": config.dir.targetTestClasses,
+         "includes": "**/*.java",
+         "debug": "on", 
+         "includeAntRuntime": "false",
+         "fork": "true"],
+
+    javacTestCompilerarg = "",
+
+    javadocAttributes = 
+        ["sourcepath" : config.dir.src,
+         "destdir": config.dir.javadoc],
+
+
+
+    //java targets
+    resourcesPatterns = 
+        [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"],
 };
 
-javacTestAttributes = 
-    ["srcdir" : config.dir.test, 
-     "destdir": config.dir.targetTestClasses,
-     "includes": "**/*.java",
-     "debug": "on", 
-     "includeAntRuntime": "false",
-     "fork": "true"];
-
-var javacTestCompilerarg = "";
-
-javadocAttributes = 
-    ["sourcepath" : config.dir.src,
-     "destdir": config.dir.javadoc];
-
-
-
-//java targets
-resourcesPatterns = 
-    [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"];
 copyResources = 
     target "copyResources" 
            [Before b.livecycleTargets.processResources,
@@ -75,7 +75,9 @@ copyResources =
                 fi;
                 if (file config.dir.src)#exists() then
                     antTask "copy" ["todir":config.dir.targetClasses]
-                        [antFilesetElement config.dir.src resourcesPatterns]
+                        [antFilesetElement 
+                                config.dir.src 
+                                config.resourcesPatterns]
                         p
                 fi;
            done;
@@ -92,7 +94,8 @@ copyTestResources =
                 fi;
                 if (file config.dir.test)#exists() then
                     antTask "copy" ["todir":config.dir.targetTestClasses]
-                        [antFilesetElement config.dir.test resourcesPatterns]
+                        [antFilesetElement config.dir.test 
+                            config.resourcesPatterns]
                         p
                 fi;
            done;
@@ -102,8 +105,8 @@ compileJava =
            [Before b.livecycleTargets.compile, Description "Compiles java sources"]
            do p:
                 if (file config.dir.src)#exists() then
-                    antTask "javac" javacAttributes 
-                        [el "compilerarg" ["line": javacCompilerarg] [],
+                    antTask "javac" config.javacAttributes 
+                        [el "compilerarg" ["line": config.javacCompilerarg] [],
                          el "classpath" [:] (antPathElements (b.pathes.compile config))] 
                         p;
                 fi;
@@ -114,8 +117,8 @@ testCompileJava =
            [Before b.livecycleTargets.testCompile, Description "compiles java test sources"]
            do p:
                 if (file config.dir.test)#exists() then
-                    antTask "javac" javacTestAttributes 
-                        [el "compilerarg" ["line":javacTestCompilerarg] [],
+                    antTask "javac" config.javacTestAttributes 
+                        [el "compilerarg" ["line":config.javacTestCompilerarg] [],
                          el "classpath" [:] (antPathElements (b.pathes.test config))] 
                         p
                 fi
@@ -128,7 +131,7 @@ javadoc =
                 if (file config.dir.src)#exists() then
                     antTask "delete" ["dir":config.dir.javadoc] [] p;
                     antTask "mkdir" ["dir":config.dir.javadoc] [] p;
-                    antTask "javadoc" javadocAttributes 
+                    antTask "javadoc" config.javadocAttributes 
                             [el "classpath" [:] (antPathElements (b.pathes.compile config))] 
                             p
                 fi
@@ -143,8 +146,8 @@ compileYeti =
                     b.yeticTask 
                         config.dir.targetClasses 
                         config.dir.src 
-                        yeticAttributes.includes 
-                        yeticAttributes.sourceReaderCode
+                        config.yeticIncludes 
+                        config.yeticSourceReaderCode
                         (b.pathes.compile config) 
                         p;
                 fi
@@ -158,8 +161,8 @@ testCompileYeti =
                     b.yeticTask 
                         config.dir.targetTestClasses 
                         config.dir.test 
-                        yeticAttributes.includes 
-                        yeticAttributes.sourceReaderCode
+                        config.yeticIncludes 
+                        config.yeticSourceReaderCode
                         (b.pathes.test config) 
                         p;
                 fi;
@@ -317,16 +320,6 @@ createNewYetiProject projectDir project =
 b with {
     
 
-    taskProps = {
-        yetic = yeticAttributes,
-        javacAttributes,
-        javacCompilerarg,
-        javacTestAttributes,
-        javacTestCompilerarg,
-        resourcesPatterns,
-    },
-    
-    
     createNewYetiProject, 
     
     baseTargets = b.livecycleTargets with b.baseTargets with {
