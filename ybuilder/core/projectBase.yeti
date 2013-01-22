@@ -123,10 +123,35 @@ config = config with {
         var uniqueVersion = false
     },
 
-    artifactDependencies = array[],	
-    projectDependencies = array [],
-    remoteRepositories = array [],
+    artifactDependencies = [],	
+    projectDependencies = [],
+    remoteRepositories = [],
 };
+
+createConfig baseConfig dependencies =
+    (var ad = array [];
+    var pd = array [];
+    var rp = array [
+        {id = "chrisichris-snapshots",
+        url = "http://chrisichris.github.com/chrisis-maven-repo/snapshots",
+        layout = "default" },
+        { id = "chrisichris", 
+        url = "http://chrisichris.github.com/chrisis-maven-repo/releases",
+        layout = "default" }];
+        
+    for dependencies do d: case d of
+        ProjectDependency d: push pd d;
+        ArtifactDependency d : push ad d;
+        Repository r : push rp r;
+    esac
+    done;
+
+    baseConfig with {
+        artifactDependencies = ad,
+        projectDependencies = pd,
+        remoteRepositories = rp
+    });
+    
 
 //pathes
 buildExtPath config =  
@@ -195,23 +220,21 @@ dependency groupId artifactId version opts =
         if not (strEnds? projectPath "/") then
             projectPath := projectPath ^ "/";
         fi;
-        push config.projectDependencies 
-             {projectPath = projectPath, 
+        
+        ProjectDependency 
+            {projectPath = projectPath, 
               artifact = v};
     else
-        push config.artifactDependencies v;
+        ArtifactDependency v;
     fi);
 
 remoteRepository idstr url = 
-    push config.remoteRepositories {
+    Repository {
             id = idstr is string, 
             url is string, 
             var layout = "default"
         };
 
-remoteRepository "chrisichris-snapshots" "http://chrisichris.github.com/chrisis-maven-repo/snapshots";
-remoteRepository "chrisichris" "http://chrisichris.github.com/chrisis-maven-repo/releases";
-        
 exclusion groupId artifactId = 
     Exclusion {groupId is string, artifactId is string};
 

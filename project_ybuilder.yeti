@@ -80,11 +80,11 @@ _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
     mvnInstallOrDeploy jarFile p;            
 done;
             
-
+/*
 dependency "junit" "junit" "3.8.2" [TestScope()];
 dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
 dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
-
+*/
 //for ["new-project","compile-java-yeti"] (push extensionTestDirs); 
 
 //runTarget retrieveDependencies;
