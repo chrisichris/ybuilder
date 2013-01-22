@@ -394,13 +394,8 @@ test =
     target "test" [Depends processTestClasses,
                    Description "runs the tests of the project"] \();
 preparePackage = 
-    target "preparePackage" [Depends cleanAll, Depends test,
-                             DoPreDependencies
-                               \(for config.projectDependencies do p:
-                                    push config.artifactDependencies p.artifact;
-                                done)]
-                            \();
-                            
+    target "preparePackage" [Depends cleanAll, Depends test] \(); 
+    
 preDoc = target "preDoc" [Depends initialize] \();
 
 doc = target "doc" [Depends preDoc,
@@ -494,7 +489,9 @@ initPom =
                  else
                     []
                  fi 
-                 ++  _mvnDependencyTags config.artifactDependencies)
+                 ++  _mvnDependencyTags 
+                        (config.artifactDependencies
+                        ++ map (.artifact) config.projectDependencies))
                 p;
         done;
         
