@@ -26,7 +26,7 @@ import yeti.lang.compiler.yeti;
 file n = new File(n is string);
 args = list _argv;
 
-buildLibsDir = dir.ybuilderLibsManaged;
+buildLibsDir = baseConfig.dir.ybuilderLibsManaged;
 
 retrieveBuildDependencies () =
    (import java.util.regex: Pattern;
@@ -91,8 +91,8 @@ retrieveBuildDependencies () =
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
     project = createProject();
     
-    antTask "delete" ["dir":dir.ybuilderLibsManaged] [] project;
-    antTask "mkdir" ["dir":dir.ybuilderLibsManaged] [] project;
+    antTask "delete" ["dir":baseConfig.dir.ybuilderLibsManaged] [] project;
+    antTask "mkdir" ["dir":baseConfig.dir.ybuilderLibsManaged] [] project;
     if not empty? deps then
         antTask (maven "dependencies") 
                 ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
@@ -118,7 +118,7 @@ retrieveBuildDependencies () =
                      done deps)) 
                 project;
                     
-        antTask "copy" ["todir":dir.ybuilderLibsManaged] 
+        antTask "copy" ["todir":baseConfig.dir.ybuilderLibsManaged] 
                 [el "fileset" ["refid":"dependenciesFS"][],
                  el "mapper" ["type":"flatten"] []] 
                 project;
@@ -152,7 +152,7 @@ _withBuildClassLoader dirPrefix antFiles fn =
 
     
 if (file "project.yeti")#exists() 
-    and not (file dir.ybuilderLibsManaged)#exists() then
+    and not (file baseConfig.dir.ybuilderLibsManaged)#exists() then
     retrieveBuildDependencies ();
 fi;	
 
@@ -223,8 +223,8 @@ elif (not empty? args) and ((head args) == "new") then
     if (new File("newproject.yeti"))#exists() then
         antFiles = 
             ((load ybuilder.core.build).listFiles) "."
-                [Include "\(dir.ybuilder)extlib/*.jar", 
-                 Include "\(dir.ybuilderLibsManaged)*.jar"];
+                [Include "\(baseConfig.dir.ybuilder)extlib/*.jar", 
+                 Include "\(baseConfig.dir.ybuilderLibsManaged)*.jar"];
 
         _withBuildClassLoader "" antFiles do ctxtLoader:
             m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
@@ -260,14 +260,14 @@ For detailed description google ybuilder yeti (there is no homepage yet)
 
 elif (not empty? args) and ((head args) == "cleanBuildLibs") then
     load ybuilder.core.build;
-    antTask "delete" ["dir":dir.ybuilderLibsManaged][] (createProject());
+    antTask "delete" ["dir":baseConfig.dir.ybuilderLibsManaged][] (createProject());
 elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
     retrieveBuildDependencies ();
 else
     antFiles = 
         ((load ybuilder.core.build).listFiles) "."
-            [Include "\(dir.ybuilder)extlib/*.jar", 
-             Include "\(dir.ybuilderLibsManaged)*.jar"];
+            [Include "\(baseConfig.dir.ybuilder)extlib/*.jar", 
+             Include "\(baseConfig.dir.ybuilderLibsManaged)*.jar"];
 
     _withBuildClassLoader "" antFiles do ctxtLoader:
         m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")

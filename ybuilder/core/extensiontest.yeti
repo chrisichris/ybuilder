@@ -23,7 +23,7 @@ load ybuilder.core.build;
 load ybuilder.core.base;
 
 extensionTestDir = "etprojects/";
-extensionTestTargetDir = dir.target ^ "etprojects/";
+extensionTestTargetDir = baseConfig.dir.target ^ "etprojects/";
 
 
 createExtensionTestDirs name project = (

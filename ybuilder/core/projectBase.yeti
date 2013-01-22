@@ -47,56 +47,58 @@ project = {
  	
 
 //directories
-dir = {
-    libManaged = "lib/managed/",
-    lib = "lib/unmanaged/",	
-    target = "target/",
-    src = "src/",
-    test = "test/",
-    reports = "target/reports/",
-    doc = "target/doc/",
-    ybuilder = "lib/ybuilder/",
-    ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
-    targetClasses = "target/classes/",
-    targetTestClasses = "target/testclasses/",
+config = {
+    dir = {
+        libManaged = "lib/managed/",
+        lib = "lib/unmanaged/",	
+        target = "target/",
+        src = "src/",
+        test = "test/",
+        reports = "target/reports/",
+        doc = "target/doc/",
+        ybuilder = "lib/ybuilder/",
+        ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
+        targetClasses = "target/classes/",
+        targetTestClasses = "target/testclasses/",
 
-    webapp = "webapp/",
-    resources = "resources/",
-    resourcesTest = "test-resources/",
-    javadoc = "target/doc/javadoc/",
-    yetidoc = "target/doc/yetidoc/",
+        webapp = "webapp/",
+        resources = "resources/",
+        resourcesTest = "test-resources/",
+        javadoc = "target/doc/javadoc/",
+        yetidoc = "target/doc/yetidoc/",
 
-    buildExtlib = "lib/ybuilder/extlib/",
+        buildExtlib = "lib/ybuilder/extlib/",
+    }
 };
 
 
 //setPathes
-config = {
+config = config with {
     pathScopeLib is pathPatternType = 
-        array [Fileset [dir.lib : [Include "**/*.jar"]]], 
+        array [Fileset [config.dir.lib : [Include "**/*.jar"]]], 
 
     pathScopeCompile is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/compile/**/*.jar"]],
-               Location dir.targetClasses],
+        array [Fileset [config.dir.libManaged : [Include "/compile/**/*.jar"]],
+               Location config.dir.targetClasses],
     
     pathScopeRuntime is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/runtime/**/*.jar"]]],
+        array [Fileset [config.dir.libManaged : [Include "/runtime/**/*.jar"]]],
 
     pathScopeSystem is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/system/**/*.jar"]]],
+        array [Fileset [config.dir.libManaged : [Include "/system/**/*.jar"]]],
 
     pathScopeProvided is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/provided/**/*.jar"]]],
+        array [Fileset [config.dir.libManaged : [Include "/provided/**/*.jar"]]],
 
     pathScopeTest is pathPatternType =
-        array [Fileset [dir.libManaged : [Include "/test/**/*.jar"]],
-               Location dir.targetTestClasses],
+        array [Fileset [config.dir.libManaged : [Include "/test/**/*.jar"]],
+               Location config.dir.targetTestClasses],
 };               
 
 
 //pathes
 buildExtPath is pathPatternType = 
-    array [Fileset [dir.buildExtlib : [Include "**/*.jar"]], 
+    array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath is pathPatternType = 
@@ -127,20 +129,20 @@ testRuntimePath is pathPatternType =
 jarManifest = [:] is hash<string,string>;
 jarAttributes is hash<string,string> = [:];
                          
-jarFileset = [ dir.targetClasses : []];
+jarFileset = [ config.dir.targetClasses : []];
 
 
-warAttributes = ["webxml": dir.webapp ^ "WEB-INF/web.xml"];
+warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"];
 
 warLibset = 
-     [dir.lib : [Include "**/*.jar"],
-      dir.libManaged : [Include "compile/**/*.jar",
+     [config.dir.lib : [Include "**/*.jar"],
+      config.dir.libManaged : [Include "compile/**/*.jar",
                         Include "runtime/**/*.jar"]];
                        
 warClassesset =
-    [dir.targetClasses : [Include "**/*.*"]];
+    [config.dir.targetClasses : [Include "**/*.*"]];
 
-warFileset = [dir.webapp : [Include "**/*.*"]];
+warFileset = [config.dir.webapp : [Include "**/*.*"]];
 
 deployRepository = {
     var url = undef_str,
@@ -253,7 +255,7 @@ yetiMainTask args path fork dir project =
     
 yetidocTask targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
-    yetiMainTask args testPath true dir.src project);
+    yetiMainTask args testPath true config.dir.src project);
     
 yeticTask targetDir srcDir includes sourceReaderCode path project =
    (files = listFiles srcDir includes;
@@ -285,7 +287,7 @@ ret
     
             
     
-continuesDirs = array [dir.src];
+continuesDirs = array [config.dir.src];
 continues = 
     target "continues" 
            [Description "Continuesly runs the target given as argument"]
@@ -344,14 +346,14 @@ preClean =
 clean = 
     target "clean" 
            [Depends preClean,  
-                Description "cleans the build [\(dir.target)] dir"] 
-           (antTask "delete" ["dir" : dir.target] []);
+                Description "cleans the build [\(config.dir.target)] dir"] 
+           (antTask "delete" ["dir" : config.dir.target] []);
 
 cleanLibs = 
     target "cleanLibs" 
            [Description ("Cleans the retrieved dependencies "
-                        ^"in [\(dir.libManaged)] directory")] 
-           (antTask "delete" ["dir":dir.libManaged] []);
+                        ^"in [\(config.dir.libManaged)] directory")] 
+           (antTask "delete" ["dir":config.dir.libManaged] []);
 cleanAll = 
     target "cleanAll" 
            [Dependencies[cleanLibs, clean], 
@@ -367,7 +369,7 @@ initializeBuild =
     
 initialize = 
     target "initialize" [Depends initializeBuild] 
-           (antTask "mkdir" ["dir": dir.target] []);
+           (antTask "mkdir" ["dir": config.dir.target] []);
 
 generateResources = 
     target "generateResources" [Depends initialize] \();
@@ -448,7 +450,7 @@ writePom file project =
              ["pomRefId" : "pom", "file":file] [] project);
     
 mvnInstall fileName project = 
-   (pomfile = dir.target ^ "pom.xml";
+   (pomfile = config.dir.target ^ "pom.xml";
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
@@ -463,7 +465,7 @@ mvnDeploy fileName project =
                  "version":deployRepository.providerVersion] 
                 [] project;
     fi;
-    pomfile = dir.target ^"pom.xml";
+    pomfile = config.dir.target ^"pom.xml";
     writePom pomfile project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
@@ -510,7 +512,7 @@ initPom =
              
 pom =
     target "pom" [Depends initPom, Description "Writes a pom.xml"] 
-           (writePom (dir.target ^ "pom.xml"));
+           (writePom (config.dir.target ^ "pom.xml"));
 
           
 addProjectDeps =
@@ -528,12 +530,12 @@ addProjectDeps =
             for deps do {projectPath, artifact}:
                 {scope} = artifact;
                 push config.pathScopeLib 
-                    (Fileset [(projectPath ^ dir.lib) : [Include "**/*.jar"]]); 
+                    (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
                 pushLoc pS =
-                    push pS (Location (projectPath ^ dir.targetClasses));
+                    push pS (Location (projectPath ^ config.dir.targetClasses));
                 pushTD pS dpS =
                     push pS 
-                         (Fileset [projectPath ^ dir.libManaged 
+                         (Fileset [projectPath ^ config.dir.libManaged 
                                   : [Include "/\(dpS)/**/*.jar"]]);
                 //scope dependencies according to maven:
                 //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
@@ -562,10 +564,13 @@ addProjectDeps =
 prepareLibs = 
     target "prepareLibs" 
         [Before initialize, Depends addProjectDeps, 
-         Description "loads librararies in [\(dir.libManaged)]"] 
+         Description "loads librararies in [\(config.dir.libManaged)]"] 
         do project:
             copyDeps scope = 
-               (antTask "mkdir" ["dir":"\(dir.libManaged)\(scope)"] [] project;
+               (antTask "mkdir" 
+                        ["dir":"\(config.dir.libManaged)\(scope)"] 
+                        [] 
+                        project;
                 if not empty? artifactDependencies then
                     antTask (maven "dependencies") 
                             ["filesetId" : "dependenciesFS-"^scope, 
@@ -583,29 +588,37 @@ prepareLibs =
                              ++ (_mvnDependencyTags ()) ) 
                             project;
                             
-                    antTask "copy" ["todir":"\(dir.libManaged)\(scope)"] [
-                            el "fileset" ["refid":"dependenciesFS-" ^ scope][],
-                            el "mapper" ["type":"flatten"] []] project;
+                    antTask "copy" 
+                            ["todir":"\(config.dir.libManaged)\(scope)"] 
+                            [el "fileset" ["refid":"dependenciesFS-" ^ scope][],
+                            el "mapper" ["type":"flatten"] []] 
+                            project;
                 fi);
             
-            if not (file dir.lib)#exists() then
-                antTask "mkdir" ["dir":dir.lib] [] project;
+            if not (file config.dir.lib)#exists() then
+                antTask "mkdir" ["dir":config.dir.lib] [] project;
             fi;
             
             scopes =["test","compile","system","provided","runtime"];
             
-            if not (file dir.libManaged)#exists() then
+            if not (file config.dir.libManaged)#exists() then
                 for scopes copyDeps;
             else
                 for scopes do scope:
-                    antTask "mkdir" ["dir":dir.libManaged ^ scope] [] project
+                    antTask 
+                        "mkdir" 
+                        ["dir":config.dir.libManaged ^ scope] 
+                        [] 
+                        project
                 done
             fi;
         done;
+
  retrieveLibs =
-    target "retrieveLibs" [Description "loads libraries in [\(dir.libManaged)]"]
+    target "retrieveLibs" 
+            [Description "loads libraries in [\(config.dir.libManaged)]"]
         do p:
-            antTask "delete" ["dir":dir.libManaged] [] p;
+            antTask "delete" ["dir":config.dir.libManaged] [] p;
             _ =executeTarget prepareLibs [RunAlways true] p;
         done;
 
@@ -624,7 +637,7 @@ jarOnly =
     target "jarOnly" 
            [Description "Makes a jar file in dir.target"] 
            do p:
-                destfl = dir.target ^ project.artifactId ^ ".jar";
+                destfl = config.dir.target ^ project.artifactId ^ ".jar";
                 antTask "jar" 
                         (nh = copy jarAttributes;
                          nh.["destfile"] := destfl;
@@ -645,7 +658,7 @@ jar =
             Description ("Makes a jar file in dir.target - use :install "
                  ^"and/or :deploy param(s) to maven install/deploy the war")] 
     do p:
-        destfl = dir.target ^ project.artifactId ^ ".jar";
+        destfl = config.dir.target ^ project.artifactId ^ ".jar";
         _mvnInstallOrDeploy destfl p;
     done;
     
@@ -655,7 +668,7 @@ war =
             Description ("Makes a war file in dir.target - use :install" 
                ^"and/or :deploy param(s) to maven install/deploy the war")]
             do p:
-                destfl = dir.target ^ project.artifactId ^ ".war";
+                destfl = config.dir.target ^ project.artifactId ^ ".war";
                 antTask "war" 
                         (nh = copy warAttributes;
                          nh.["destfile"] := destfl;
@@ -695,7 +708,7 @@ jetty =
         
         context = new WebAppContext();
         context#setDescriptor((warAttributes.["webxml"]));
-        context#setResourceBase(dir.webapp);
+        context#setResourceBase(config.dir.webapp);
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
         
@@ -711,8 +724,8 @@ jetty =
 initDirs = 
     target "initDirs" [Before initialize,Depends prepareLibs] 
             do project:
-                antTask "mkdir" ["dir":dir.targetClasses] [] project;
-                antTask "mkdir" ["dir":dir.targetTestClasses][] project;
+                antTask "mkdir" ["dir":config.dir.targetClasses] [] project;
+                antTask "mkdir" ["dir":config.dir.targetTestClasses][] project;
             done;
     
 initBuildPathes = 
@@ -728,7 +741,6 @@ for [clean, retrieveLibs, compile, test, jar, war,
 {
     project,
     baseConfig = config, 
-    dir,
     pathes = {
         buildExt = buildExtPath,
         runtime = runtimePath,

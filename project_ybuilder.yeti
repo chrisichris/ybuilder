@@ -16,19 +16,19 @@ ybuilderSrcDir = "ybuilder/";
 
 _ = target "ybuilderinit" [Before livecycleTargets.initialize] do p:
 
-    antTask "delete" ["dir":dir.src] [] p;
-    antTask "delete" ["dir":dir.resources] [] p;
+    antTask "delete" ["dir":baseConfig.dir.src] [] p;
+    antTask "delete" ["dir":baseConfig.dir.resources] [] p;
     
     
-    antTask "copy" ["todir":dir.src ^ "ybuilder"] [
+    antTask "copy" ["todir":baseConfig.dir.src ^ "ybuilder"] [
         el "fileset" ["dir":ybuilderSrcDir] [
             el "include" ["name":"core/*.java"] []]] p;
 
-    antTask "copy" ["todir":dir.src ^ "ybuilder"] [
+    antTask "copy" ["todir":baseConfig.dir.src ^ "ybuilder"] [
         el "fileset" ["dir":ybuilderSrcDir] [
             el "include" ["name":"core/*.yeti"] []]] p;
 
-    antTask "copy" ["todir":dir.resources] [
+    antTask "copy" ["todir":baseConfig.dir.resources] [
         el "fileset" ["dir":ybuilderSrcDir ^ "resources", 
                       "defaultexcludes":"no"] 
                      []] p;
@@ -36,16 +36,16 @@ _ = target "ybuilderinit" [Before livecycleTargets.initialize] do p:
 done;
 
 _ = target "copygit" [Before baseTargets.copyResources] do p:
-    antTask "copy" ["todir":dir.targetClasses] 
-                    [el "fileset" ["dir":dir.resources, "defaultexcludes":"no"] 
+    antTask "copy" ["todir":baseConfig.dir.targetClasses] 
+                    [el "fileset" ["dir":baseConfig.dir.resources, "defaultexcludes":"no"] 
                         []] p;
 done;
 
 // compileRes = 
     // target "compileRes" [Before livecycleTargets.testCompile] do p:
-        // antTask "copy" ["todir": dir.target || "rscSources"]
-                // [antFileset (dir.targetClasses~) [Include "**/*.yeti"]] p;
-        // antTask "yetic" ["srcdir":(dir.target || "rscSources"), "destdir": dir.target||"tempClasses"] 
+        // antTask "copy" ["todir": baseConfig.dir.target || "rscSources"]
+                // [antFileset (baseConfig.dir.targetClasses~) [Include "**/*.yeti"]] p;
+        // antTask "yetic" ["srcdir":(baseConfig.dir.target || "rscSources"), "destdir": baseConfig.dir.target||"tempClasses"] 
                 // [el "classpath" [:] 
                     // [el "pathelement" ["path":"compilePath"] []]]
                 // p
@@ -57,10 +57,10 @@ jarFile = "ybuilder.jar";
 _ = target "jary" [Depends livecycleTargets.preparePackage] do p:
     jars = ["ant-1.8.2.jar","ant-launcher-1.8.2.jar","maven-ant-tasks-2.1.3.jar","yeti.jar"];
     
-    antTask "jar" ["jarfile":jarFile,"basedir":dir.targetClasses, "defaultexcludes":"no"] 
+    antTask "jar" ["jarfile":jarFile,"basedir":baseConfig.dir.targetClasses, "defaultexcludes":"no"] 
             ((map do j:	
                     el "zipfileset" 
-                       ["src": "\(dir.lib)\(j)","excludes":"MANIFEST.MF"] [] 
+                       ["src": "\(baseConfig.dir.lib)\(j)","excludes":"MANIFEST.MF"] [] 
                   done jars) 
              ++ [el "manifest" [:]
                     [el "attribute" 
