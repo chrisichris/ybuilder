@@ -155,7 +155,8 @@ testRuntimePath config =
 
 
 //dependency management
-artifactDependencies = array[];					  
+artifactDependencies = array[];	
+projectDependencies = array [];
 remoteRepositories = array [];
 
 
@@ -190,17 +191,16 @@ dependency groupId artifactId version opts =
         esac;
     done;
     
-    v2 = if (strLength projectPath) > 0 then
+    if (strLength projectPath) > 0 then
         if not (strEnds? projectPath "/") then
             projectPath := projectPath ^ "/";
         fi;
-        Project {projectPath = projectPath, artifact = v};
+        push projectDependencies 
+             {projectPath = projectPath, 
+              artifact = v};
     else
-        Artifact v;
-    fi;
-    
-    push artifactDependencies v2;
-    ());
+        push artifactDependencies v;
+    fi);
 
 remoteRepository idstr url = 
     push remoteRepositories {
@@ -396,13 +396,8 @@ test =
 preparePackage = 
     target "preparePackage" [Depends cleanAll, Depends test,
                              DoPreDependencies
-                               \(cp = copy artifactDependencies;
-                                clearArray artifactDependencies;
-                                for cp do a:
-                                    push artifactDependencies (case a of
-                                        Project p: Artifact p.artifact;
-                                        Artifact a: Artifact a;
-                                    esac)
+                               \(for projectDependencies do p:
+                                    push artifactDependencies p.artifact;
                                 done)]
                             \();
                             
@@ -412,14 +407,7 @@ doc = target "doc" [Depends preDoc,
                     Description "Generates project documentation"] \();	
 
 //mvn things
-_mvnDependencyTags () =     
-   (ads = map do v:
-        case v of
-            Project x : none;
-            Artifact y : Some y;
-        esac
-    done artifactDependencies;
-    ad = catSome ads;
+_mvnDependencyTags artifactDependencies =     
     map do dep: 
         atts = 
            ["groupId" : dep.groupId,
@@ -442,7 +430,7 @@ _mvnDependencyTags () =
                     ["groupId":exc.groupId, 
                      "artifactId":exc.artifactId] [] 
                  done dep.exclusions) 
-    done ad);
+    done artifactDependencies;
 
 
 writePom file project =
@@ -506,7 +494,7 @@ initPom =
                  else
                     []
                  fi 
-                 ++  _mvnDependencyTags ())
+                 ++  _mvnDependencyTags artifactDependencies)
                 p;
         done;
         
@@ -521,14 +509,7 @@ addProjectDeps =
            [Before initialize,
             Description "add the pathes for dependend projects"]
            do p:
-            sdeps = map do d:
-                        case d of
-                            Project p: Some p;
-                            Artifact _ : none;
-                        esac
-                    done artifactDependencies;
-            deps = catSome sdeps;
-            for deps do {projectPath, artifact}:
+            for projectDependencies do {projectPath, artifact}:
                 {scope} = artifact;
                 push config.pathScopeLib 
                     (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
@@ -586,7 +567,7 @@ prepareLibs =
                                         "layout":rr.layout] 
                                        [] 
                                    done remoteRepositories) 
-                             ++ (_mvnDependencyTags ()) ) 
+                             ++ (_mvnDependencyTags artifactDependencies) ) 
                             project;
                             
                     antTask "copy" 
