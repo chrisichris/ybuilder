@@ -275,8 +275,7 @@ yetiMainTask args path fork dir project =
         yrt;
         ();
     fi;
-    
-    
+     
 yetidocTask targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
     yetiMainTask args (testPath config) true config.dir.src project);
@@ -450,15 +449,35 @@ _mvnDependencyTags artifactDependencies =
                  done dep.exclusions) 
     done artifactDependencies;
 
+_pomName config = config.dir.target^"pom.xml";
 
-writePom file project =
-    (antTask "delete" ["file":file] [] project;
-     antTask (maven "writepom")
-             ["pomRefId" : "pom", "file":file] [] project);
+writePom p=
+    (//first init pom
+    antTask "mkdir" ["dir":config.dir.target] [] p;
+    antTask (maven "pom") 
+        ["id" : "pom",
+         "groupId" : project.groupId,
+         "artifactId" : project.artifactId,
+         "version" : project.version,
+         "name" : project.name]
+        (if (strLength project.license) > 0 
+             and (strLength project.licenseURL) > 0 then
+            [el "license" ["name":project.license,
+                          "url": project.licenseURL] []]
+         else
+            []
+         fi 
+         ++  _mvnDependencyTags 
+                (config.artifactDependencies
+                ++ map (.artifact) config.projectDependencies))
+        p;
+    antTask "delete" ["file":_pomName config] [] p;
+    antTask (maven "writepom")
+             ["pomRefId" : "pom", "file":_pomName config] [] p);
     
 mvnInstall fileName project = 
-   (pomfile = config.dir.target ^ "pom.xml";
-    writePom pomfile project;
+   (pomfile = _pomName config;
+    writePom project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
             ["file": fileName]
@@ -472,8 +491,8 @@ mvnDeploy fileName project =
                  "version":config.deployRepository.providerVersion] 
                 [] project;
     fi;
-    pomfile = config.dir.target ^"pom.xml";
-    writePom pomfile project;
+    pomfile = _pomName config;
+    writePom project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
             ["file":fileName, 
@@ -493,35 +512,12 @@ mvnDeploy fileName project =
              ++ [el "pom" ["refid":"installPom"] []])
              project);
                  
-
                  
-initPom = 
-    target "initPom" [Before initialize] 
-        do p:
-            //println project.groupId;
-            antTask (maven "pom") 
-                ["id" : "pom",
-                 "groupId" : project.groupId,
-                 "artifactId" : project.artifactId,
-                 "version" : project.version,
-                 "name" : project.name]
-                (if (strLength project.license) > 0 
-                     and (strLength project.licenseURL) > 0 then
-                    [el "license" ["name":project.license,
-                                  "url": project.licenseURL] []]
-                 else
-                    []
-                 fi 
-                 ++  _mvnDependencyTags 
-                        (config.artifactDependencies
-                        ++ map (.artifact) config.projectDependencies))
-                p;
-        done;
         
              
 pom =
-    target "pom" [Depends initPom, Description "Writes a pom.xml"] 
-           (writePom (config.dir.target ^ "pom.xml"));
+    target "pom" [Description "Writes a pom.xml"] 
+           do p: writePom p done;
 
           
 addProjectDeps =
@@ -656,7 +652,7 @@ jarOnly =
 
 jar = 
     target "jar" 
-           [Depends preparePackage, Depends initPom, Depends jarOnly,
+           [Depends preparePackage, Depends jarOnly,
             Description ("Makes a jar file in dir.target - use :install "
                  ^"and/or :deploy param(s) to maven install/deploy the war")] 
     do p:
@@ -798,6 +794,5 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jar,
         jarOnly,
         pom,
-        initPom,
     }
 }
