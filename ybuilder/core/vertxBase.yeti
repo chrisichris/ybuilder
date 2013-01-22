@@ -48,7 +48,7 @@ do opts:
 
     if useVertxHomeOnPath then
         //add all the vert.x dependencies
-        push b.baseConfig.pathScopeLib 
+        push b.config.pathScopeLib 
             (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
 
@@ -59,11 +59,11 @@ do opts:
         antTask "delete" ["dir":targetDir] [] p;
         antTask "mkdir" ["dir":targetDir] [] p;
         antTask "copy" ["todir":targetDir]
-            [antFilesetElement (b.baseConfig.dir.libManaged^"compile/") 
+            [antFilesetElement (b.config.dir.libManaged^"compile/") 
                                 [Include  "*.jar"]] p;
         antTask "copy" ["todir":targetDir, 
                         "flatten":"true"]
-                       [antFilesetElement b.baseConfig.dir.lib [Include "**/*.jar"]] p);
+                       [antFilesetElement b.config.dir.lib [Include "**/*.jar"]] p);
 
     //add fn to retrieveDependencies target
     bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
@@ -79,7 +79,7 @@ do opts:
             antTask "mkdir" ["dir":targetDir] [] p;
             antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
-                    [antFilesetElement b.baseConfig.dir.target 
+                    [antFilesetElement b.config.dir.target 
                         [Include "\(b.project.artifactId).jar"]] p;
         done;    
 
@@ -88,14 +88,14 @@ do opts:
                  Description "bundles creates the vertx module and 
                               copies it to target"]
         do p:
-            tDir = b.baseConfig.dir.target^modsDir^fullModuleName;
+            tDir = b.config.dir.target^modsDir^fullModuleName;
             antTask "delete" ["dir":tDir] [] p;
             antTask "mkdir" ["dir":tDir] [] p;
 
             antTask "copy" ["todir":tDir] 
                            [antFilesetElement (modsDir^moduleName) []] p;
 
-            antTask "zip" ["destfile":b.baseConfig.dir.target^fullModuleName]
+            antTask "zip" ["destfile":b.config.dir.target^fullModuleName]
                           [antFilesetElement modsDir 
                             [Include (moduleName^"/**")]] p;
         done;
@@ -109,7 +109,7 @@ do opts:
        cpP is pathPatternType = if useVertxHomeOnPath then
            array [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]];
        else
-           array [Patterns \b.baseConfig.pathScopeProvided];
+           array [Patterns \b.config.pathScopeProvided];
        fi;
 
        if defined? vertxHome then
@@ -139,16 +139,16 @@ do opts:
                         p);
 
     vertxRunPath () = 
-        (cp = array [Patterns \b.baseConfig.pathScopeCompile,
-                     Location (b.baseConfig.dir.targetClasses)];
+        (cp = array [Patterns \b.config.pathScopeCompile,
+                     Location (b.config.dir.targetClasses)];
         path = createAntPath cp;
         strJoin ":" (wrapArray path#list()));
     
     vertxTestPath () =
-        (cp = array [Patterns \b.baseConfig.pathScopeCompile, 
-                     Patterns \b.baseConfig.pathScopeTest,
-                     Location (b.baseConfig.dir.targetClasses),
-                     Location (b.baseConfig.dir.targetTestClasses)];
+        (cp = array [Patterns \b.config.pathScopeCompile, 
+                     Patterns \b.config.pathScopeTest,
+                     Location (b.config.dir.targetClasses),
+                     Location (b.config.dir.targetTestClasses)];
         path = createAntPath cp;
         strJoin ":" (wrapArray path#list()));
         
@@ -203,8 +203,8 @@ do opts:
             vertxRun,
             vertxTest,
         },
-        baseConfig = yb.baseConfig with {
-            dir  = yb.baseConfig.dir with {
+        config = yb.config with {
+            dir  = yb.config.dir with {
                 vertxHome,
                 modsDir
             }

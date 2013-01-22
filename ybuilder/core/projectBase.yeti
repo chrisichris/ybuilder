@@ -95,6 +95,35 @@ config = config with {
                Location config.dir.targetTestClasses],
 };               
 
+//jar properties
+config = config with {
+    jarManifest = [:] is hash<string,string>,
+    jarAttributes is hash<string,string> = [:],
+                             
+    jarFileset = [ config.dir.targetClasses : []],
+
+
+    warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"],
+
+    warLibset = 
+         [config.dir.lib : [Include "**/*.jar"],
+          config.dir.libManaged : [Include "compile/**/*.jar",
+                            Include "runtime/**/*.jar"]],
+                           
+    warClassesset =
+        [config.dir.targetClasses : [Include "**/*.*"]],
+
+    warFileset = [config.dir.webapp : [Include "**/*.*"]],
+
+    deployRepository = {
+        var url = undef_str,
+        var providerArtifactId = undef_str,
+        var providerVersion = "1.0-beta2",
+        params = (array []) is array<xmlelement>,
+        var uniqueVersion = false
+    }
+
+};
 
 //pathes
 buildExtPath config =  
@@ -123,34 +152,6 @@ testPath config =
            
 testRuntimePath config = 
          array [Patterns \(testPath config)];
-
-//jar properties
-
-jarManifest = [:] is hash<string,string>;
-jarAttributes is hash<string,string> = [:];
-                         
-jarFileset = [ config.dir.targetClasses : []];
-
-
-warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"];
-
-warLibset = 
-     [config.dir.lib : [Include "**/*.jar"],
-      config.dir.libManaged : [Include "compile/**/*.jar",
-                        Include "runtime/**/*.jar"]];
-                       
-warClassesset =
-    [config.dir.targetClasses : [Include "**/*.*"]];
-
-warFileset = [config.dir.webapp : [Include "**/*.*"]];
-
-deployRepository = {
-    var url = undef_str,
-    var providerArtifactId = undef_str,
-    var providerVersion = "1.0-beta2",
-    params = (array []) is array<xmlelement>,
-    var uniqueVersion = false
-};
 
 
 //dependency management
@@ -459,10 +460,10 @@ mvnInstall fileName project =
             project);
 
 mvnDeploy fileName project =
-   (if defined? deployRepository.providerArtifactId then
+   (if defined? config.deployRepository.providerArtifactId then
         antTask (maven "install-provider") 
-                ["artifactId":deployRepository.providerArtifactId,
-                 "version":deployRepository.providerVersion] 
+                ["artifactId":config.deployRepository.providerArtifactId,
+                 "version":config.deployRepository.providerVersion] 
                 [] project;
     fi;
     pomfile = config.dir.target ^"pom.xml";
@@ -470,10 +471,10 @@ mvnDeploy fileName project =
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
             ["file":fileName, 
-             "uniqueVersion": string deployRepository.uniqueVersion]
-            (if defined? deployRepository.url then
-                [el "remoteRepository" ["url":deployRepository.url]
-                    (list deployRepository.params)]
+             "uniqueVersion": string config.deployRepository.uniqueVersion]
+            (if defined? config.deployRepository.url then
+                [el "remoteRepository" ["url":config.deployRepository.url]
+                    (list config.deployRepository.params)]
              else
                 args = list project.args;
                 if (length args) < 2 then
@@ -639,16 +640,16 @@ jarOnly =
            do p:
                 destfl = config.dir.target ^ project.artifactId ^ ".jar";
                 antTask "jar" 
-                        (nh = copy jarAttributes;
+                        (nh = copy config.jarAttributes;
                          nh.["destfile"] := destfl;
                          nh)
                         (mapHash do dir ie:
                             antFilesetElement dir ie;
-                         done jarFileset
+                         done config.jarFileset
                          ++ [el "manifest" [:] 
                                (mapHash do k v: 
                                  el "attribute" ["name":k, "value":v] [] 
-                               done jarManifest)] ) 
+                               done config.jarManifest)] ) 
                         p;
            done;
 
@@ -670,18 +671,18 @@ war =
             do p:
                 destfl = config.dir.target ^ project.artifactId ^ ".war";
                 antTask "war" 
-                        (nh = copy warAttributes;
+                        (nh = copy config.warAttributes;
                          nh.["destfile"] := destfl;
                          nh)
                         ((mapHash do dir ie:
                             el "lib" ["dir":dir] (antInExcludeElements ie);
-                          done warLibset)
+                          done config.warLibset)
                          ++ (mapHash do dir ie:
                             el "classes" ["dir" :dir] (antInExcludeElements ie);
-                          done warClassesset)
+                          done config.warClassesset)
                          ++ (mapHash do dir ie:
                             antFilesetElement dir ie;
-                          done warFileset))
+                          done config.warFileset))
                         p;
                 _mvnInstallOrDeploy destfl p;
             done;
@@ -707,7 +708,7 @@ jetty =
         fi;
         
         context = new WebAppContext();
-        context#setDescriptor((warAttributes.["webxml"]));
+        context#setDescriptor((config.warAttributes.["webxml"]));
         context#setResourceBase(config.dir.webapp);
         context#setContextPath("/");
         context#setParentLoaderPriority(false);
@@ -741,7 +742,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
 
 {
     project,
-    baseConfig = config, 
+    config, 
     pathes = {
         buildExt = buildExtPath,
         runtime = runtimePath,
@@ -771,18 +772,8 @@ for [clean, retrieveLibs, compile, test, jar, war,
         doc,  
     },	
 
-    taskProps = {
-        jarManifest,
-        jarAttributes,
-        warAttributes,
-        warLibset,
-        warClassesset,
-        warFileset,
-    },
-    
     mvnInstall, 
     mvnDeploy, 
-    deployRepository,    
     mvnInstallOrDeploy = _mvnInstallOrDeploy,
     
     yetiMainTask,
