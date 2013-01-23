@@ -1,0 +1,114 @@
+/*
+ * Copyright 2011 Christian Essl
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+module ybuilder.core.extensiontest;
+
+import java.util.Properties;
+import java.io:FileInputStream, File;
+
+load ybuilder.core.build;
+load ybuilder.core.base;
+
+extensionTestDir = "etprojects/";
+extensionTestTargetDir = config.dir.target ^ "etprojects/";
+
+
+createExtensionTestDirs name project = (
+    baseDir = extensionTestDir ^ name ^ "/";
+    createNewYetiProject baseDir project;
+    antTask "copy" ["todir":baseDir, "overwrite":"false"] 
+        [el "javaresource" ["name":"ybuilder/core/targets.properties"][],
+         el "mapper" ["type":"flatten"][]] 
+        project;
+        
+);
+
+createExtensionTestProject = 
+    target "createExtensionTestProject" 
+           [Description "creates a project for testing of an extension in [\(extensionTestDir)]. The name of the project must be provided as a param"] do p:
+        for p.args do n: 
+            createExtensionTestDirs n p 
+        done;
+    done;
+
+_doExtensionTest name project = (
+    if (file (extensionTestDir ^ name))#exists() then 
+        println "\n================\nextension test [\(name)]";
+        antTask "copy" ["todir":extensionTestTargetDir ^ name] 
+                [el "fileset" ["dir":extensionTestDir ^ name] []] 
+                project;
+        
+        dir = file (extensionTestTargetDir ^ name);
+
+        argLines = 
+           (fis = new FileInputStream(new File(dir,"targets.properties"));
+            try 
+                props = new Properties();
+                props#load(fis);
+                fst = string props#get("targets");
+                if defined? (props#get("targets1")) then
+                    [fst,(string props#get("targets1"))]
+                else
+                    [fst]
+                fi
+            finally
+                fis#close();
+            yrt);
+        for argLines do args:
+            println "\n---\ntarget: \(args)";
+                        
+            antTask "java" 
+                    ["jar":"ybuilder.jar", "fork":"true", 
+                     "failonerror":"true",
+                     "dir":dir#getAbsolutePath()] 
+                    [el "arg" ["line":args] []] 
+                    project;
+        done;
+    fi;        
+);    
+  
+
+runExtensionTests project = (
+    if (file extensionTestDir)#exists() then
+        names = if (length project.args) > 0 then
+            list project.args;
+        else
+            rs = (file extensionTestDir)#list();
+            if defined? rs then 
+                (sort . map string . list . wrapArray) rs;
+            else
+                []
+            fi;
+        fi;
+        for names do n: _doExtensionTest n project done;
+    fi;
+);
+
+extensionTest = 
+    target "extensionTest" [Before livecycleTargets.test] runExtensionTests;
+
+push targetsInHelp extensionTest;   
+push targetsInHelp createExtensionTestProject;   
+
+{
+    init () = ();
+    extensionTest, 
+    runExtensionTests, 
+    extensionTestDir,
+    createExtensionTestProject, 
+    createExtensionTestDirs
+}				
+
