@@ -337,6 +337,9 @@ registerBaseTargets config = (
             junit = junitTarget,
             yebspec = yebspecTarget,
             simpleTest = simpleTestTarget,
+            yetidoc,
+            testCompileYeti,
+            compileYeti
         }
     };
 );        

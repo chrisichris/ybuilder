@@ -77,7 +77,7 @@ evaluate config argv =
                                 if cut > 0 then
                                     value = strRight str (cut+1);
                                     key = strSlice str 1 cut;
-                                    a.properties.[key] := value;
+                                    a.properties[key] := value;
                                 else
                                     push a.params str
                                 fi;
@@ -139,7 +139,7 @@ evaluate config argv =
                         printSimilarTargets config.targets n;
                         throw new YbuilderAntException("\(n) is no target",());
                     else
-                        t = config.targets.[n];
+                        t = config.targets[n];
                         println "--target: \(n)";
                         if not empty? ps.excludes then
                             println "  -x \(ps.excludes)";

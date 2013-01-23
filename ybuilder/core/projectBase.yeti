@@ -355,10 +355,10 @@ _mvnDependencyTags artifactDependencies =
             "systemPath": dep.systemPath,
             "optional" : string dep.optional];
         if defined? dep.classifier then
-            atts.["classifier"] := dep.classifier
+            atts["classifier"] := dep.classifier
         fi;
         if defined? dep.systemPath then
-            atts.["systemPath"] := dep.systemPath;
+            atts["systemPath"] := dep.systemPath;
         fi;
         
         el (maven "dependency") atts 
@@ -446,8 +446,7 @@ _mvnInstallOrDeploy config fileName project =
 //lifecycle targets
 
 registerProjectBaseTargets config = 
-(
-continues = 
+(continues = 
     target config "continues" 
        [Description "Continuesly runs the target given as argument"]
        do p:
@@ -460,7 +459,7 @@ continues =
                 failWith "[\(cmd)] is no target";
             fi;
             
-            tar = config.targets.[cmd];
+            tar = config.targets[cmd];
             args = tail (list p.args);
             props = p.properties;
             
@@ -639,7 +638,7 @@ jarOnly =
                 destfl = config.dir.target ^ config.artifactId ^ ".jar";
                 antTask "jar" 
                         (nh = copy config.jarAttributes;
-                         nh.["destfile"] := destfl;
+                         nh["destfile"] := destfl;
                          nh)
                         (mapHash do dir ie:
                             antFilesetElement dir ie;
@@ -670,7 +669,7 @@ war =
                 destfl = config.dir.target ^ config.artifactId ^ ".war";
                 antTask "war" 
                         (nh = copy config.warAttributes;
-                         nh.["destfile"] := destfl;
+                         nh["destfile"] := destfl;
                          nh)
                         ((mapHash do dir ie:
                             el "lib" ["dir":dir] (antInExcludeElements ie);
@@ -706,7 +705,7 @@ jetty =
         fi;
         
         context = new WebAppContext();
-        context#setDescriptor((config.warAttributes.["webxml"]));
+        context#setDescriptor((config.warAttributes["webxml"]));
         context#setResourceBase(config.dir.webapp);
         context#setContextPath("/");
         context#setParentLoaderPriority(false);

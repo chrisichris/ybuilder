@@ -146,7 +146,7 @@ target config name opts fn1 is 'c -> string -> 'a -> 'b -> targetType =
         esac 
     done;
     
-    config.targets.[t.name] := t;
+    config.targets[t.name] := t;
     t);
 
 doAfterTarget target fn =
@@ -191,15 +191,15 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
     for opts do opt: 
                 case opt of
                 RunAlways v : runAlways := v;
-                Exclude target: project.executedTargets.[target.name] := true;
-                ExcludeByName name: project.executedTargets.[name] := true;
+                Exclude target: project.executedTargets[target.name] := true;
+                ExcludeByName name: project.executedTargets[name] := true;
                 Args args: targetArgs := args;
                 Properties h: insertHash project.properties h;
                 esac 
              done;
     if runAlways 
        or (not (target is targetType).name in project.executedTargets) then
-        project.executedTargets.[target.name] := true;
+        project.executedTargets[target.name] := true;
         oldArgs = project.args;
         project.args := targetArgs;
 
@@ -433,7 +433,7 @@ readProperties propsFile =
             k = string enum#nextElement();
             v = string props#get(k);
             push nas k;
-            vas.[k] := v);
+            vas[k] := v);
         {names = list nas,
          values = vas};
     fi);
@@ -508,7 +508,7 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
 
     {
         help,
-        //cmdYbuilderVersion,
+        cmdYbuilderVersion,
         cmdTargets
     });
 
