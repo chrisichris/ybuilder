@@ -52,7 +52,6 @@ typedef projectType = {
                     
 typedef targetType = {
     name is string, 
-    pos is number,
     depends is array<targetType>,
     var preDependenciesFn is projectType -> (),
     var description is string,
@@ -83,7 +82,14 @@ end;
 
 ybuilderVersion = "0.5";
 
-basedir = "./";
+
+createBuildConfig () = {
+    basedir = "./",
+    targets = [:] is hash<string,targetType>,
+    targetsInHelp is array<targetType>= array []             
+    
+};
+
 
 
 createProject () = 
@@ -113,21 +119,17 @@ el name atts subelements =
             
 tel name atts text = el name atts [Text text];			
 
-targets is hash<string,targetType> = [:];
 
 
-var _targetCounter = 0;
     
-target name opts fn1 is string -> 'a -> 'b -> targetType = 
-   (if name in targets then 
+target config name opts fn1 is 'c -> string -> 'a -> 'b -> targetType = 
+   (if name in config.targets then 
         failWith "\(name) already defined as target" 
     fi;
     
     t = {
         name, 
         depends = array [],
-        pos = synchronized _targetCounter 
-            \(_targetCounter := _targetCounter +1; _targetCounter),
         var description = "",
         var preDependenciesFn = \(),
         var fn = fn1, 
@@ -144,7 +146,7 @@ target name opts fn1 is string -> 'a -> 'b -> targetType =
         esac 
     done;
     
-    targets.[t.name] := t;
+    config.targets.[t.name] := t;
     t);
 
 doAfterTarget target fn =
@@ -165,16 +167,11 @@ targetToString t = (
     fi
     ^ "   depends: \(strJoin ", " (map (.name) deps))");   
 
-cmdTargets = 
-    target "targets" 
-        [Description "Shows all the available targets in current project"] 
-        \(for (sortBy (on (<)(.pos)) (list targets)) 
-            (println . targetToString));
-    
 
-printSimilarTargets name =
+printSimilarTargets targets name =
    (n = name;
-    ts = filter do t: strStarts? t.name n done (mapHash do k t: t done targets);
+    ts = filter do t: strStarts? t.name n done 
+        (mapHash do k t: t done targets);
     if empty? ts then
         println "There are no targets starting with [\(n)]";
     else
@@ -186,56 +183,7 @@ printSimilarTargets name =
         done;
     fi);
             
-targetsInHelp = array [cmdTargets];             
             
-help = 
-    target "help" 
-        [Description "Shows help"] 
-        do p:
-        if empty? p.args then
-            println "\nybuilder version: \(ybuilderVersion) \n";
-            println '
-ybuilder is a simple build-enviroment for YETI the functional 
-programming-language for the JVM.
-----
-
-To run ybuilder targets defined in project.yeti:
-
-java -jar ybuilder.jar target [params] [-property] [, target [param] [-property] ]+
-
-target       name of the target to run
-params       space seperated list of params for target
-property     space seperated list of -key=value pairs starting with - for target
-
--or-
-
-To run yeti-expression in ybuilder enviroment:
-
-java -jar ybuilder.jar #yeti-expression
-
----
-Common targets:
-
--c              Starts ybuilder in repl mode
-
--yeti           Same as invoking the yeti.jar in your project but with the full 
-                classpath setup  
-
-help            Prints this message
-';  
-            for targetsInHelp do t:
-                println String#format("%1$-15s %2$s\n",array [t.name,t.description])
-            done;
-println 'retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
-
-cleanBuildLibs  deletes the ybuilder/libext_managed directory 
-                triggering fresh load next time
-';
-
-        else
-            for p.args printSimilarTargets;
-        fi;
-        done;
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
    (var runAlways = false;
@@ -447,11 +395,6 @@ listDirs dir patts	=
 file name = new File(name is string);
 assert text cond = if not cond then failWith text else () fi;
 
-cmdYbuilderVersion = 
-    target "-ybuilderVersion" 
-        [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
-        (antTask "echo" ["message":"ybuilder version \(ybuilderVersion) yeti-version: \(yetiRuntimeVersion)"] []);
-
 readProperties propsFile =        
    (import java.util:Properties,
                     LinkedHashSet,
@@ -495,24 +438,87 @@ readProperties propsFile =
          values = vas};
     fi);
 
-lazyConfig fn =
-    (var ho = none;
-    do v:
-        case ho of
-        Some va: va;
-        None _: 
-            (va = fn v;
-             ho = Some va;
-             va);
-        esac;
-    done);
+registerBuildTargets config =
+    (
+    cmdYbuilderVersion = 
+        target config "-ybuilderVersion"
+            [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
+            (antTask "echo" 
+                 ["message":("ybuilder version \(ybuilderVersion) "
+                    ^"yeti-version: \(yetiRuntimeVersion)")] 
+                 []);
+    
+    cmdTargets = 
+        target config "targets" 
+            [Description "Shows all the available targets in current project"] 
+            \((for (list config.targets)) 
+                (println . targetToString));
+        
+
+    help = 
+        target config "help" 
+            [Description "Shows help"] 
+            do p:
+            if empty? p.args then
+                println "\nybuilder version: \(ybuilderVersion) \n";
+                println '
+ybuilder is a simple build-enviroment for YETI the functional 
+programming-language for the JVM.
+----
+
+To run ybuilder targets defined in project.yeti:
+
+java -jar ybuilder.jar target [params] [-property] [, target [param] [-property] ]+
+
+target       name of the target to run
+params       space seperated list of params for target
+property     space seperated list of -key=value pairs starting with - for target
+
+-or-
+
+To run yeti-expression in ybuilder enviroment:
+
+java -jar ybuilder.jar #yeti-expression
+
+---
+Common targets:
+
+-c              Starts ybuilder in repl mode
+
+-yeti           Same as invoking the yeti.jar in your project but with the full 
+                classpath setup  
+
+help            Prints this message
+';  
+            for config.targetsInHelp do t:
+                println String#format("%1$-15s %2$s\n",array [t.name,t.description])
+            done;
+println 'retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
+
+cleanBuildLibs  deletes the ybuilder/libext_managed directory 
+                triggering fresh load next time
+';
+
+            else
+                for p.args (printSimilarTargets config.targets);
+            fi;
+            done;
+
+    push config.targetsInHelp cmdTargets;       
+
+    {
+        help,
+        //cmdYbuilderVersion,
+        cmdTargets
+    });
 
 {
+    createBuildConfig,
+    registerBuildTargets,
+
     readProperties,
     assert,
     ybuilderVersion,
-    cmdYbuilderVersion,
-    basedir,
 
     createAntPath, 
     listPath,
@@ -523,10 +529,6 @@ lazyConfig fn =
 
     printSimilarTargets,
     
-    cmdTargets,
-    targetsInHelp,
-    help,
-    targets,
     target,
     doAfterTarget,
     runTarget,
@@ -542,7 +544,6 @@ lazyConfig fn =
     antPathElements,
     //antPathById,
     file,
-    lazyConfig
 }
 
 

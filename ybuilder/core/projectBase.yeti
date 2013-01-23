@@ -71,7 +71,7 @@ baseConfig is baseConfig = {
     }
 };
 
-createConfig config dependencies =
+createProjectBaseConfig config dependencies =
     ( //path and dependency things
     var ad = array [];
     var pd = array [];
@@ -187,7 +187,7 @@ createConfig config dependencies =
         },
 
         continuesDirs = array [config.dir.src],
-    });
+    } with (createBuildConfig()));
     
 
 //pathes
@@ -445,117 +445,118 @@ _mvnInstallOrDeploy config fileName project =
     
 //lifecycle targets
 
-baseProjectTargets config = 
-(continues = 
-    target "continues" 
-           [Description "Continuesly runs the target given as argument"]
-           do p:
-                if empty? p.args then
-                    failWith 
-                        "No command to run for continue please pvoide one as arg";
-                fi;
-                cmd = head (list p.args);
-                if not cmd in targets then
-                    failWith "[\(cmd)] is no target";
-                fi;
-                
-                tar = targets.[cmd];
-                args = tail (list p.args);
-                props = p.properties;
-                
-                println "---\nStarting continues target [\(cmd) \(args)]\n";
+registerProjectBaseTargets config = 
+(
+continues = 
+    target config "continues" 
+       [Description "Continuesly runs the target given as argument"]
+       do p:
+            if empty? p.args then
+                failWith 
+                    "No command to run for continue please pvoide one as arg";
+            fi;
+            cmd = head (list p.args);
+            if not cmd in config.targets then
+                failWith "[\(cmd)] is no target";
+            fi;
+            
+            tar = config.targets.[cmd];
+            args = tail (list p.args);
+            props = p.properties;
+            
+            println "---\nStarting continues target [\(cmd) \(args)]\n";
 
-                fsc dirs time =
-                   (var ntime = time;
-                    for (dirs is list<~File>) do dir:
-                        if dir#exists() then
-                            ntime := max ntime (dir#lastModified());
-                            if (dir is ~File)#isDirectory() then
-                                ntime := fsc (list(wrapArray(dir#listFiles()))) 
-                                             ntime;
-                            fi
+            fsc dirs time =
+               (var ntime = time;
+                for (dirs is list<~File>) do dir:
+                    if dir#exists() then
+                        ntime := max ntime (dir#lastModified());
+                        if (dir is ~File)#isDirectory() then
+                            ntime := fsc (list(wrapArray(dir#listFiles()))) 
+                                         ntime;
                         fi
-                    done;
-                    ntime);
+                    fi
+                done;
+                ntime);
 
-                var oldTime = System#currentTimeMillis();
-                scf = map file config.continuesDirs;
+            var oldTime = System#currentTimeMillis();
+            scf = map file config.continuesDirs;
 
-                true loop 
-                   (nt = fsc scf oldTime;
-                    if nt > oldTime then
-                        println ("---\nSource changed running [\(cmd) \(args)],"
-                                ^" (\(nt),\(oldTime))\n");
-                        oldTime := nt;
-                        
-                        
-                        runTarget tar [Args args,
-                                     Properties props]
-                    fi;
-                    Thread#sleep(1000));
-           done;
+            true loop 
+               (nt = fsc scf oldTime;
+                if nt > oldTime then
+                    println ("---\nSource changed running [\(cmd) \(args)],"
+                            ^" (\(nt),\(oldTime))\n");
+                    oldTime := nt;
+                    
+                    
+                    runTarget tar [Args args,
+                                 Properties props]
+                fi;
+                Thread#sleep(1000));
+       done;
 
 
 preClean = 
-    target "preClean" 
+    target config "preClean" 
            [Description "invoked befroe main clean"] 
            \();
            
 clean = 
-    target "clean" 
+    target config "clean" 
            [Depends preClean,  
                 Description "cleans the build [\(config.dir.target)] dir"] 
            (antTask "delete" ["dir" : config.dir.target] []);
 
 cleanLibs = 
-    target "cleanLibs" 
+    target config "cleanLibs" 
            [Description ("Cleans the retrieved dependencies "
                         ^"in [\(config.dir.libManaged)] directory")] 
            (antTask "delete" ["dir":config.dir.libManaged] []);
 cleanAll = 
-    target "cleanAll" 
+    target config "cleanAll" 
            [Dependencies[cleanLibs, clean], 
             Description "Cleans the project and all the libs"] 
            \();
            
            
 
-validate = target "validate" [] \();
+validate = target config "validate" [] \();
 
 initializeBuild = 
-    target "initializeBuild" [Depends validate] \();
+    target config "initializeBuild" [Depends validate] \();
     
 initialize = 
-    target "initialize" [Depends initializeBuild] 
+    target config "initialize" [Depends initializeBuild] 
            (antTask "mkdir" ["dir": config.dir.target] []);
 
 generateResources = 
-    target "generateResources" [Depends initialize] \();
+    target config "generateResources" [Depends initialize] \();
 processResources = 
-    target "processResources" [Depends generateResources] \();
+    target config "processResources" [Depends generateResources] \();
 compile = 
-    target "compile" [Depends processResources,
+    target config "compile" [Depends processResources,
                       Description "Compiles the sources of the project"] \();
 processClasses = 
-    target "processClasses" [Depends compile] \();
+    target config "processClasses" [Depends compile] \();
 generateTestResources = 
-    target "generateTestResources" [Depends processClasses] \();
+    target config "generateTestResources" [Depends processClasses] \();
 processTestResources = 
-    target "processTestResources" 
+    target config "processTestResources" 
         [Depends generateTestResources] \();
 testCompile = 
-    target "testCompile" [Depends processTestResources] \();
+    target config "testCompile" [Depends processTestResources] \();
 processTestClasses = 
-    target "processTestClasses" [Depends testCompile] \();
+    target config "processTestClasses" [Depends testCompile] \();
 test = 
-    target "test" [Depends processTestClasses,
+    target config "test" [Depends processTestClasses,
                    Description "runs the tests of the project"] \();
 preparePackage = 
-    target "preparePackage" [Depends cleanAll, Depends test] \(); 
+    target config "preparePackage" [Depends cleanAll, Depends test] \(); 
     
-preDoc = target "preDoc" [Depends initialize] \();
+preDoc = target config "preDoc" [Depends initialize] \();
 
-doc = target "doc" [Depends preDoc,
+doc = target config "doc" [Depends preDoc,
                     Description "Generates project documentation"] \();	
 
 //mvn things
@@ -564,11 +565,11 @@ doc = target "doc" [Depends preDoc,
         
              
 pom =
-    target "pom" [Description "Writes a pom.xml"] 
+    target config "pom" [Description "Writes a pom.xml"] 
            do p: writePom config p done;
 
 prepareLibs = 
-    target "prepareLibs" 
+    target config "prepareLibs" 
         [Before initialize, 
          Description "loads librararies in [\(config.dir.libManaged)]"] 
         do project:
@@ -621,7 +622,7 @@ prepareLibs =
         done;
 
  retrieveLibs =
-    target "retrieveLibs" 
+    target config "retrieveLibs" 
             [Description "loads libraries in [\(config.dir.libManaged)]"]
         do p:
             antTask "delete" ["dir":config.dir.libManaged] [] p;
@@ -632,7 +633,7 @@ prepareLibs =
     
     
 jarOnly = 
-    target "jarOnly" 
+    target config "jarOnly" 
            [Description "Makes a jar file in dir.target"] 
            do p:
                 destfl = config.dir.target ^ config.artifactId ^ ".jar";
@@ -651,7 +652,7 @@ jarOnly =
            done;
 
 jar = 
-    target "jar" 
+    target config "jar" 
            [Depends preparePackage, Depends jarOnly,
             Description ("Makes a jar file in dir.target - use :install "
                  ^"and/or :deploy param(s) to maven install/deploy the war")] 
@@ -661,7 +662,7 @@ jar =
     done;
     
 war = 
-    target "war" 
+    target config "war" 
            [Depends preparePackage, 
             Description ("Makes a war file in dir.target - use :install" 
                ^"and/or :deploy param(s) to maven install/deploy the war")]
@@ -686,7 +687,7 @@ war =
 
             
 jetty =
-    target "jetty" [Depends initialize,
+    target config "jetty" [Depends initialize,
                     Description ("runs jetty - note the jetty libs must be" 
                         ^"on the ybuilder path")] 
     do project:
@@ -720,22 +721,23 @@ jetty =
 
 //path targets    
 initDirs = 
-    target "initDirs" [Before initialize,Depends prepareLibs] 
+    target config "initDirs" [Before initialize,Depends prepareLibs] 
             do project:
                 antTask "mkdir" ["dir":config.dir.targetClasses] [] project;
                 antTask "mkdir" ["dir":config.dir.targetTestClasses][] project;
             done;
     
 initBuildPathes = 
-    target "initBuildPathes" [Before initializeBuild,Depends prepareLibs] 
+    target config "initBuildPathes" [Before initializeBuild,Depends prepareLibs] 
           (antTask "path" ["id":"buildExtPath"] 
                     (antPathElements (buildExtPath config)));
 
 
 for [clean, retrieveLibs, compile, test, jar, war, 
      doc, pom, jetty, cleanLibs, cleanAll, continues]
-    (push targetsInHelp);
-{
+    (push config.targetsInHelp);
+
+(registerBuildTargets config) with {
     livecycleTargets = {
         preClean, 
         clean, 
@@ -756,7 +758,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         preDoc, 
         doc,  
     },	
-    baseTargets = {
+    projectBaseTargets = {
         jetty,
         initBuildPathes,
         prepareLibs,
@@ -767,7 +769,8 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jar,
         jarOnly,
         pom,
-    }
+    },
+
 
 }
 );
@@ -775,7 +778,6 @@ for [clean, retrieveLibs, compile, test, jar, war,
 
 {
     baseConfig,
-    createConfig,
     pathes = {
         buildExt = buildExtPath,
         runtime = runtimePath,
@@ -792,7 +794,8 @@ for [clean, retrieveLibs, compile, test, jar, war,
         mvnDeploy,
         mvnInstallOrDeploy = _mvnInstallOrDeploy,
     },
-    baseProjectTargets,   
+    createProjectBaseConfig,
+    registerProjectBaseTargets,   
 
     localRepository, 
     dependency, 

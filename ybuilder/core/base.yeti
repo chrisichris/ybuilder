@@ -25,9 +25,9 @@ import org.apache.tools.ant.types: FileSet;
 load ybuilder.core.build;
 b = load ybuilder.core.projectBase;
 
-config = b.createConfig b.baseConfig [];
-
-config = config with {
+createBaseConfig config dependencies = 
+    (bc = b.createProjectBaseConfig config dependencies;
+    bc with {
     //task attributes
     javacAttributes = 
         ["srcdir" : config.dir.src, 
@@ -61,249 +61,287 @@ config = config with {
     //java targets
     resourcesPatterns = 
         [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"],
-};
+    });
 
-{livecycleTargets, baseTargets} = b.baseProjectTargets config;
 
-copyResources = 
-    target "copyResources" 
-           [Before livecycleTargets.processResources,
-            Description "Copies resources from [\(config.dir.src), \(config.dir.resources)] to [\(config.dir.targetClasses)]"]
-           do p:
-                if (file config.dir.resources)#exists() then
-                    antTask "copy" ["todir":config.dir.targetClasses] 
-                        [el "fileset" ["dir":config.dir.resources] []]
-                        p
-                fi;
-                if (file config.dir.src)#exists() then
-                    antTask "copy" ["todir":config.dir.targetClasses]
-                        [antFilesetElement 
-                                config.dir.src 
+registerBaseTargets config = ( 
+    projectBaseT = b.registerProjectBaseTargets config;
+    
+    {livecycleTargets, projectBaseTargets} = projectBaseT;
+
+    copyResources = 
+        target config "copyResources" 
+               [Before livecycleTargets.processResources,
+                Description ("Copies resources from [\(config.dir.src)," 
+                ^"\(config.dir.resources)] to [\(config.dir.targetClasses)]")]
+               do p:
+                    if (file config.dir.resources)#exists() then
+                        antTask "copy" ["todir":config.dir.targetClasses] 
+                            [el "fileset" ["dir":config.dir.resources] []]
+                            p
+                    fi;
+                    if (file config.dir.src)#exists() then
+                        antTask "copy" ["todir":config.dir.targetClasses]
+                            [antFilesetElement 
+                                    config.dir.src 
+                                    config.resourcesPatterns]
+                            p
+                    fi;
+               done;
+               
+    copyTestResources = 
+        target config "copyTestResources" 
+               [Before livecycleTargets.processTestResources, 
+                Description "Copies test resources to test classes dir"]
+               do p:
+                    if (file config.dir.resourcesTest)#exists() then
+                        antTask "copy" ["todir":config.dir.targetTestClasses] 
+                                [el "fileset" 
+                                    ["dir":config.dir.resourcesTest] 
+                                    []]
+                                p
+                    fi;
+                    if (file config.dir.test)#exists() then
+                        antTask "copy" ["todir":config.dir.targetTestClasses]
+                            [antFilesetElement config.dir.test 
                                 config.resourcesPatterns]
-                        p
-                fi;
-           done;
-           
-copyTestResources = 
-    target "copyTestResources" 
-           [Before livecycleTargets.processTestResources, 
-            Description "Copies test resources to test classes dir"]
-           do p:
-                if (file config.dir.resourcesTest)#exists() then
-                    antTask "copy" ["todir":config.dir.targetTestClasses] 
-                            [el "fileset" ["dir":config.dir.resourcesTest] []]
                             p
-                fi;
-                if (file config.dir.test)#exists() then
-                    antTask "copy" ["todir":config.dir.targetTestClasses]
-                        [antFilesetElement config.dir.test 
-                            config.resourcesPatterns]
-                        p
-                fi;
-           done;
+                    fi;
+               done;
 
-compileJava = 
-    target "compileJava" 
-           [Before livecycleTargets.compile, Description "Compiles java sources"]
-           do p:
-                if (file config.dir.src)#exists() then
-                    antTask "javac" config.javacAttributes 
-                        [el "compilerarg" ["line": config.javacCompilerarg] [],
-                         el "classpath" [:] (antPathElements (b.pathes.compile config))] 
-                        p;
-                fi;
-           done; 
+    compileJava = 
+        target config "compileJava" 
+               [Before livecycleTargets.compile, 
+               Description "Compiles java sources"]
+               do p:
+                    if (file config.dir.src)#exists() then
+                        antTask "javac" config.javacAttributes 
+                            [el "compilerarg" 
+                                ["line": config.javacCompilerarg] 
+                                [],
+                             el "classpath" [:] 
+                                (antPathElements (b.pathes.compile config))] 
+                            p;
+                    fi;
+               done; 
 
-testCompileJava = 
-    target "testCompileJava" 
-           [Before livecycleTargets.testCompile, Description "compiles java test sources"]
-           do p:
-                if (file config.dir.test)#exists() then
-                    antTask "javac" config.javacTestAttributes 
-                        [el "compilerarg" ["line":config.javacTestCompilerarg] [],
-                         el "classpath" [:] (antPathElements (b.pathes.test config))] 
-                        p
-                fi
-           done;
-javadoc = 
-    target "javadoc" 
-           [Before livecycleTargets.doc, 
-            Description "create javadocs from [\(config.dir.src)] to [\(config.dir.javadoc)]"] 
+    testCompileJava = 
+        target config "testCompileJava" 
+               [Before livecycleTargets.testCompile, 
+               Description "compiles java test sources"]
+               do p:
+                    if (file config.dir.test)#exists() then
+                        antTask "javac" config.javacTestAttributes 
+                            [el "compilerarg" 
+                                ["line":config.javacTestCompilerarg] [],
+                             el "classpath" [:] 
+                                (antPathElements (b.pathes.test config))] 
+                            p
+                    fi
+               done;
+    javadoc = 
+        target config "javadoc" 
+               [Before livecycleTargets.doc, 
+                Description ("create javadocs from [\(config.dir.src)] to "
+                    ^"[\(config.dir.javadoc)]")] 
+                do p:
+                    if (file config.dir.src)#exists() then
+                        antTask "delete" ["dir":config.dir.javadoc] [] p;
+                        antTask "mkdir" ["dir":config.dir.javadoc] [] p;
+                        antTask "javadoc" config.javadocAttributes 
+                                [el "classpath" [:] 
+                                (antPathElements (b.pathes.compile config))] 
+                                p
+                    fi
+                done;
+
+              
+
+    compileYeti = 
+        target config "compileYeti" 
+                [Depends compileJava, Before livecycleTargets.compile] 
+               do p:
+                    if (file config.dir.src)#exists() then
+                        b.helpers.yeticTask 
+                            config.dir.targetClasses 
+                            config.dir.src 
+                            config.yeticIncludes 
+                            config.yeticSourceReaderCode
+                            (b.pathes.compile config) 
+                            p;
+                    fi
+               done;
+               
+    testCompileYeti = 
+        target config "testCompileYeti" 
+               [Depends testCompileJava, Before livecycleTargets.testCompile] 
+               do p:
+                    if (file config.dir.test)#exists() then
+                        b.helpers.yeticTask 
+                            config.dir.targetTestClasses 
+                            config.dir.test 
+                            config.yeticIncludes 
+                            config.yeticSourceReaderCode
+                            (b.pathes.test config) 
+                            p;
+                    fi;
+               done;
+                            
+    yetidoc = 
+        target config "yetidoc" 
+            [Before livecycleTargets.doc, 
+            Depends projectBaseTargets.initDirs, 
+            Description "creates yetidoc"] 
             do p:
-                if (file config.dir.src)#exists() then
-                    antTask "delete" ["dir":config.dir.javadoc] [] p;
-                    antTask "mkdir" ["dir":config.dir.javadoc] [] p;
-                    antTask "javadoc" config.javadocAttributes 
-                            [el "classpath" [:] (antPathElements (b.pathes.compile config))] 
-                            p
-                fi
-            done;
-
-          
-
-compileYeti = 
-    target "compileYeti" [Depends compileJava, Before livecycleTargets.compile] 
-           do p:
-                if (file config.dir.src)#exists() then
-                    b.helpers.yeticTask 
-                        config.dir.targetClasses 
-                        config.dir.src 
-                        config.yeticIncludes 
-                        config.yeticSourceReaderCode
-                        (b.pathes.compile config) 
-                        p;
-                fi
-           done;
-           
-testCompileYeti = 
-    target "testCompileYeti" 
-           [Depends testCompileJava, Before livecycleTargets.testCompile] 
-           do p:
                 if (file config.dir.test)#exists() then
-                    b.helpers.yeticTask 
-                        config.dir.targetTestClasses 
-                        config.dir.test 
-                        config.yeticIncludes 
-                        config.yeticSourceReaderCode
-                        (b.pathes.test config) 
-                        p;
+                    antTask "delete" ["dir":config.dir.yetidoc] [] p;
+                    antTask "mkdir" ["dir":config.dir.yetidoc] [] p;
+                    fileSet = listFiles config.dir.src [Include "**/*.yeti", 
+                                          Exclude "**/ybuilder.yeti" ];
+                    b.helpers.yetidocTask config config.dir.yetidoc fileSet p;
                 fi;
-           done;
-                        
-yetidoc = 
-    target "yetidoc" 
-        [Before livecycleTargets.doc, Depends baseTargets.initDirs, Description "creates yetidoc"] 
-        do p:
-            if (file config.dir.test)#exists() then
-                antTask "delete" ["dir":config.dir.yetidoc] [] p;
-                antTask "mkdir" ["dir":config.dir.yetidoc] [] p;
-                fileSet = listFiles config.dir.src [Include "**/*.yeti", 
-                                      Exclude "**/ybuilder.yeti" ];
-                b.helpers.yetidocTask config config.dir.yetidoc fileSet p;
-            fi;
-        done;
-        
-//Test target
-junitTarget = 
-    target "junit" [Before livecycleTargets.test] do p:
-        hasJunit = try 
-            (createAntClassLoader (b.pathes.test config) [])
-                #loadClass("junit.framework.Test");
-            ((p.antProject)#getClass()#getClassLoader())
-                           #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
-            true;
-        catch Exception e:
-            false;
-        yrt;
+            done;
             
-        if (file config.dir.test)#exists() and hasJunit then
-            antTask "mkdir" ["dir":config.dir.reports ^ "tests"] [] p;
-            antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
+    //Test target
+    junitTarget = 
+        target config "junit" [Before livecycleTargets.test] do p:
+            hasJunit = try 
+                (createAntClassLoader (b.pathes.test config) [])
+                    #loadClass("junit.framework.Test");
+                ((p.antProject)#getClass()#getClassLoader())
+                     #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
+                true;
+            catch Exception e:
+                false;
+            yrt;
+                
+            if (file config.dir.test)#exists() and hasJunit then
+                antTask "mkdir" ["dir":config.dir.reports ^ "tests"] [] p;
+                antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
                    [el "classpath" [:] (antPathElements (b.pathes.test config)),
                     el "formatter" ["type":"plain"] [],
                     el "batchtest" ["fork":"yes", 
                                     "todir": config.dir.reports ^ "tests"] 
                        [el "fileset" ["dir": config.dir.test] 
                            [el "include" ["name":"**/*Test.java"] []]]] p;
-        fi
-    done;
-    
-yebspecTarget =
-    target "yebspec" [Before livecycleTargets.test] do p:
-        hasSpec = try
-            (createAntClassLoader (b.pathes.test config) [])
-                #loadClass("org.yeb.yebspec");
-            true;
-        catch Exception e:
-            false;
-        yrt;
-        modules = if empty? p.args then
-            if (file config.dir.test)#exists() and hasSpec then
-                listFiles config.dir.test [Include "**/*Spec.yeti"];
+            fi
+        done;
+        
+    yebspecTarget =
+        target config "yebspec" [Before livecycleTargets.test] do p:
+            hasSpec = try
+                (createAntClassLoader (b.pathes.test config) [])
+                    #loadClass("org.yeb.yebspec");
+                true;
+            catch Exception e:
+                false;
+            yrt;
+            modules = if empty? p.args then
+                if (file config.dir.test)#exists() and hasSpec then
+                    listFiles config.dir.test [Include "**/*Spec.yeti"];
+                else
+                    []
+                fi    
             else
-                []
-            fi    
-        else
-            if not hasSpec then
-                failWith "No yebspec jar on path, can not run yebspec tests"
+                if not hasSpec then
+                    failWith "No yebspec jar on path, can not run yebspec tests"
+                fi;
+                list p.args
             fi;
-            list p.args
-        fi;
-        antTask "mkdir" ["dir":config.dir.reports] [] p;
-        repFile = config.dir.reports ^"yebspecResults.txt";
-        antTask "delete" ["file":repFile] [] p;
+            antTask "mkdir" ["dir":config.dir.reports] [] p;
+            repFile = config.dir.reports ^"yebspecResults.txt";
+            antTask "delete" ["file":repFile] [] p;
 
-        if not empty? modules then
-            code = "ys = load org.yeb.yebspec;"
-                ^ "res = (ys.specSuite '' [" 
-                ^ (strJoin "," . map do mo:
-                    mn = if strEnds? mo ".yeti" then 
-                        n = strLeft mo ((strLength mo) - 5);
-                        n2 = strReplace '/' '.' n;
-                        strReplace '\' '.' n2;
-                    else
-                        mo
-                    fi;
-                    "load \(mn)"
-                done) modules
-                ^ "]) none;"
-                ^ "resStr = ys.resultString res;"
-                ^ "println resStr;"
-                ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write resStr done;"
-                ^ "if (res.exceptions + res.fails) > 0 then System#exit(1) fi;";
-            //println ("----sepec:"^code);
-            b.helpers.yetiMainTask ["-e",code] (b.pathes.test config) true "." p;
-        fi;
-    done;
-        
-simpleTestTarget =
-    target "simpleTest" [Before livecycleTargets.test] do p:
-        modules = if empty? p.args then
-            if (file config.dir.test)#exists() then
-                listFiles config.dir.test [Include "**/*STest.yeti"];
+            if not empty? modules then
+                code = "ys = load org.yeb.yebspec;"
+                    ^ "res = (ys.specSuite '' [" 
+                    ^ (strJoin "," . map do mo:
+                        mn = if strEnds? mo ".yeti" then 
+                            n = strLeft mo ((strLength mo) - 5);
+                            n2 = strReplace '/' '.' n;
+                            strReplace '\' '.' n2;
+                        else
+                            mo
+                        fi;
+                        "load \(mn)"
+                    done) modules
+                    ^ "]) none;"
+                    ^ "resStr = ys.resultString res;"
+                    ^ "println resStr;"
+                    ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write "
+                    ^ "resStr done; if (res.exceptions + res.fails) > 0 then "
+                    ^ "System#exit(1) fi;";
+                //println ("----sepec:"^code);
+                b.helpers.yetiMainTask 
+                    ["-e",code] (b.pathes.test config) true "." p;
+            fi;
+        done;
+            
+    simpleTestTarget =
+        target config "simpleTest" [Before livecycleTargets.test] do p:
+            modules = if empty? p.args then
+                if (file config.dir.test)#exists() then
+                    listFiles config.dir.test [Include "**/*STest.yeti"];
+                else
+                    []
+                fi    
             else
-                []
-            fi    
-        else
-            list p.args
-        fi;
-        
-        repDir = config.dir.reports ^"stests/";
-        antTask "delete" ["dir":repDir] [] p;
-        antTask "mkdir" ["dir":repDir] [] p;
+                list p.args
+            fi;
+            
+            repDir = config.dir.reports ^"stests/";
+            antTask "delete" ["dir":repDir] [] p;
+            antTask "mkdir" ["dir":repDir] [] p;
 
-        
-        if not empty? modules then
-            code = "(var fails = 0;(" 
-                ^ (modules |> map do mo:
-                    if strEnds? mo ".yeti" then
-                        n = strLeft mo ((strLength mo) - 5);
-                        n2 = strReplace '/' '.' n;
-                        strReplace '\' '.' n2;
-                    else
-                        mo
-                    fi
-                done
-                |> map do moduleName:
-                    resFile = repDir ^ moduleName ^".txt";
-                    "(res = (load \(moduleName))();"
-                    ^ "if ((strLength res) > 6) and"
-                    ^ "((strLower (strLeft res 7)) == 'failure') then"
-                    ^ " fails := fails + 1 fi;"
-                    ^ "println 'TestResult of \(moduleName)';"  
-                    ^ "println res;"
-                    ^ "_ = writeFile '\(resFile)' 'utf-8' do h: "
-                    ^ " h.write res done;);";
-                done
-                |> strJoin "")
-                ^ "); if fails > 0 then System#exit(1) fi;);";
-            b.helpers.yetiMainTask ["-e", code] (b.pathes.test config) true "." p;
-        fi;
-    done;
-      
-                
-        
-createNewYetiProject projectDir project = 
+            
+            if not empty? modules then
+                code = "(var fails = 0;(" 
+                    ^ (modules |> map do mo:
+                        if strEnds? mo ".yeti" then
+                            n = strLeft mo ((strLength mo) - 5);
+                            n2 = strReplace '/' '.' n;
+                            strReplace '\' '.' n2;
+                        else
+                            mo
+                        fi
+                    done
+                    |> map do moduleName:
+                        resFile = repDir ^ moduleName ^".txt";
+                        "(res = (load \(moduleName))();"
+                        ^ "if ((strLength res) > 6) and"
+                        ^ "((strLower (strLeft res 7)) == 'failure') then"
+                        ^ " fails := fails + 1 fi;"
+                        ^ "println 'TestResult of \(moduleName)';"  
+                        ^ "println res;"
+                        ^ "_ = writeFile '\(resFile)' 'utf-8' do h: "
+                        ^ " h.write res done;);";
+                    done
+                    |> strJoin "")
+                    ^ "); if fails > 0 then System#exit(1) fi;);";
+                b.helpers.yetiMainTask 
+                    ["-e", code] 
+                    (b.pathes.test config) true "." p;
+            fi;
+        done;
+          
+                    
+            
+    
+    projectBaseT with {
+        baseTargets = {
+            copyResources,
+            copyTestResources,
+            compileJava,
+            testCompileJava,
+            javadoc,
+            junit = junitTarget,
+            yebspec = yebspecTarget,
+            simpleTest = simpleTestTarget,
+        }
+    };
+);        
+
+createNewYetiProject config projectDir project = 
        (for [config.dir.lib, 
              config.dir.src, 
              config.dir.test, 
@@ -318,21 +356,10 @@ createNewYetiProject projectDir project =
                  el "mapper" ["type":"flatten"] []] 
                 project);
         
-        
+ 
 b with {
-    
-
+    registerBaseTargets,
+    createBaseConfig,
     createNewYetiProject, 
-    
-    baseTargets = livecycleTargets with baseTargets with {
-        copyResources,
-        copyTestResources,
-        compileJava,
-        testCompileJava,
-        javadoc,
-        junit = junitTarget,
-        yebspec = yebspecTarget,
-        simpleTest = simpleTestTarget,
-    }
 }
 
