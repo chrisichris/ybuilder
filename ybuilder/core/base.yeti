@@ -70,7 +70,7 @@ registerBaseTargets config = (
     {livecycleTargets, projectBaseTargets} = projectBaseT;
 
     copyResources = 
-        target config "copyResources" 
+        target config "resources" "copy" 
                [Before livecycleTargets.processResources,
                 Description ("Copies resources from [\(config.dir.src)," 
                 ^"\(config.dir.resources)] to [\(config.dir.targetClasses)]")]
@@ -90,7 +90,7 @@ registerBaseTargets config = (
                done;
                
     copyTestResources = 
-        target config "copyTestResources" 
+        target config "resources" "test-copy" 
                [Before livecycleTargets.processTestResources, 
                 Description "Copies test resources to test classes dir"]
                do p:
@@ -110,7 +110,7 @@ registerBaseTargets config = (
                done;
 
     compileJava = 
-        target config "compileJava" 
+        target config "compile" "java" 
                [Before livecycleTargets.compile, 
                Description "Compiles java sources"]
                do p:
@@ -126,7 +126,7 @@ registerBaseTargets config = (
                done; 
 
     testCompileJava = 
-        target config "testCompileJava" 
+        target config "compile" "test-java" 
                [Before livecycleTargets.testCompile, 
                Description "compiles java test sources"]
                do p:
@@ -140,7 +140,7 @@ registerBaseTargets config = (
                     fi
                done;
     javadoc = 
-        target config "javadoc" 
+        target config "doc" "javadoc" 
                [Before livecycleTargets.doc, 
                 Description ("create javadocs from [\(config.dir.src)] to "
                     ^"[\(config.dir.javadoc)]")] 
@@ -158,7 +158,7 @@ registerBaseTargets config = (
               
 
     compileYeti = 
-        target config "compileYeti" 
+        target config "compile" "yeti" 
                 [Depends compileJava, Before livecycleTargets.compile] 
                do p:
                     if (file config.dir.src)#exists() then
@@ -173,7 +173,7 @@ registerBaseTargets config = (
                done;
                
     testCompileYeti = 
-        target config "testCompileYeti" 
+        target config "compile" "test-yeti" 
                [Depends testCompileJava, Before livecycleTargets.testCompile] 
                do p:
                     if (file config.dir.test)#exists() then
@@ -188,9 +188,10 @@ registerBaseTargets config = (
                done;
                             
     yetidoc = 
-        target config "yetidoc" 
+        target config "doc" "yetidoc" 
             [Before livecycleTargets.doc, 
-            Depends projectBaseTargets.initDirs, 
+            Depends projectBaseTargets.initDirs,
+            ShortName (),
             Description "creates yetidoc"] 
             do p:
                 if (file config.dir.test)#exists() then
@@ -204,7 +205,7 @@ registerBaseTargets config = (
             
     //Test target
     junitTarget = 
-        target config "junit" [Before livecycleTargets.test] do p:
+        target config "test" "junit" [Before livecycleTargets.test] do p:
             hasJunit = try 
                 (createAntClassLoader (b.pathes.test config) [])
                     #loadClass("junit.framework.Test");
@@ -228,7 +229,7 @@ registerBaseTargets config = (
         done;
         
     yebspecTarget =
-        target config "yebspec" [Before livecycleTargets.test] do p:
+        target config "test" "yebspec" [Before livecycleTargets.test] do p:
             hasSpec = try
                 (createAntClassLoader (b.pathes.test config) [])
                     #loadClass("org.yeb.yebspec");
@@ -278,7 +279,7 @@ registerBaseTargets config = (
         done;
             
     simpleTestTarget =
-        target config "simpleTest" [Before livecycleTargets.test] do p:
+        target config "test" "simpleTest" [Before livecycleTargets.test] do p:
             modules = if empty? p.args then
                 if (file config.dir.test)#exists() then
                     listFiles config.dir.test [Include "**/*STest.yeti"];

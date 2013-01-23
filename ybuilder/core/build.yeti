@@ -122,8 +122,10 @@ tel name atts text = el name atts [Text text];
 
 
     
-target config name opts fn1 is 'c -> string -> 'a -> 'b -> targetType = 
-   (if name in config.targets then 
+target config group namep opts fn1 
+    is 'c -> string -> string -> 'a -> 'b -> targetType = 
+   (name = group ^ ":" ^ namep;
+   if name in config.targets then 
         failWith "\(name) already defined as target" 
     fi;
     
@@ -143,6 +145,12 @@ target config name opts fn1 is 'c -> string -> 'a -> 'b -> targetType =
         DependencyOf target : push (target is targetType).depends t;
         Before target : push (target is targetType).depends t;
         DoPreDependencies fn : t.preDependenciesFn := fn;
+        ShortName () : 
+            if namep in config.targets then
+                failWith "\(namep) already defined as target"
+            else
+                config.targets[namep] := t;
+            fi;
         esac 
     done;
     
@@ -441,23 +449,26 @@ readProperties propsFile =
 registerBuildTargets config =
     (
     cmdYbuilderVersion = 
-        target config "-ybuilderVersion"
-            [Description "The verstion of ybuilder: \(ybuilderVersion)"] 
+        target config "help" "version"
+            [Description "The verstion of ybuilder: \(ybuilderVersion)",
+            ShortName()] 
             (antTask "echo" 
                  ["message":("ybuilder version \(ybuilderVersion) "
                     ^"yeti-version: \(yetiRuntimeVersion)")] 
                  []);
     
     cmdTargets = 
-        target config "targets" 
-            [Description "Shows all the available targets in current project"] 
+        target config "help" "targets" 
+            [Description "Shows all the available targets in current project",
+            ShortName()] 
             \((for (list config.targets)) 
                 (println . targetToString));
         
 
     help = 
-        target config "help" 
-            [Description "Shows help"] 
+        target config "help" "help" 
+            [Description "Shows help",
+            ShortName()] 
             do p:
             if empty? p.args then
                 println "\nybuilder version: \(ybuilderVersion) \n";
