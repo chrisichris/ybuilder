@@ -25,6 +25,8 @@ import org.apache.tools.ant.types: FileSet;
 
 load ybuilder.core.build;
 
+typedef shared baseConfig = 'a;
+
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 localRepository = { 
     var layout = "default", 
@@ -35,7 +37,7 @@ localRepository = {
  
 
 //directories
-config = {
+baseConfig is baseConfig = {
     var name = "",
     var version = "", 
     var artifactId = "", 
@@ -69,97 +71,8 @@ config = {
     }
 };
 
-
-//setPathes
-config = config with {
-    pathScopeLib is pathPatternType = 
-        array [Fileset [config.dir.lib : [Include "**/*.jar"]]], 
-
-    pathScopeCompile is pathPatternType =
-        array [Fileset [config.dir.libManaged : [Include "/compile/**/*.jar"]],
-               Location config.dir.targetClasses],
-    
-    pathScopeRuntime is pathPatternType =
-        array [Fileset [config.dir.libManaged : [Include "/runtime/**/*.jar"]]],
-
-    pathScopeSystem is pathPatternType =
-        array [Fileset [config.dir.libManaged : [Include "/system/**/*.jar"]]],
-
-    pathScopeProvided is pathPatternType =
-        array [Fileset [config.dir.libManaged : [Include "/provided/**/*.jar"]]],
-
-    pathScopeTest is pathPatternType =
-        array [Fileset [config.dir.libManaged : [Include "/test/**/*.jar"]],
-               Location config.dir.targetTestClasses],
-};               
-
-//jar properties
-config = config with {
-    jarManifest = [:] is hash<string,string>,
-    jarAttributes is hash<string,string> = [:],
-                             
-    jarFileset = [ config.dir.targetClasses : []],
-
-
-    warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"],
-
-    warLibset = 
-         [config.dir.lib : [Include "**/*.jar"],
-          config.dir.libManaged : [Include "compile/**/*.jar",
-                            Include "runtime/**/*.jar"]],
-                           
-    warClassesset =
-        [config.dir.targetClasses : [Include "**/*.*"]],
-
-    warFileset = [config.dir.webapp : [Include "**/*.*"]],
-
-    deployRepository = {
-        var url = undef_str,
-        var providerArtifactId = undef_str,
-        var providerVersion = "1.0-beta2",
-        params = (array []) is array<xmlelement>,
-        var uniqueVersion = false
-    },
-
-    continuesDirs = array [config.dir.src],
-    
-    artifactDependencies = [],	
-    projectDependencies = [],
-    remoteRepositories = [],
-};
-
-createConfig baseConfig dependencies =
-    (baseConfig = baseConfig with {
-        jarManifest = [:] is hash<string,string>,
-        jarAttributes is hash<string,string> = [:],
-                                 
-        jarFileset = [ config.dir.targetClasses : []],
-
-
-        warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"],
-
-        warLibset = 
-             [config.dir.lib : [Include "**/*.jar"],
-              config.dir.libManaged : [Include "compile/**/*.jar",
-                                Include "runtime/**/*.jar"]],
-                               
-        warClassesset =
-            [config.dir.targetClasses : [Include "**/*.*"]],
-
-        warFileset = [config.dir.webapp : [Include "**/*.*"]],
-
-        deployRepository = {
-            var url = undef_str,
-            var providerArtifactId = undef_str,
-            var providerVersion = "1.0-beta2",
-            params = (array []) is array<xmlelement>,
-            var uniqueVersion = false
-        },
-
-        continuesDirs = array [config.dir.src],
-    };
-    
-    //path and dependency things
+createConfig config dependencies =
+    ( //path and dependency things
     var ad = array [];
     var pd = array [];
     var rp = array [
@@ -237,7 +150,7 @@ createConfig baseConfig dependencies =
     done;
     
 
-    baseConfig with {
+    (config is baseConfig )  with {
         artifactDependencies = ad,
         projectDependencies = pd,
         remoteRepositories = rp,
@@ -247,6 +160,33 @@ createConfig baseConfig dependencies =
         pathScopeSystem,
         pathScopeProvided,
         pathScopeTest,
+        jarManifest = [:] is hash<string,string>,
+        jarAttributes is hash<string,string> = [:],
+                                 
+        jarFileset = [ config.dir.targetClasses : []],
+
+
+        warAttributes = ["webxml": config.dir.webapp ^ "WEB-INF/web.xml"],
+
+        warLibset = 
+             [config.dir.lib : [Include "**/*.jar"],
+              config.dir.libManaged : [Include "compile/**/*.jar",
+                                Include "runtime/**/*.jar"]],
+                               
+        warClassesset =
+            [config.dir.targetClasses : [Include "**/*.*"]],
+
+        warFileset = [config.dir.webapp : [Include "**/*.*"]],
+
+        deployRepository = {
+            var url = undef_str,
+            var providerArtifactId = undef_str,
+            var providerVersion = "1.0-beta2",
+            params = (array []) is array<xmlelement>,
+            var uniqueVersion = false
+        },
+
+        continuesDirs = array [config.dir.src],
     });
     
 
@@ -502,7 +442,11 @@ _mvnInstallOrDeploy config fileName project =
 
             
     
-continues = 
+    
+//lifecycle targets
+
+baseProjectTargets config = 
+(continues = 
     target "continues" 
            [Description "Continuesly runs the target given as argument"]
            do p:
@@ -550,8 +494,8 @@ continues =
                     fi;
                     Thread#sleep(1000));
            done;
-    
-//lifecycle targets
+
+
 preClean = 
     target "preClean" 
            [Description "invoked befroe main clean"] 
@@ -791,18 +735,7 @@ initBuildPathes =
 for [clean, retrieveLibs, compile, test, jar, war, 
      doc, pom, jetty, cleanLibs, cleanAll, continues]
     (push targetsInHelp);
-        
-
 {
-    config, 
-    pathes = {
-        buildExt = buildExtPath,
-        runtime = runtimePath,
-        compile = compilePath,
-        test = testPath,
-        testRuntime = testRuntimePath,
-    },
-
     livecycleTargets = {
         preClean, 
         clean, 
@@ -823,25 +756,6 @@ for [clean, retrieveLibs, compile, test, jar, war,
         preDoc, 
         doc,  
     },	
-
-    helpers = {
-        yetiMainTask,
-        yetidocTask,
-        yeticTask,
-        writePom,
-        mvnInstall,
-        mvnDeploy,
-        mvnInstallOrDeploy = _mvnInstallOrDeploy,
-    },
-        
-        
-
-    localRepository, 
-    dependency, 
-    exclusion,
-    remoteRepository,
-
-    
     baseTargets = {
         jetty,
         initBuildPathes,
@@ -854,4 +768,34 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jarOnly,
         pom,
     }
+
+}
+);
+
+
+{
+    baseConfig,
+    createConfig,
+    pathes = {
+        buildExt = buildExtPath,
+        runtime = runtimePath,
+        compile = compilePath,
+        test = testPath,
+        testRuntime = testRuntimePath,
+    },
+    helpers = {
+        yetiMainTask,
+        yetidocTask,
+        yeticTask,
+        writePom,
+        mvnInstall,
+        mvnDeploy,
+        mvnInstallOrDeploy = _mvnInstallOrDeploy,
+    },
+    baseProjectTargets,   
+
+    localRepository, 
+    dependency, 
+    exclusion,
+    remoteRepository,
 }

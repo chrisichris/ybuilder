@@ -25,7 +25,7 @@ import org.apache.tools.ant.types: FileSet;
 load ybuilder.core.build;
 b = load ybuilder.core.projectBase;
 
-config = b.config;
+config = b.createConfig b.baseConfig [];
 
 config = config with {
     //task attributes
@@ -63,9 +63,11 @@ config = config with {
         [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"],
 };
 
+{livecycleTargets, baseTargets} = b.baseProjectTargets config;
+
 copyResources = 
     target "copyResources" 
-           [Before b.livecycleTargets.processResources,
+           [Before livecycleTargets.processResources,
             Description "Copies resources from [\(config.dir.src), \(config.dir.resources)] to [\(config.dir.targetClasses)]"]
            do p:
                 if (file config.dir.resources)#exists() then
@@ -84,7 +86,7 @@ copyResources =
            
 copyTestResources = 
     target "copyTestResources" 
-           [Before b.livecycleTargets.processTestResources, 
+           [Before livecycleTargets.processTestResources, 
             Description "Copies test resources to test classes dir"]
            do p:
                 if (file config.dir.resourcesTest)#exists() then
@@ -102,7 +104,7 @@ copyTestResources =
 
 compileJava = 
     target "compileJava" 
-           [Before b.livecycleTargets.compile, Description "Compiles java sources"]
+           [Before livecycleTargets.compile, Description "Compiles java sources"]
            do p:
                 if (file config.dir.src)#exists() then
                     antTask "javac" config.javacAttributes 
@@ -114,7 +116,7 @@ compileJava =
 
 testCompileJava = 
     target "testCompileJava" 
-           [Before b.livecycleTargets.testCompile, Description "compiles java test sources"]
+           [Before livecycleTargets.testCompile, Description "compiles java test sources"]
            do p:
                 if (file config.dir.test)#exists() then
                     antTask "javac" config.javacTestAttributes 
@@ -125,7 +127,7 @@ testCompileJava =
            done;
 javadoc = 
     target "javadoc" 
-           [Before b.livecycleTargets.doc, 
+           [Before livecycleTargets.doc, 
             Description "create javadocs from [\(config.dir.src)] to [\(config.dir.javadoc)]"] 
             do p:
                 if (file config.dir.src)#exists() then
@@ -140,7 +142,7 @@ javadoc =
           
 
 compileYeti = 
-    target "compileYeti" [Depends compileJava, Before b.livecycleTargets.compile] 
+    target "compileYeti" [Depends compileJava, Before livecycleTargets.compile] 
            do p:
                 if (file config.dir.src)#exists() then
                     b.helpers.yeticTask 
@@ -155,7 +157,7 @@ compileYeti =
            
 testCompileYeti = 
     target "testCompileYeti" 
-           [Depends testCompileJava, Before b.livecycleTargets.testCompile] 
+           [Depends testCompileJava, Before livecycleTargets.testCompile] 
            do p:
                 if (file config.dir.test)#exists() then
                     b.helpers.yeticTask 
@@ -170,7 +172,7 @@ testCompileYeti =
                         
 yetidoc = 
     target "yetidoc" 
-        [Before b.livecycleTargets.doc, Depends b.baseTargets.initDirs, Description "creates yetidoc"] 
+        [Before livecycleTargets.doc, Depends baseTargets.initDirs, Description "creates yetidoc"] 
         do p:
             if (file config.dir.test)#exists() then
                 antTask "delete" ["dir":config.dir.yetidoc] [] p;
@@ -183,7 +185,7 @@ yetidoc =
         
 //Test target
 junitTarget = 
-    target "junit" [Before b.livecycleTargets.test] do p:
+    target "junit" [Before livecycleTargets.test] do p:
         hasJunit = try 
             (createAntClassLoader (b.pathes.test config) [])
                 #loadClass("junit.framework.Test");
@@ -207,7 +209,7 @@ junitTarget =
     done;
     
 yebspecTarget =
-    target "yebspec" [Before b.livecycleTargets.test] do p:
+    target "yebspec" [Before livecycleTargets.test] do p:
         hasSpec = try
             (createAntClassLoader (b.pathes.test config) [])
                 #loadClass("org.yeb.yebspec");
@@ -255,7 +257,7 @@ yebspecTarget =
     done;
         
 simpleTestTarget =
-    target "simpleTest" [Before b.livecycleTargets.test] do p:
+    target "simpleTest" [Before livecycleTargets.test] do p:
         modules = if empty? p.args then
             if (file config.dir.test)#exists() then
                 listFiles config.dir.test [Include "**/*STest.yeti"];
@@ -322,7 +324,7 @@ b with {
 
     createNewYetiProject, 
     
-    baseTargets = b.livecycleTargets with b.baseTargets with {
+    baseTargets = livecycleTargets with baseTargets with {
         copyResources,
         copyTestResources,
         compileJava,

@@ -6,6 +6,9 @@ load ybuilder.core.build;
 
 import java.lang.System;
 
+config = createConfig baseConfig [];
+{livecycleTargets} = baseProjectTargets config;
+
 config.groupId :="org.ybuilder";
 config.artifactId := "ybuilder";
 config.version := ybuilderVersion;
