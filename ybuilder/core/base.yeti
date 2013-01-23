@@ -23,10 +23,10 @@ import org.apache.tools.ant.types: FileSet;
 
 
 load ybuilder.core.build;
-b = load ybuilder.core.projectBase;
+load ybuilder.core.projectBase;
 
 createBaseConfig config dependencies = 
-    (bc = b.createProjectBaseConfig config dependencies;
+    (bc = createProjectBaseConfig config dependencies;
     bc with {
     //task attributes
     javacAttributes = 
@@ -65,7 +65,7 @@ createBaseConfig config dependencies =
 
 
 registerBaseTargets config = ( 
-    projectBaseT = b.registerProjectBaseTargets config;
+    projectBaseT = registerProjectBaseTargets config;
     
     {livecycleTargets, projectBaseTargets} = projectBaseT;
 
@@ -120,7 +120,7 @@ registerBaseTargets config = (
                                 ["line": config.javacCompilerarg] 
                                 [],
                              el "classpath" [:] 
-                                (antPathElements (b.pathes.compile config))] 
+                                (antPathElements (pathes.compile config))] 
                             p;
                     fi;
                done; 
@@ -135,7 +135,7 @@ registerBaseTargets config = (
                             [el "compilerarg" 
                                 ["line":config.javacTestCompilerarg] [],
                              el "classpath" [:] 
-                                (antPathElements (b.pathes.test config))] 
+                                (antPathElements (pathes.test config))] 
                             p
                     fi
                done;
@@ -150,7 +150,7 @@ registerBaseTargets config = (
                         antTask "mkdir" ["dir":config.dir.javadoc] [] p;
                         antTask "javadoc" config.javadocAttributes 
                                 [el "classpath" [:] 
-                                (antPathElements (b.pathes.compile config))] 
+                                (antPathElements (pathes.compile config))] 
                                 p
                     fi
                 done;
@@ -162,12 +162,12 @@ registerBaseTargets config = (
                 [Depends compileJava, Before livecycleTargets.compile] 
                do p:
                     if (file config.dir.src)#exists() then
-                        b.helpers.yeticTask 
+                        helpers.yeticTask 
                             config.dir.targetClasses 
                             config.dir.src 
                             config.yeticIncludes 
                             config.yeticSourceReaderCode
-                            (b.pathes.compile config) 
+                            (pathes.compile config) 
                             p;
                     fi
                done;
@@ -177,12 +177,12 @@ registerBaseTargets config = (
                [Depends testCompileJava, Before livecycleTargets.testCompile] 
                do p:
                     if (file config.dir.test)#exists() then
-                        b.helpers.yeticTask 
+                        helpers.yeticTask 
                             config.dir.targetTestClasses 
                             config.dir.test 
                             config.yeticIncludes 
                             config.yeticSourceReaderCode
-                            (b.pathes.test config) 
+                            (pathes.test config) 
                             p;
                     fi;
                done;
@@ -199,7 +199,7 @@ registerBaseTargets config = (
                     antTask "mkdir" ["dir":config.dir.yetidoc] [] p;
                     fileSet = listFiles config.dir.src [Include "**/*.yeti", 
                                           Exclude "**/ybuilder.yeti" ];
-                    b.helpers.yetidocTask config config.dir.yetidoc fileSet p;
+                    helpers.yetidocTask config config.dir.yetidoc fileSet p;
                 fi;
             done;
             
@@ -207,7 +207,7 @@ registerBaseTargets config = (
     junitTarget = 
         target config "test" "junit" [Before livecycleTargets.test] do p:
             hasJunit = try 
-                (createAntClassLoader (b.pathes.test config) [])
+                (createAntClassLoader (pathes.test config) [])
                     #loadClass("junit.framework.Test");
                 ((p.antProject)#getClass()#getClassLoader())
                      #loadClass("org.apache.tools.ant.taskdefs.optional.junit.JUnitTask");    
@@ -219,7 +219,7 @@ registerBaseTargets config = (
             if (file config.dir.test)#exists() and hasJunit then
                 antTask "mkdir" ["dir":config.dir.reports ^ "tests"] [] p;
                 antTask "junit" ["printsummary": "yes", "haltonfailure":"yes"] 
-                   [el "classpath" [:] (antPathElements (b.pathes.test config)),
+                   [el "classpath" [:] (antPathElements (pathes.test config)),
                     el "formatter" ["type":"plain"] [],
                     el "batchtest" ["fork":"yes", 
                                     "todir": config.dir.reports ^ "tests"] 
@@ -231,7 +231,7 @@ registerBaseTargets config = (
     yebspecTarget =
         target config "test" "yebspec" [Before livecycleTargets.test] do p:
             hasSpec = try
-                (createAntClassLoader (b.pathes.test config) [])
+                (createAntClassLoader (pathes.test config) [])
                     #loadClass("org.yeb.yebspec");
                 true;
             catch Exception e:
@@ -273,8 +273,8 @@ registerBaseTargets config = (
                     ^ "resStr done; if (res.exceptions + res.fails) > 0 then "
                     ^ "System#exit(1) fi;";
                 //println ("----sepec:"^code);
-                b.helpers.yetiMainTask 
-                    ["-e",code] (b.pathes.test config) true "." p;
+                helpers.yetiMainTask 
+                    ["-e",code] (pathes.test config) true "." p;
             fi;
         done;
             
@@ -319,9 +319,9 @@ registerBaseTargets config = (
                     done
                     |> strJoin "")
                     ^ "); if fails > 0 then System#exit(1) fi;);";
-                b.helpers.yetiMainTask 
+                helpers.yetiMainTask 
                     ["-e", code] 
-                    (b.pathes.test config) true "." p;
+                    (pathes.test config) true "." p;
             fi;
         done;
           
@@ -361,7 +361,7 @@ createNewYetiProject config projectDir project =
                 project);
         
  
-b with {
+(load ybuilder.core.projectBase) with {
     registerBaseTargets,
     createBaseConfig,
     createNewYetiProject, 
