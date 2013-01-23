@@ -92,4 +92,4 @@ dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
 //runTarget retrieveDependencies;
 
-(load ybuilder.core.run) config;
+(load ybuilder.core.run).run  config;

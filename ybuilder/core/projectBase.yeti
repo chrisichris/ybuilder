@@ -472,7 +472,7 @@ continues =
                     if dir#exists() then
                         ntime := max ntime (dir#lastModified());
                         if (dir is ~File)#isDirectory() then
-                            ntime := fsc (list(wrapArray(dir#listFiles()))) 
+                            ntime := fsc (list(dir#listFiles())) 
                                          ntime;
                         fi
                     fi

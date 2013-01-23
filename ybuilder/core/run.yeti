@@ -22,10 +22,6 @@ import java.lang:ClassLoader, Thread;
 import org.apache.tools.ant:AntClassLoader;
 import org.apache.tools.ant.types:Path;
 
-withCl cl fn =
-    (oldCl = Thread#currentThread()#getContextClassLoader();
-    Thread#currentThread()#setContextClassLoader(cl);
-    try fn() finally Thread#currentThread()#setContextClassLoader(oldCl); yrt);
 
 repl eval = 
     (print "ybuilder> ";
@@ -45,22 +41,27 @@ repl eval =
 
 
 evalFun = (load yeti.lang.compiler.eval).evaluateYetiCode [] [Bind()];
-evaluate argv = 
+evaluate config argv = 
     if empty? argv then
         "\n";
     elif (head argv) == "-yeti" then
         cl = 
             (load ybuilder.core.base;
-             runTarget livecycleTargets.initialize [];
+             runTarget config.livecycleTargets.initialize [];
              pat = createAntPath (pathes.testRuntime config);
              new AntClassLoader(ClassLoader#getSystemClassLoader()#getParent(), 
                                 pat#getProject(), pat, false));
-        _ = withCl cl 
-                \(m = cl#loadClass("yeti.lang.compiler.yeti")
+        _ = (oldCl = Thread#currentThread()#getContextClassLoader();
+             Thread#currentThread()#setContextClassLoader(cl);
+             try
+                m = cl#loadClass("yeti.lang.compiler.yeti")
                         #getMethod("main",array [classOf java.lang.String[]]);
                   m#invoke((),(array [(array (tail argv)) as ~String[] ]) 
                                 as ~String[][]);
-        );
+             finally
+                Thread#currentThread()#setContextClassLoader(oldCl)
+             yrt);
+        
         "\n";
     else
         if strStarts? (head argv) "#" then
@@ -133,12 +134,12 @@ evaluate argv =
                         fi;
                     if n == "" then
                         () 
-                    elif not n in targets then
+                    elif not n in config.targets then
                         println "\n--target: [\(n)] is no target!\n";
-                        printSimilarTargets n;
+                        printSimilarTargets config.targets n;
                         throw new YbuilderAntException("\(n) is no target",());
                     else
-                        t = targets.[n];
+                        t = config.targets.[n];
                         println "--target: \(n)";
                         if not empty? ps.excludes then
                             println "  -x \(ps.excludes)";
@@ -154,18 +155,22 @@ evaluate argv =
         fi;
     fi;
 
-argvL = list _argv;
+runCmds config args =
+    (if empty? args then
+        println (evaluate config ["help"])
+    elif (head args) == "-c" then
+        repl (evaluate config);
+    else
+        println (evaluate config args)
+    fi;
+    System#exit(0));
 
-if empty? argvL then
-    println (evaluate ["help"])
-elif (head argvL) == "-c" then
-    repl evaluate;
-else
-    println (evaluate argvL)
-fi;
-    
-System#exit(0);
-();
+run config = 
+    runCmds config (list _argv);
+{
+    runCmds,
+    run
+};
 
 
 

@@ -355,7 +355,7 @@ _createAntPath project patts	=
 
 createAntPath patts = _createAntPath (createProject ()) patts;
 
-listPath patts = map string (wrapArray (createAntPath patts)#list());   
+listPath patts = (createAntPath patts)#list() as list<string>;   
 
 createAntClassLoader patts opts =
    (var parentClassLoader = ClassLoader#getSystemClassLoader()#getParent();
@@ -378,7 +378,7 @@ listFiles dir patts	=
         project;
     r = ((project.antProject#getReference(name)) unsafely_as ~FileSet)
         #getDirectoryScanner()#getIncludedFiles();
-    map ((strReplace File#separator "/") . string) (wrapArray r));
+    map (strReplace File#separator "/") r);
 
 listDirs dir patts	= 
    (name="foox";
@@ -387,7 +387,7 @@ listDirs dir patts	=
         project;
     r = ((project.antProject#getReference(name)) unsafely_as ~DirSet)
         #getDirectoryScanner()#getIncludedFiles();
-    map ((strReplace File#separator "/") . string) (wrapArray r));
+    map (strReplace File#separator "/") r);
     
     
 
@@ -511,6 +511,7 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
         //cmdYbuilderVersion,
         cmdTargets
     });
+
 
 {
     createBuildConfig,
