@@ -15,7 +15,7 @@
  * and limitations under the License.
  */
 
-module ybuilder.core.projectBase;
+module ybuilder.core.projectbase;
 
 import java.lang.Thread;
 import java.io.File;

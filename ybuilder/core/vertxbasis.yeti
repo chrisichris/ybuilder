@@ -17,7 +17,7 @@
 module ybuilder.core.vertxBase;
 
 load ybuilder.core.build;
-b = load ybuilder.core.projectBase;
+b = load ybuilder.core.projectbase;
 bu = load ybuilder.core.build;
 
 do opts:
