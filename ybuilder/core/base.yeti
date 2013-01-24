@@ -23,7 +23,7 @@ import org.apache.tools.ant.types: FileSet;
 
 
 load ybuilder.core.build;
-load ybuilder.core.projectBase;
+load ybuilder.core.projectbase;
 
 createBaseConfig config dependencies = 
     (bc = createProjectBaseConfig config dependencies;
@@ -361,7 +361,7 @@ createNewYetiProject config projectDir project =
                 project);
         
  
-(load ybuilder.core.projectBase) with {
+(load ybuilder.core.projectbase) with {
     registerBaseTargets,
     createBaseConfig,
     createNewYetiProject, 

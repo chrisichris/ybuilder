@@ -320,7 +320,30 @@ yeticTask targetDir srcDir includes sourceReaderCode path project =
     println String#format(
         "%1$11s Compiling \(length files) files to \(targetDir)", 
         array ["[yetic]"]);
-    
+    if "verbose" in project.properties then
+        println String#format(
+            "%1$11s files", 
+            array ["[yetic]"]);
+        for files do f:
+            println String#format(
+                "%1$11s \(f)", 
+                array [""]);
+        done;
+        println String#format(
+            "%1$11s sourceDir: \(srcDir)", 
+            array ["[yetic]"]);
+        println String#format(
+            "%1$11s path", 
+            array ["[yetic]"]);
+        for (listPath path) do f:
+            println String#format(
+                "%1$11s \(f)", 
+                array [""]);
+        done;
+    fi;
+
+    //files = ["ybuilder/core/base.yeti"]; 
+
     if not empty? files then
         code = 
 """import yeti.lang.compiler.CompileException;
@@ -695,7 +718,6 @@ war =
                 _mvnInstallOrDeploy config destfl p;
             done;
 
-            
 jetty =
     target config "run" "jetty" [Depends initialize,
                     Description ("runs jetty - note the jetty libs must be" 
@@ -728,7 +750,6 @@ jetty =
         server#start();
         server#join();
     done;
-
 //path targets    
 initDirs = 
     target config "init" "initDirs" [Before initialize,Depends prepareLibs] 
@@ -745,7 +766,7 @@ initBuildPathes =
 
 
 for [clean, retrieveLibs, compile, test, jar, war, 
-     doc, pom, jetty, cleanLibs, cleanAll, continues]
+     doc, pom, cleanLibs, cleanAll, continues]
     (push config.targetsInHelp);
 
 (registerBuildTargets config) with {

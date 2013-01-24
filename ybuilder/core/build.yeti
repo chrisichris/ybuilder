@@ -208,6 +208,8 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
     if runAlways 
        or (not (target is targetType).name in project.executedTargets) then
         project.executedTargets[target.name] := true;
+
+
         oldArgs = project.args;
         project.args := targetArgs;
 
@@ -216,6 +218,9 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
         for target.depends do t:
             executeTarget t [] project;
         done;
+        if "verbose" in project.properties then
+            println "--\(target.name)";
+        fi;
         try
             //println "Exectuing target \(target.name)";
             target.fn project;
