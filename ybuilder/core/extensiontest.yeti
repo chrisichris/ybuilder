@@ -22,36 +22,29 @@ import java.io:FileInputStream, File;
 load ybuilder.core.build;
 load ybuilder.core.base;
 
-extensionTestDir = "etprojects/";
-extensionTestTargetDir = config.dir.target ^ "etprojects/";
+createExtensionTestConfig config = {
+    extensionTestDir = "etprojects/",
+    extensionTestTargetDir = config.dir.target ^ "etprojects/",
+};
 
 
-createExtensionTestDirs name project = (
-    baseDir = extensionTestDir ^ name ^ "/";
-    createNewYetiProject baseDir project;
+createExtensionTestDirs config name project = 
+    (baseDir = config.extensionTestDir ^ name ^ "/";
+    createNewYetiProject config baseDir project;
     antTask "copy" ["todir":baseDir, "overwrite":"false"] 
         [el "javaresource" ["name":"ybuilder/core/targets.properties"][],
          el "mapper" ["type":"flatten"][]] 
-        project;
-        
-);
+        project);
 
-createExtensionTestProject = 
-    target "createExtensionTestProject" 
-           [Description "creates a project for testing of an extension in [\(extensionTestDir)]. The name of the project must be provided as a param"] do p:
-        for p.args do n: 
-            createExtensionTestDirs n p 
-        done;
-    done;
 
-_doExtensionTest name project = (
-    if (file (extensionTestDir ^ name))#exists() then 
+_doExtensionTest config name project = (
+    if (file (config.extensionTestDir ^ name))#exists() then 
         println "\n================\nextension test [\(name)]";
-        antTask "copy" ["todir":extensionTestTargetDir ^ name] 
-                [el "fileset" ["dir":extensionTestDir ^ name] []] 
+        antTask "copy" ["todir":config.extensionTestTargetDir ^ name] 
+                [el "fileset" ["dir":config.extensionTestDir ^ name] []] 
                 project;
         
-        dir = file (extensionTestTargetDir ^ name);
+        dir = file (config.extensionTestTargetDir ^ name);
 
         argLines = 
            (fis = new FileInputStream(new File(dir,"targets.properties"));
@@ -81,34 +74,54 @@ _doExtensionTest name project = (
 );    
   
 
-runExtensionTests project = (
-    if (file extensionTestDir)#exists() then
+runExtensionTests config project = (
+    if (file config.extensionTestDir)#exists() then
         names = if (length project.args) > 0 then
             list project.args;
         else
-            rs = (file extensionTestDir)#list();
+            rs = (file config.extensionTestDir)#list();
             if defined? rs then 
-                (sort . map string . list . wrapArray) rs;
+                sort (rs as list<string>);
             else
                 []
             fi;
         fi;
-        for names do n: _doExtensionTest n project done;
+        for names do n: 
+            _doExtensionTest config n (project is projectType); 
+        done;
     fi;
 );
 
-extensionTest = 
-    target "extensionTest" [Before livecycleTargets.test] runExtensionTests;
+registerExtensionTestTargets config = 
+    (createExtensionTestProject = 
+        target config "extensiontest" "createProject" 
+               [Description ("creates a project for testing of an extension "
+                ^"in [\(config.extensionTestDir)]. The name of the "
+                ^" project must be provided as a param")] do p:
+            for p.args do n: 
+                createExtensionTestDirs config n p 
+            done;
+        done;
 
-push targetsInHelp extensionTest;   
-push targetsInHelp createExtensionTestProject;   
+    extensionTest = 
+        target config "extensiontest" "run" 
+        [Before config.livecycleTargets.test] 
+        do p: runExtensionTests config p done;
+
+    push config.targetsInHelp extensionTest;   
+    push config.targetsInHelp createExtensionTestProject;
+    {
+        extenstiontestTargets = {
+            createExtensionTestProject,
+            extensionTest,
+        }
+    });
+
 
 {
-    init () = ();
-    extensionTest, 
+    createExtensionTestConfig,
+    registerExtensionTestTargets,
     runExtensionTests, 
-    extensionTestDir,
-    createExtensionTestProject, 
     createExtensionTestDirs
 }				
 

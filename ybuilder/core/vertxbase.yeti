@@ -14,170 +14,177 @@
  * and limitations under the License.
  */
 
-module ybuilder.core.vertxBase;
+module ybuilder.core.vertxbase;
+
+import java.lang.System;
 
 load ybuilder.core.build;
 b = load ybuilder.core.projectbase;
 bu = load ybuilder.core.build;
 
-do opts:
-    var useVertxHomeOnPath = false;
-    for opts do opt:
-        case opt of
-        UseVertxHomeOnPath b: useVertxHomeOnPath := b;
-        esac;
-    done;
-    
-    modsDir = "mods/";
-
-    moduleName = "\(b.config.groupId).\(b.config.artifactId)-v0"; 
-    fullModuleName = "\(b.config.groupId).\(b.config.artifactId)-v\(b.config.version)"; 
-
-    //check for vert.x
-
-    import java.lang.System;
-    vertxHome = System#getenv("VERTX_HOME");
-    if useVertxHomeOnPath and not defined? vertxHome then
+createVertxConfig useVertxHomeOnSystemPath config = 
+    (vertxHome = System#getenv("VERTX_HOME");
+    vertxHome = if useVertxHomeOnSystemPath and not defined? vertxHome then
         failWith "Vertxhome is set to be on path but is not defined"
+    else
+        string vertxHome;
     fi;
-
+    
     if not defined? vertxHome then
         println ("Warning: VERTX_HOME enviroment variable is not defined" 
                     ^"some tasks will not work")
     fi;
-
-    if useVertxHomeOnPath then
+   
+    if useVertxHomeOnSystemPath then
         //add all the vert.x dependencies
-        push b.config.pathScopeLib 
+        push config.pathScopeLib 
             (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
+    {
+        useVertxHomeOnSystemPath = false,
+        vertxHome,
+        vertxModsDir = "mods/",
+        vertxModuleName = "\(config.groupId).\(config.artifactId)-v0", 
+        vertxFullModuleName = 
+            "\(config.groupId).\(config.artifactId)-v\(config.version)", 
+    });
+
+vertxTask config args p = 
+   (jythonHome =System#getenv("JYTHON_HOME");  
+   jrubyHome =System#getenv("JRUBY_HOME");  
+   
+   sysProps = [:]; 
+   cpP is pathPatternType = if config.useVertxHomeOnSystemPath then
+       array [Fileset [config.vertxHome^"/lib" : [Include "**/*.jar"]]];
+   else
+       array [Patterns \config.pathScopeProvided];
+   fi;
+
+   if defined? config.vertxHome then
+       sysProps.["java.util.logging.config.file"] 
+            := config.vertxHome^"/conf/logging.properties";
+       push cpP (Location (config.vertxHome^"/conf"));
+   fi;
+   if defined? jythonHome then
+       push cpP (Location (jythonHome^"/jython.jar"));
+       sysProps.["jython.home"] := jythonHome;
+   fi;
+   if defined? jrubyHome then
+       push cpP (Location (jrubyHome^"/lib/jruby.jar"));
+       sysProps.["jruby.home"] := jrubyHome;
+   fi;
+  
+    
+   antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
+                   "fork":"true",
+                   "failonerror":"true"]
+                   ([el "classpath" [:] (antPathElements cpP)]
+                    ++ (map do a: el "arg" ["value":a] [] done args)
+                    ++ (mapHash do k v:
+                            el "sysproperty" ["key" : k, "value":v] []
+                        done sysProps)) 
+                    p);
+
+vertxRunPath config = 
+    listPath [Patterns \config.pathScopeCompile,
+                 Location (config.dir.targetClasses)];
+
+vertxTestPath config =
+    listPath [Patterns \config.pathScopeCompile, 
+                 Patterns \config.pathScopeTest,
+                 Location (config.dir.targetClasses),
+                 Location (config.dir.targetTestClasses)];
+    
 
 
-    //fn to copy module libs to module dir
-    moduleLibsFn p=
-        (targetDir = modsDir^moduleName^"/lib/";
-        antTask "delete" ["dir":targetDir] [] p;
-        antTask "mkdir" ["dir":targetDir] [] p;
-        antTask "copy" ["todir":targetDir]
-            [antFilesetElement (b.config.dir.libManaged^"compile/") 
-                                [Include  "*.jar"]] p;
-        antTask "copy" ["todir":targetDir, 
-                        "flatten":"true"]
-                       [antFilesetElement b.config.dir.lib [Include "**/*.jar"]] p);
 
-    //add fn to retrieveDependencies target
-    bu.doAfterTarget b.baseTargets.retrieveLibs moduleLibsFn;
+//fn to copy module libs to module dir
+moduleLibsFn config p=
+    (targetDir = config.vertxModsDir^config.vertxModuleName^"/lib/";
+    antTask "delete" ["dir":targetDir] [] p;
+    antTask "mkdir" ["dir":targetDir] [] p;
+    antTask "copy" ["todir":targetDir]
+        [antFilesetElement (config.dir.libManaged^"compile/") 
+                            [Include  "*.jar"]] p;
+    antTask "copy" ["todir":targetDir, 
+                    "flatten":"true"]
+                   [antFilesetElement config.dir.lib [Include "**/*.jar"]] p);
 
+registerVertxTargets config =
+    (//add fn to retrieveDependencies target
+    bu.doAfterTarget 
+        config.projectBaseTargets.retrieveLibs 
+        (moduleLibsFn config);
 
-    vertxCompile = target "vertx:compile" [
-                Depends b.livecycleTargets.compile,
-                Depends b.baseTargets.jarOnly,
-                Before b.livecycleTargets.testCompile,
-                Description "Makes jar for the vertxModule and copies it in"]
+    vertxCompile = 
+        target config "vertx" "compile" 
+            [Depends config.livecycleTargets.compile,
+             Depends config.projectBaseTargets.jarOnly,
+             Before config.livecycleTargets.testCompile,
+             Description "Makes jar for the vertxModule and copies it in"]
         do p:
-            targetDir = modsDir^moduleName^"/";
+            targetDir = config.vertxModsDir^config.vertxModuleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
             antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
-                    [antFilesetElement b.config.dir.target 
-                        [Include "\(b.config.artifactId).jar"]] p;
+                    [antFilesetElement config.dir.target 
+                        [Include "\(config.artifactId).jar"]] p;
         done;    
 
-    vertxZipModule = target "vertx:zipModule"
-                [Depends b.livecycleTargets.preparePackage,
-                 Description "bundles creates the vertx module and 
+    vertxZipModule = 
+        target config "vertx" "zipModule"
+            [Depends config.livecycleTargets.preparePackage,
+             Description "bundles creates the vertx module and 
                               copies it to target"]
         do p:
-            tDir = b.config.dir.target^modsDir^fullModuleName;
+            tDir = config.dir.target
+                    ^config.vertxModsDir
+                    ^config.vertxFullModuleName;
             antTask "delete" ["dir":tDir] [] p;
             antTask "mkdir" ["dir":tDir] [] p;
 
             antTask "copy" ["todir":tDir] 
-                           [antFilesetElement (modsDir^moduleName) []] p;
+                           [antFilesetElement 
+                                (config.vertxModsDir
+                                ^config.vertxModuleName) []] p;
 
-            antTask "zip" ["destfile":b.config.dir.target^fullModuleName]
-                          [antFilesetElement modsDir 
-                            [Include (moduleName^"/**")]] p;
+            antTask "zip" ["destfile":config.dir.target
+                                ^config.vertxFullModuleName]
+                          [antFilesetElement config.vertxModsDir 
+                            [Include (config.vertxModuleName^"/**")]] p;
         done;
 
     
-    vertxTask args p = 
-       (jythonHome =System#getenv("JYTHON_HOME");  
-       jrubyHome =System#getenv("JRUBY_HOME");  
-       
-       sysProps = [:]; 
-       cpP is pathPatternType = if useVertxHomeOnPath then
-           array [Fileset [vertxHome^"/lib" : [Include "**/*.jar"]]];
-       else
-           array [Patterns \b.config.pathScopeProvided];
-       fi;
-
-       if defined? vertxHome then
-           sysProps.["java.util.logging.config.file"] 
-                := vertxHome^"/conf/logging.properties";
-           push cpP (Location (vertxHome^"/conf"));
-       fi;
-       if defined? jythonHome then
-           push cpP (Location (jythonHome^"/jython.jar"));
-           sysProps.["jython.home"] := jythonHome;
-       fi;
-       if defined? jrubyHome then
-           push cpP (Location (jrubyHome^"/lib/jruby.jar"));
-           sysProps.["jruby.home"] := jrubyHome;
-       fi;
-      
-        
-       els = antPathElements cpP; 
-       antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
-                       "fork":"true",
-                       "failonerror":"true"]
-                       ([el "classpath" [:] (antPathElements cpP)]
-                        ++ (map do a: el "arg" ["value":a] [] done args)
-                        ++ (mapHash do k v:
-                                el "sysproperty" ["key" : k, "value":v] []
-                            done sysProps)) 
-                        p);
-
-    vertxRunPath () = 
-        (cp = array [Patterns \b.config.pathScopeCompile,
-                     Location (b.config.dir.targetClasses)];
-        path = createAntPath cp;
-        strJoin ":" (wrapArray path#list()));
-    
-    vertxTestPath () =
-        (cp = array [Patterns \b.config.pathScopeCompile, 
-                     Patterns \b.config.pathScopeTest,
-                     Location (b.config.dir.targetClasses),
-                     Location (b.config.dir.targetTestClasses)];
-        path = createAntPath cp;
-        strJoin ":" (wrapArray path#list()));
-        
-
-    vertxRun = target "vertx:run" 
-                    [Description "runs the current vertx module"]
+    vertxRun = 
+        target config "vertx" "run" 
+            [Description "runs the current vertx module or the one
+            given as paremeter"]
         do p:
             mn = if empty? p.args then
-                moduleName
+                config.vertxModuleName
             else
                 head p.args
             fi;
-            vertxTask ["runmod", mn] p;
+            vertxTask config ["runmod", mn] p;
         done;
 
-    vertxTest = target "vertx:test"
-                    [Before b.livecycleTargets.test,
-                     Description "runs the vertx test module"]
+    vertxTest = 
+        target config "vertx" "test"
+            [Before config.livecycleTargets.test,
+             Description "runs the vertx test module, 
+                or the one given as name"]
         do p:
             mn = if empty? p.args then
                 "text-v0"
             else
                 head p.args
             fi;
-            vertxTask ["runmod", mn] p;
+            vertxTask config ["runmod", mn] p;
         done;
-    
-    vertxRunVerticle = target "vertx:runVerticle"
-        [Description "runs the current verx verticle"]
+
+    vertxRunVerticle = 
+        target config "vertx" "runVerticle"
+            [Description "runs the current verx verticle"]
         do p:
             vn = if empty? p.args then
                 "server.yeti"
@@ -189,28 +196,24 @@ do opts:
             else
                 head (tail p.args)
             fi;
-            cp = dir ^ ":" ^ (vertxRunPath ());
-            vertxTask ["run", vn, "-cp", cp] p
+            cp = dir ^ ":" ^ (strJoin ":" (vertxRunPath config));
+            vertxTask config ["run", vn, "-cp", cp] p
         done;
-
-
-    yb = load ybuilder.core.base;
-
-    yb with {
-        baseTargets = yb.baseTargets with { 
-            vertxZipModule,
+    {
+        vertxTargets = {
             vertxCompile,
+            vertxZipModule,
             vertxRun,
             vertxTest,
-        },
-        config = yb.config with {
-            dir  = yb.config.dir with {
-                vertxHome,
-                modsDir
-            }
-        },
-        vertxBaseModuleName = moduleName,
-        vertxModuleName = fullModuleName,
+            vertxRunVerticle,
+        }
+    });
+{
+    createVertxConfig,
+    registerVertxTargets,
+    vertxHelpers = {
         vertxTask,
-    }   
-done;
+        vertxRunPath,
+        vertxTestPath,
+    }
+}
