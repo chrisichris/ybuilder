@@ -26,7 +26,14 @@ import yeti.lang.compiler.yeti;
 file n = new File(n is string);
 args = list _argv;
 
-buildLibsDir = ybuilderLibsManagedDir;
+config = {
+    dir = {
+        ybuilder = "lib/ybuilder/",
+        ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
+        //ybuilderLibsManaged = 
+        //    (load ybuilder.core.build).ybuilderLibsManagedDir;
+    }
+};
 
 retrieveBuildDependencies () =
    (import java.util.regex: Pattern;
@@ -61,8 +68,8 @@ retrieveBuildDependencies () =
                                         pair s.[1] s.[2] 
                                     done
                                 do ws:
-                                    failWith "Error in @buildDependency: "
-                                    ^"Exclusion Arguments wrong: \(s):[\(ws)]"
+                                    failWith ("Error in @buildDependency: "
+                                    ^"Exclusion Arguments wrong: \(s):[\(ws)]")
                                 done
                                 exs;
                             Some {dep = a, exc};
@@ -99,8 +106,8 @@ retrieveBuildDependencies () =
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
     project = createProject();
     
-    antTask "delete" ["dir":config.dir.ybuilderLibsManaged] [] project;
-    antTask "mkdir" ["dir":config.dir.ybuilderLibsManaged] [] project;
+    antTask "delete" ["dir":ybuilderLibsManagedDir] [] project;
+    antTask "mkdir" ["dir":ybuilderLibsManagedDir] [] project;
     if not empty? deps then
         antTask (maven "dependencies") 
                 ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
@@ -126,7 +133,7 @@ retrieveBuildDependencies () =
                      done deps)) 
                 project;
                     
-        antTask "copy" ["todir":config.dir.ybuilderLibsManaged] 
+        antTask "copy" ["todir":ybuilderLibsManagedDir] 
                 [el "fileset" ["refid":"dependenciesFS"][],
                  el "mapper" ["type":"flatten"] []] 
                 project;
@@ -172,9 +179,9 @@ if (not (file "project.yeti")#exists())
         if not empty? (tail args) then 
             (head (tail args)) 
         else 
-            basedir 
+            "."; 
         fi;
-    createNewYetiProject projectName (createProject ()); 
+    createNewYetiProject baseConfig projectName (createProject ()); 
     retrieveBuildDependencies ();
 elif (not empty? args) and ((head args) == "new") then
     build = load ybuilder.core.build;
@@ -226,6 +233,8 @@ elif (not empty? args) and ((head args) == "new") then
                     [(array ["-e", "(load ybuilder.core.projecttemplate).newFromTemplate \(name)"]) as ~String[]]
                 ) as ~String[][]);
     done;
+
+_lib_builder = "ybuilder";
 
     //run the newproject file
     if (new File("newproject.yeti"))#exists() then
