@@ -81,6 +81,7 @@ class AntBuilderLocator extends Locator
 end;
 
 ybuilderVersion = "0.5";
+ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
 
 
 createBuildConfig () = {
@@ -534,6 +535,7 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
 
 {
     createBuildConfig,
+    ybuilderLibsManaged,
     registerBuildTargets,
 
     readProperties,

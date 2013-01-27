@@ -37,7 +37,10 @@ retrieveBuildDependencies () =
             ((map ((flip strRight) 2) . filter ((flip strStarts?) "//"))
              inLines) ;
 
-        deps = array (catSome (matchAll '\s*@buildDependency\s([^;]*);' do smatch:
+        deps = 
+            array 
+                (catSome (matchAll '\s*@buildDependency\s([^;]*);' 
+                do smatch:
                 s = smatch.[1];
                 a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)' s) ();//"
                 if empty? a then 
@@ -58,7 +61,8 @@ retrieveBuildDependencies () =
                                         pair s.[1] s.[2] 
                                     done
                                 do ws:
-                                    failWith "Error in @buildDependency: Exclusion Arguments wrong: \(s):[\(ws)]"
+                                    failWith "Error in @buildDependency: "
+                                    ^"Exclusion Arguments wrong: \(s):[\(ws)]"
                                 done
                                 exs;
                             Some {dep = a, exc};
