@@ -717,7 +717,7 @@ war =
                         p;
                 _mvnInstallOrDeploy config destfl p;
             done;
-
+/*
 jetty =
     target config "run" "jetty" [Depends initialize,
                     Description ("runs jetty - note the jetty libs must be" 
@@ -750,6 +750,8 @@ jetty =
         server#start();
         server#join();
     done;
+*/
+
 //path targets    
 initDirs = 
     target config "init" "initDirs" [Before initialize,Depends prepareLibs] 
@@ -791,7 +793,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         doc,  
     },	
     projectBaseTargets = {
-        jetty,
+        //jetty,
         initBuildPathes,
         prepareLibs,
         retrieveLibs, 
