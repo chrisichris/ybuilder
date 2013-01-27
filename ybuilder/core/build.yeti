@@ -191,7 +191,14 @@ printSimilarTargets targets name =
         done;
     fi);
             
-            
+printTargets config =            
+    ({fst = short, snd = other} = splitBy
+        do t: strIndexOf t.name ":" 0 < 0 done
+        (list config.targets);
+    other = other |> sortBy do t t2: t.name < t2.name done;
+        
+    for short (println . targetToString);
+    for other (println . targetToString));
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
    (var runAlways = false;
@@ -468,8 +475,9 @@ registerBuildTargets config =
         target config "help" "targets" 
             [Description "Shows all the available targets in current project",
             ShortName()] 
-            \((for (list config.targets)) 
-                (println . targetToString));
+            do p:
+                printTargets config;
+            done;
         
 
     help = 
@@ -499,7 +507,7 @@ To run yeti-expression in ybuilder enviroment:
 java -jar ybuilder.jar #yeti-expression
 
 ---
-Common targets:
+targets:
 
 -c              Starts ybuilder in repl mode
 
@@ -507,16 +515,14 @@ Common targets:
                 classpath setup  
 
 help            Prints this message
-';  
-            for config.targetsInHelp do t:
-                println String#format("%1$-15s %2$s\n",array [t.name,t.description])
-            done;
-println 'retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir                
+
+retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir 
 
 cleanBuildLibs  deletes the ybuilder/libext_managed directory 
                 triggering fresh load next time
 ';
-
+                
+                printTargets config;
             else
                 for p.args (printSimilarTargets config.targets);
             fi;

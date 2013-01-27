@@ -43,6 +43,7 @@ config = config with et.createExtensionTestConfig config;
 config = config with et.registerExtensionTestTargets config;
 
 project = createProject(); 
+
 antTask "delete" ["dir":config.dir.src] [] project;
 antTask "delete" ["dir":config.dir.resources] [] project;
 antTask "delete" ["dir":config.extensionTestDir] [] project;
