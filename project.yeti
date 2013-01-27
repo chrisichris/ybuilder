@@ -19,8 +19,6 @@ load ybuilder.core.base;
 
 et = load ybuilder.core.extensiontest;
 
-
-
 import junit.framework.TestCase;
 import java.lang.Thread;
 
