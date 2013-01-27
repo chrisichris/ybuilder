@@ -41,6 +41,20 @@ baseConfig is baseConfig = {
     homePage = "",
     license = "",
     licenseURL = "",
+
+    localRepository = { 
+        layout = "default", 
+        path = "${user.home}/.m2"
+    },
+
+    deployRepository = {
+        url = undef_str,
+        providerArtifactId = undef_str,
+        providerVersion = "1.0-beta2",
+        params = [] is list<xmlelement>,
+        uniqueVersion = false
+    },
+
     
     dir = {
         libManaged = "lib/managed/",
@@ -153,10 +167,6 @@ createProjectBaseConfig config dependencies =
         pathScopeSystem,
         pathScopeProvided,
         pathScopeTest,
-        localRepository = { 
-            layout = "default", 
-            path = "${user.home}/.m2"
-        },
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
                                  
@@ -174,14 +184,6 @@ createProjectBaseConfig config dependencies =
             [config.dir.targetClasses : [Include "**/*.*"]],
 
         warFileset = [config.dir.webapp : [Include "**/*.*"]],
-
-        deployRepository = {
-            url = undef_str,
-            providerArtifactId = undef_str,
-            providerVersion = "1.0-beta2",
-            params = (array []) is array<xmlelement>,
-            uniqueVersion = false
-        },
 
         continuesDirs = array [config.dir.src],
     } with (createBuildConfig()));
