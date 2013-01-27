@@ -406,8 +406,7 @@ listDirs dir patts	=
 
     
 file name = 
-    (n = name is string;
-    new File(name is string));
+    new File(name is string);
 
 assert text cond = if not cond then failWith text else () fi;
 
