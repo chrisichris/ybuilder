@@ -28,10 +28,6 @@ load ybuilder.core.build;
 typedef shared baseConfig = 'a;
 
 maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
-localRepository = { 
-    var layout = "default", 
-    var path = "${user.home}/.m2"
-};
 
 
 //directories
@@ -157,6 +153,10 @@ createProjectBaseConfig config dependencies =
         pathScopeSystem,
         pathScopeProvided,
         pathScopeTest,
+        localRepository = { 
+            var layout = "default", 
+            var path = "${user.home}/.m2"
+        },
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
                                  
@@ -612,8 +612,8 @@ prepareLibs =
                             ["filesetId" : "dependenciesFS-"^scope, 
                              "scopes":scope] 
                             ([el (maven "localRepository") 
-                                ["layout":localRepository.layout, 
-                                    "path":localRepository.path] []] 
+                                ["layout":config.localRepository.layout, 
+                                    "path":config.localRepository.path] []] 
                             
                              ++ (map do rr: 
                                     el (maven "remoteRepository") 
@@ -830,7 +830,6 @@ for [clean, retrieveLibs, compile, test, jar, war,
     createProjectBaseConfig,
     registerProjectBaseTargets,   
 
-    localRepository, 
     dependency, 
     exclusion,
     remoteRepository,
