@@ -32,15 +32,15 @@ maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 
 //directories
 baseConfig is baseConfig = {
-    var name = "",
-    var version = "", 
-    var artifactId = "", 
-    var groupId = "",
-    var description = "",
-    var organization = "",
-    var homePage = "",
-    var license = "",
-    var licenseURL = "",
+    name = "",
+    version = "", 
+    artifactId = "", 
+    groupId = "",
+    description = "",
+    organization = "",
+    homePage = "",
+    license = "",
+    licenseURL = "",
     
     dir = {
         libManaged = "lib/managed/",
@@ -66,9 +66,9 @@ baseConfig is baseConfig = {
 
 createProjectBaseConfig config dependencies =
     ( //path and dependency things
-    var ad = array [];
-    var pd = array [];
-    var rp = array [
+    ad = array [];
+    pd = array [];
+    rp = array [
         {id = "chrisichris-snapshots",
         url = "http://chrisichris.github.com/chrisis-maven-repo/snapshots",
         layout = "default" },
@@ -154,8 +154,8 @@ createProjectBaseConfig config dependencies =
         pathScopeProvided,
         pathScopeTest,
         localRepository = { 
-            var layout = "default", 
-            var path = "${user.home}/.m2"
+            layout = "default", 
+            path = "${user.home}/.m2"
         },
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
@@ -176,11 +176,11 @@ createProjectBaseConfig config dependencies =
         warFileset = [config.dir.webapp : [Include "**/*.*"]],
 
         deployRepository = {
-            var url = undef_str,
-            var providerArtifactId = undef_str,
-            var providerVersion = "1.0-beta2",
+            url = undef_str,
+            providerArtifactId = undef_str,
+            providerVersion = "1.0-beta2",
             params = (array []) is array<xmlelement>,
-            var uniqueVersion = false
+            uniqueVersion = false
         },
 
         continuesDirs = array [config.dir.src],
