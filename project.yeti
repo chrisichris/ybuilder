@@ -14,9 +14,10 @@
  * and limitations under the License.
  */
 
+load ybuilder.core.ybuilder;
 load ybuilder.core.base;
+
 et = load ybuilder.core.extensiontest;
-load ybuilder.core.build;
 
 
 
@@ -25,19 +26,31 @@ import java.lang.Thread;
 
 ybuilderDir = "ybuilder/";
 
-project.artifactId := "ybuilder";
-project.groupId :="ybuilder";
-project.version := "0.1-alpha";
-project.description := "A simple build tool for yeti";
+config = createBaseConfig 
+    (baseConfig with {
+        artifactId = "ybuilder",
+        groupId ="ybuilder",
+        version = "0.1-alpha",
+        description = "A simple build tool for yeti",
+    })
+    [
+    dependency "junit" "junit" "3.8.2" [TestScope()],
+    dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
+    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()],
+    ];    
+
+config = config with registerBaseTargets config;
+
+config = config with et.createExtensionTestConfig config;
+config = config with et.registerExtensionTestTargets config;
 
 project = createProject(); 
+antTask "delete" ["dir":config.dir.src] [] project;
+antTask "delete" ["dir":config.dir.resources] [] project;
+antTask "delete" ["dir":config.extensionTestDir] [] project;
 
-antTask "delete" ["dir":dir.src] [] project;
-antTask "delete" ["dir":dir.resources] [] project;
-antTask "delete" ["dir":et.extensionTestDir] [] project;
 
-
-antTask "copy" ["todir":et.extensionTestDir] 
+antTask "copy" ["todir":config.extensionTestDir] 
     [el "fileset" ["dir":ybuilderDir ^ "etprojects"] []]
     project;
 
@@ -47,11 +60,7 @@ for ["test1", "test2"] (push et.extensionTestDirs);
 _ = et.createExtensionTestDirs;
 */			
 
-dependency "junit" "junit" "3.8.2" [TestScope()];
-dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
-dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
-_ = et.init();
 
 //_ = new TestCase("Hier");
-load ybuilder.core.run;
+run config;
