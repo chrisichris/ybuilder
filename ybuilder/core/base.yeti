@@ -342,8 +342,7 @@ registerBaseTargets config = (
             testCompileYeti,
             compileYeti
         }
-    };
-);        
+    });        
 
 createNewYetiProject config projectDir project = 
        (for [config.dir.lib, 

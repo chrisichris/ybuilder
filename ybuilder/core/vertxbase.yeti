@@ -54,7 +54,7 @@ vertxTask config args p =
    jrubyHome =System#getenv("JRUBY_HOME");  
    
    sysProps = [:]; 
-   cpP is pathPatternType = if config.useVertxHomeOnSystemPath then
+   cpP = if config.useVertxHomeOnSystemPath then
        array [Fileset [config.vertxHome^"/lib" : [Include "**/*.jar"]]];
    else
        array [Patterns \config.pathScopeProvided];
@@ -78,7 +78,7 @@ vertxTask config args p =
    antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
                    "fork":"true",
                    "failonerror":"true"]
-                   ([el "classpath" [:] (antPathElements cpP)]
+                   ([el "classpath" [:] (antPathElements (list cpP))]
                     ++ (map do a: el "arg" ["value":a] [] done args)
                     ++ (mapHash do k v:
                             el "sysproperty" ["key" : k, "value":v] []

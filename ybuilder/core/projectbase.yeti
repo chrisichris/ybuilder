@@ -54,7 +54,6 @@ baseConfig is baseConfig = {
         params = [] is list<xmlelement>,
         uniqueVersion = false
     },
-
     
     dir = {
         libManaged = "lib/managed/",
@@ -76,6 +75,7 @@ baseConfig is baseConfig = {
 
         buildExtlib = "lib/ybuilder/extlib/",
     }
+
 };
 
 createProjectBaseConfig config dependencies =
@@ -90,23 +90,23 @@ createProjectBaseConfig config dependencies =
         url = "http://chrisichris.github.com/chrisis-maven-repo/releases",
         layout = "default" }];
         
-    pathScopeLib is pathPatternType = 
+    _pathScopeLib = 
         array [Fileset [config.dir.lib : [Include "**/*.jar"]]]; 
 
-    pathScopeCompile is pathPatternType =
+    _pathScopeCompile =
         array [Fileset [config.dir.libManaged : [Include "/compile/**/*.jar"]],
                Location config.dir.targetClasses];
     
-    pathScopeRuntime is pathPatternType =
+    _pathScopeRuntime =
         array [Fileset [config.dir.libManaged : [Include "/runtime/**/*.jar"]]];
 
-    pathScopeSystem is pathPatternType =
+    _pathScopeSystem =
         array [Fileset [config.dir.libManaged : [Include "/system/**/*.jar"]]];
 
-    pathScopeProvided is pathPatternType =
+    _pathScopeProvided =
         array [Fileset [config.dir.libManaged : [Include "/provided/**/*.jar"]]];
 
-    pathScopeTest is pathPatternType =
+    _pathScopeTest =
         array [Fileset [config.dir.libManaged : [Include "/test/**/*.jar"]],
                Location config.dir.targetTestClasses];
 
@@ -114,19 +114,19 @@ createProjectBaseConfig config dependencies =
         ProjectDependency d: push pd d;
         ArtifactDependency d : push ad d;
         Repository r : push rp r;
-        Lib pt : push pathScopeLib pt;
-        Compile pt: push pathScopeCompile pt;
-        Runtime pt: push pathScopeRuntime pt;
-        System pt: push pathScopeSystem pt;
-        Provided pt: push pathScopeProvided pt;
-        Test pt: push pathScopeTest pt;
+        Lib pt : push _pathScopeLib pt;
+        Compile pt: push _pathScopeCompile pt;
+        Runtime pt: push _pathScopeRuntime pt;
+        System pt: push _pathScopeSystem pt;
+        Provided pt: push _pathScopeProvided pt;
+        Test pt: push _pathScopeTest pt;
     esac
     done;
 
     //adjust porjectDependencies
     for pd do {projectPath, artifact}:
         {scope} = artifact;
-        push pathScopeLib 
+        push _pathScopeLib 
             (Fileset [(projectPath ^ config.dir.lib) : [Include "**/*.jar"]]); 
         pushLoc pS =
             push pS (Location (projectPath ^ config.dir.targetClasses));
@@ -137,36 +137,36 @@ createProjectBaseConfig config dependencies =
         //scope dependencies according to maven:
         //http://www.sonatype.com/books/mvnref-book/reference/pom-relationships-sect-project-dependencies.html                
         if scope == "compile" then
-            pushLoc pathScopeCompile;
-            pushTD pathScopeCompile "compile";
-            pushTD pathScopeRuntime "runtime";
+            pushLoc _pathScopeCompile;
+            pushTD _pathScopeCompile "compile";
+            pushTD _pathScopeRuntime "runtime";
         elif scope == "provided" then
-            pushLoc pathScopeProvided;
-            pushTD pathScopeProvided "compile";
-            pushTD pathScopeProvided "provided";
-            pushTD pathScopeProvided "runtime";
+            pushLoc _pathScopeProvided;
+            pushTD _pathScopeProvided "compile";
+            pushTD _pathScopeProvided "provided";
+            pushTD _pathScopeProvided "runtime";
         elif scope == "runtime" then
-            pushLoc pathScopeRuntime;
-            pushTD pathScopeRuntime "compile";
-            pushTD pathScopeRuntime "runtime";
+            pushLoc _pathScopeRuntime;
+            pushTD _pathScopeRuntime "compile";
+            pushTD _pathScopeRuntime "runtime";
         elif scope == "test" then
-            pushLoc pathScopeTest;
-            pushTD pathScopeTest "compile";
-            pushTD pathScopeTest "runtime";
+            pushLoc _pathScopeTest;
+            pushTD _pathScopeTest "compile";
+            pushTD _pathScopeTest "runtime";
         fi;
     done;
     
 
     (config is baseConfig )  with {
-        artifactDependencies = ad,
-        projectDependencies = pd,
-        remoteRepositories = rp,
-        pathScopeLib, 
-        pathScopeCompile,
-        pathScopeRuntime,
-        pathScopeSystem,
-        pathScopeProvided,
-        pathScopeTest,
+        artifactDependencies = list ad,
+        projectDependencies = list pd,
+        remoteRepositories = list rp,
+        pathScopeLib is pathPatternType = list _pathScopeLib, 
+        pathScopeCompile is pathPatternType = list _pathScopeCompile,
+        pathScopeRuntime is pathPatternType = list _pathScopeRuntime,
+        pathScopeSystem is pathPatternType = list _pathScopeSystem,
+        pathScopeProvided is pathPatternType = list _pathScopeProvided,
+        pathScopeTest is pathPatternType = list _pathScopeTest,
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
                                  
@@ -190,32 +190,32 @@ createProjectBaseConfig config dependencies =
     
 
 //pathes
-buildExtPath config =  
-          array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
+buildExtPath config is 'a -> pathPatternType =  
+          [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
-runtimePath config =  
-          array [Patterns \config.pathScopeCompile,
+runtimePath config is 'a -> pathPatternType =  
+          [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeRuntime,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
-compilePath config = 
-          array [Patterns \config.pathScopeCompile,
+compilePath config is 'a -> pathPatternType = 
+          [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
-testPath config = 
-          array [Patterns \config.pathScopeCompile,
+testPath config is 'a -> pathPatternType = 
+          [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeRuntime,
            Patterns \config.pathScopeTest,
            Patterns \config.pathScopeLib];
            
-testRuntimePath config = 
-         array [Patterns \(testPath config)];
+testRuntimePath config is 'a -> pathPatternType = 
+         [Patterns \(testPath config)];
 
 
 //dependency management
