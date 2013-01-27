@@ -106,8 +106,8 @@ retrieveBuildDependencies () =
     maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
     project = createProject();
     
-    antTask "delete" ["dir":ybuilderLibsManagedDir] [] project;
-    antTask "mkdir" ["dir":ybuilderLibsManagedDir] [] project;
+    antTask "delete" ["dir":config.dir.ybuilderLibsManaged] [] project;
+    antTask "mkdir" ["dir":config.dir.ybuilderLibsManaged] [] project;
     if not empty? deps then
         antTask (maven "dependencies") 
                 ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
@@ -133,7 +133,7 @@ retrieveBuildDependencies () =
                      done deps)) 
                 project;
                     
-        antTask "copy" ["todir":ybuilderLibsManagedDir] 
+        antTask "copy" ["todir":config.dir.ybuilderLibsManaged] 
                 [el "fileset" ["refid":"dependenciesFS"][],
                  el "mapper" ["type":"flatten"] []] 
                 project;
