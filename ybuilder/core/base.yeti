@@ -219,7 +219,7 @@ registerBaseTargets config = (
                 args = tail p.args}
             fi;
         helpers.runYetiTask 
-            (name ^ ".yeti") 
+            (config.dir.src ^ name ^ ".yeti") 
             args 
             config.runConfig.dir
             (config.runConfig.pathfn config)
