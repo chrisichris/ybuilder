@@ -279,7 +279,16 @@ exclusion groupId artifactId =
 
 
 //helper functions
-                
+runJavaTask mainClassName args dir path project =
+    (antTask "java"
+        ["classname":mainClassName,
+         "fork":"true",
+         "dir":dir,
+         "failonerror":"true"]
+        ((el "classpath" [:] (antPathElements path)
+         :: (map do a: el "arg" ["value":a] [] done args)))
+        project);
+
 yetiMainTask args path fork dir project = 
    if fork then
         antTask "java" 
@@ -312,6 +321,13 @@ yetiMainTask args path fork dir project =
         yrt;
         ();
     fi;
+
+runYetiTask sourceName args dir path project =
+    (println String#format(
+        "%1$11s Running \(sourceName) at \(dir)", 
+        array ["[yeti]"]);
+    yetiMainTask (sourceName :: args) path true dir project);
+    
      
 yetidocTask config targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
@@ -366,6 +382,8 @@ ret
         args = ["-e", code];
         yetiMainTask args path true "." project
     fi);    
+
+           
 
 _mvnDependencyTags artifactDependencies =     
     map do dep: 
@@ -825,6 +843,8 @@ for [clean, retrieveLibs, compile, test, jar, war,
         yetiMainTask,
         yetidocTask,
         yeticTask,
+        runYetiTask,
+        runJavaTask,
         writePom,
         mvnInstall,
         mvnDeploy,

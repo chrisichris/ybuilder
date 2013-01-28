@@ -56,7 +56,12 @@ createBaseConfig config dependencies =
         ["sourcepath" : config.dir.src,
          "destdir": config.dir.javadoc],
 
-
+    runConfig = {
+        var mainModule = "main",
+        var dir = ".",
+        var args = [] is list<string>,
+        var pathfn = pathes.compile, 
+    },
 
     //java targets
     resourcesPatterns = 
@@ -202,8 +207,44 @@ registerBaseTargets config = (
                     helpers.yetidocTask config config.dir.yetidoc fileSet p;
                 fi;
             done;
-            
-    //Test target
+    runYeti = 
+        target config "run" "runyeti"
+            [Description "run yeti sourcefile",
+            ShortName()] do p:
+        {name,args} = if empty? p.args then 
+                {name = config.runConfig.mainModule,
+                args = config.runConfig.args}
+            else
+                {name = head p.args,
+                args = tail p.args}
+            fi;
+        helpers.runYetiTask 
+            (name ^ ".yeti") 
+            args 
+            config.runConfig.dir
+            (config.runConfig.pathfn config)
+            p
+    done;
+
+    runJava = 
+        target config "run" "run"
+            [Description "run a java main class",
+            ShortName()] do p:
+        {name,args} = if empty? p.args then 
+                {name = config.runConfig.mainModule,
+                args = config.runConfig.args}
+            else
+                {name = head p.args,
+                args = tail p.args}
+            fi;
+        helpers.runJavaTask 
+            name 
+            args 
+            config.runConfig.dir
+            (config.runConfig.pathfn config)
+            p
+    done;
+//Test target
     junitTarget = 
         target config "test" "junit" [Before livecycleTargets.test] do p:
             hasJunit = try 
@@ -366,7 +407,9 @@ registerBaseTargets config = (
             yetidoc,
             testCompileYeti,
             compileYeti,
-            repl = replTarget
+            repl = replTarget,
+            runJava,
+            runYeti
         }
     });        
 
