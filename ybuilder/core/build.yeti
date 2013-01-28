@@ -192,13 +192,21 @@ printSimilarTargets targets name =
     fi);
             
 printTargets config =            
-    ({fst = short, snd = other} = splitBy
-        do t: strIndexOf t.name ":" 0 < 0 done
-        (list config.targets);
-    other = other |> sortBy do t t2: t.name < t2.name done;
-        
-    for short (println . targetToString);
-    for other (println . targetToString));
+    (ts = array (list config.targets)
+    |> groupBy do t t2:
+        cut = strIndexOf t.name ":" 0;
+        if cut < 0 then
+            strIndexOf t2.name ":" 0 == cut;
+        else
+            prefix = strLeft t.name cut;
+            strStarts? t2.name (prefix^":")
+        fi
+    done;
+    println "all targets"; 
+    for ts do ts2:
+        println "next...";
+        for ts2 (println . targetToString)
+    done);
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
    (var runAlways = false;
