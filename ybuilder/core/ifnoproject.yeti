@@ -20,7 +20,7 @@ import java.lang:Thread;
 import java.io:File;
 import java.net:URLClassLoader;
 
-load ybuilder.core.ybuilder;
+load ybuilder.core.build;
 load ybuilder.core.projectbase;
 
 _withBuildClassLoader dirPrefix antFiles fn = 
