@@ -86,7 +86,8 @@ ybuilderVersion = "0.5";
 createBuildConfig () = {
     basedir = "./",
     targets = [:] is hash<string,targetType>,
-    targetsInHelp is array<targetType>= array []             
+    targetsInHelp is array<targetType>= array [],
+    var defaultTarget = none is Some targetType | None (), 
     
 };
 

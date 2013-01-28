@@ -157,7 +157,11 @@ evaluate config argv =
 
 runCmds config args =
     (if empty? args then
-        println (evaluate config ["help"])
+        tn = case config.defaultTarget of
+            None _: "help";
+            Some t: t.name;
+            esac;
+        println (evaluate config [tn])
     elif (head args) == "-c" then
         repl (evaluate config);
     else
