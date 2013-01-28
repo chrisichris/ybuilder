@@ -27,7 +27,6 @@ import yeti.lang.compiler.yeti;
 file n = new File(n is string);
 args = list _argv;
 
-config = build.buildDependenciesConfig;
     
 _withBuildClassLoader dirPrefix antFiles fn = 
    (load ybuilder.core.build;
@@ -55,26 +54,19 @@ _withBuildClassLoader dirPrefix antFiles fn =
     yrt);
 
     
-if (file "project.yeti")#exists() 
-    and not (file config.dir.ybuilderLibsManaged)#exists() then
-    build.retrieveBuildDependencies config;
-fi;	
-
-
 if not (file "poject.yeti")#exists() then
     load ybuilder.core.ifnoproject;    
-elif (not empty? args) and ((head args) == "cleanBuildLibs") then
-    build.antTask "delete" 
-                ["dir":config.dir.ybuilderLibsManaged] 
-                [] 
-                (build.createProject());
-elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
-    build.retrieveBuildDependencies config;
 else
+    if not 
+        (file build.buildDependenciesConfig.ybuilderLibsManaged)#exists() 
+        then
+        build.retrieveBuildDependencies ();
+    fi;
+
     antFiles = 
         ((load ybuilder.core.build).listFiles) "."
-            [Include "\(config.dir.ybuilder)extlib/*.jar", 
-             Include "\(config.dir.ybuilderLibsManaged)*.jar"];
+            [Include "\(build.buildDependenciesConfig.ybuilder)extlib/*.jar", 
+             Include "\(build.buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
 
     _withBuildClassLoader "" antFiles do ctxtLoader:
         m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")

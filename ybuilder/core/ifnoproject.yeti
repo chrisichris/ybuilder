@@ -52,9 +52,6 @@ _withBuildClassLoader dirPrefix antFiles fn =
 config = createProjectBaseConfig 
     baseConfig
     [];
-config = config with {
-    dir = config.dir with buildDependenciesConfig.dir;
-};
 config = config with registerProjectBaseTargets config;
 
 _ = target config "new" "newproject" 
@@ -69,7 +66,7 @@ _ = target config "new" "newproject"
             "."; 
         fi;
     createNewYetiProject baseConfig projectName (createProject ()); 
-    retrieveBuildDependencies config;
+    retrieveBuildDependencies ();
 
 done;
 
@@ -132,8 +129,8 @@ _ = target config "new" "new"
     if (new File("newproject.yeti"))#exists() then
         antFiles = 
             ((load ybuilder.core.build).listFiles) "."
-                [Include "\(config.dir.ybuilder)extlib/*.jar", 
-                 Include "\(config.dir.ybuilderLibsManaged)*.jar"];
+                [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
+                 Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
 
         _withBuildClassLoader "" antFiles do ctxtLoader:
             m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")

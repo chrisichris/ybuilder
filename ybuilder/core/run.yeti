@@ -155,8 +155,27 @@ evaluate config argv =
         fi;
     fi;
 
+registerTargets config = 
+    (_ = target config "buildlibs" "delete" 
+            [Description 
+            "deletes the buildlibs dir, which triggers next time a retrieve"]
+        do p:
+        antTask "delete" 
+                    ["dir":buildDependenciesConfig.ybuilderLibsManaged] 
+                    []
+                    p;
+
+        done;
+
+    _ = target config "buildlibs" "retrieve" 
+            [Description "retrieves the buildlibs"]
+        do p:
+            retrieveBuildDependencies ();
+        done);
+
 runCmds config args =
-    (if empty? args then
+    (registerTargets config;
+    if empty? args then
         tn = case config.defaultTarget of
             None _: "help";
             Some t: t.name;

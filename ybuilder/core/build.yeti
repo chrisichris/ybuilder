@@ -470,15 +470,13 @@ readProperties propsFile =
     fi);
 
 buildDependenciesConfig = {
-    dir = {
-        ybuilder = "lib/ybuilder/",
-        ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
-        //ybuilderLibsManaged = 
-        //    (load ybuilder.core.build).ybuilderLibsManagedDir;
-    }
+    ybuilder = "lib/ybuilder/",
+    ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
+    //ybuilderLibsManaged = 
+    //    (load ybuilder.core.build).ybuilderLibsManagedDir;
 };
 
-retrieveBuildDependencies config =
+retrieveBuildDependencies () =
    (import java.util.regex: Pattern;
     //content = readFile "project.yeti" "utf-8" getContents;
     {deps, reps} = if (file "project.yeti")#exists() then
@@ -548,8 +546,12 @@ retrieveBuildDependencies config =
     (maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
     project = createProject();
     
-    antTask "delete" ["dir":config.dir.ybuilderLibsManaged] [] project;
-    antTask "mkdir" ["dir":config.dir.ybuilderLibsManaged] [] project;
+    antTask "delete" 
+            ["dir":buildDependenciesConfig.ybuilderLibsManaged] 
+            [] project;
+    antTask "mkdir" 
+            ["dir":buildDependenciesConfig.ybuilderLibsManaged] 
+            [] project;
     if not empty? deps then
         antTask (maven "dependencies") 
                 ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
@@ -575,7 +577,7 @@ retrieveBuildDependencies config =
                      done deps)) 
                 project;
                     
-        antTask "copy" ["todir":config.dir.ybuilderLibsManaged] 
+        antTask "copy" ["todir":buildDependenciesConfig.ybuilderLibsManaged] 
                 [el "fileset" ["refid":"dependenciesFS"][],
                  el "mapper" ["type":"flatten"] []] 
                 project;
