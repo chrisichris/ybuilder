@@ -324,7 +324,32 @@ registerBaseTargets config = (
                     (pathes.test config) true "." p;
             fi;
         done;
-          
+    
+    replTarget =
+        target config "run" "repl" 
+            [Description ("runs the yeti repl with the projects testRuntime "
+                ^"classpath"),
+            ShortName()] do p:
+            import java.lang:ClassLoader;
+            import org.apache.tools.ant:AntClassLoader;
+
+             runTarget livecycleTargets.initialize [];
+             pat = createAntPath (pathes.testRuntime config);
+             cl = new AntClassLoader(
+                        ClassLoader#getSystemClassLoader()#getParent(), 
+                        pat#getProject(), pat, false);
+             oldCl = Thread#currentThread()#getContextClassLoader();
+             Thread#currentThread()#setContextClassLoader(cl);
+             _ = try
+                m = cl#loadClass("yeti.lang.compiler.yeti")
+                        #getMethod("main",array [classOf java.lang.String[]]);
+                  m#invoke((),(array [(array p.args) as ~String[] ]) 
+                                as ~String[][]);
+             finally
+                Thread#currentThread()#setContextClassLoader(oldCl)
+             yrt;
+        
+        done;
                     
             
     
@@ -340,7 +365,8 @@ registerBaseTargets config = (
             simpleTest = simpleTestTarget,
             yetidoc,
             testCompileYeti,
-            compileYeti
+            compileYeti,
+            repl = replTarget
         }
     });        
 

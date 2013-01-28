@@ -651,13 +651,32 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
                 for p.args (printSimilarTargets config.targets);
             fi;
             done;
+            
+    buildlibsDelete = target config "buildlibs" "delete" 
+            [Description 
+            "deletes the buildlibs dir, which triggers next time a retrieve"]
+        do p:
+        antTask "delete" 
+                    ["dir":buildDependenciesConfig.ybuilderLibsManaged] 
+                    []
+                    p;
+
+        done;
+
+    buildlibsRetrieve = target config "buildlibs" "retrieve" 
+            [Description "retrieves the buildlibs"]
+        do p:
+            retrieveBuildDependencies ();
+        done;
 
     push config.targetsInHelp cmdTargets;       
 
     {
         help,
         cmdYbuilderVersion,
-        cmdTargets
+        cmdTargets,
+        buildlibsDelete,
+        buildlibsRetrieve
     });
 
 
