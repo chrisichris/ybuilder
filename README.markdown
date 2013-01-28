@@ -1,25 +1,18 @@
 Ybuilder - a simple build tool for Yeti the funtional language for JVM
 ==========================================================
 
-Ybuilder is a buildsystem for [yeti](http://mth.github.com/yeti/) in yeti.
+Ybuilder is a yeti [yeti](http://mth.github.com/yeti/) wrapper around ant 
+combined with the dependency management of maven. 
 
-It aims to be an easy-to-use alternative to maven and ant to build 
-[yeti](http://mth.github.com/yeti/) projects using yeti itself. It provides 
+Custom buildscripts can be defined from ground up like with ant but written
+in yeti instead of ant-xml.There are
 built-in commands for common tasks like downloading dependencies, 
 compiling the project, lauching the REPL with the right classpath etc.
 
-At the base of `ybuilder` (`module ybuilder.core.build`)
-is a yeti-wrapper around ant-tasks and a target-execution-mechanism. This can
-be used to define ant-scripts coded yeti. 
- 
 On top of the ant-wrapper there is standard and cutomizable build-script 
 (`module ybuilder.core.base`) with predefined 
-targets (clean, compile, test etc), directories, 
+livecycle-targets (clean, compile, test etc), directories, 
 and maven based dependency- and classpath-management. 
-
-While the base of yubilder is similar to ant the modules on top are similar to
-maven in that they provide predefined builds which are meant to be used out of 
-the box with a bit customization in 90 % of the usecases 
 
 ## Download and Installation
 
@@ -73,20 +66,28 @@ Join the discussion mailing list at:
 >8. add a source file to the src/ directory 
 >    
 >    file: src/foo.yeti:
->    module foo.yeti;
+>    application foo.yeti;
 >    
 >    println "Hello world!";
 >    0;
 >
->9. compile it
+>9. run it from source
+>
+>	>java -jar ybuilder.jar runyeti foo
+>
+>10. compile it
 >
 >   >java -jar ybuilder.jar compile
 >   
->10. jar it
+>11. run it the class
+>
+>	>java -jar ybuilder.jar run foo
+>
+>12. jar it
 >
 >    >java -jar ybuilder.jar clean, jar
 >    
->11. find the result in target/first-test.jar
+>13. find the result in target/first-test.jar
     
 
 ## Usage
@@ -102,9 +103,9 @@ i. e. to clean and compile your project type on the command line
     java -jar ybuilder.jar clean, compile
  
 To get a list of the most important targets (ie compile, test, jar etc) call 
-ybuilder without a target
+the targets target
 
-    java -jar ybuilder.jar
+    java -jar ybuilder.jar targets
     
 ## Directory Layout
 
