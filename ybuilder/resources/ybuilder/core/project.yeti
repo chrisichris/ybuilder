@@ -31,22 +31,15 @@
 //Load build modules with general setups
 
 //the base module sets up all the targets, pathes etc for a basic yeti build
+load ybuilder.core.build
 load ybuilder.core.base;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//General setup
+//Configuration
 
 //FIXME: change following values to fit your project
-
-project.name := "FIXME: projects-name";
-project.groupId :="FIXME: project-groupId";
-project.artifactId := "FIXME: project artifactId";
-project.version := "FIXME: 0.1-alpha";
-project.description := "FIXME: project description";
-
-////////////////////////////////////////////////////////////////////////////////
-//---Library Dependencies ---			
+// and Library Dependencies ---			
 // add your library dependencies in maven style
 // use: dependency "groupId" "artifactId" "version" [options]
 //      options = ProvidedScope(), TestScope(), SystemScope()
@@ -55,13 +48,27 @@ project.description := "FIXME: project description";
 // You must have the version of yeti which you want to use on your projects path
 // (Instead of declaring the dependency you can also copy yeti.jar 
 // to the ./lib directory and remove the following line)
-dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [];
 
-// examples for other dependencies
-// dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
-// dependency "junit" "junit" "3.8.2" [TestScope()];
-// dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
 
+config = createBaseConfig
+    (baseConfig with {
+        name = "FIXME: projects-name",
+        groupId ="FIXME: project-groupId",
+        artifactId = "FIXME: project artifactId",
+        version = "FIXME: 0.1-alpha",
+        description = "FIXME: project description",
+    })
+    [
+    dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [],
+    // examples for other dependencies
+    // dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
+    // dependency "junit" "junit" "3.8.2" [TestScope()],
+    // dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()],
+    ];
+
+//after configuration register targets with the configuration
+
+config = config with registerBaseTargets config;
 
 ////////////////////////////////////////////////////////////////////////////////
 //---custom targets --
@@ -89,4 +96,4 @@ dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [];
 
 // leave the final load! 
 // runs the targets entered at the command line
-load ybuilder.core.run;
+run config;
