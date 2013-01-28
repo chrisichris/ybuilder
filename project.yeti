@@ -14,7 +14,7 @@
  * and limitations under the License.
  */
 
-load ybuilder.core.ybuilder;
+load ybuilder.core.build;
 load ybuilder.core.base;
 
 et = load ybuilder.core.extensiontest;

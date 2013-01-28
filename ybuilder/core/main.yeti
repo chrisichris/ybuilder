@@ -54,7 +54,7 @@ _withBuildClassLoader dirPrefix antFiles fn =
     yrt);
 
     
-if not (file "poject.yeti")#exists() then
+if not (file "project.yeti")#exists() then
     //no project file create default project with some default targets
     load ybuilder.core.build;
     load ybuilder.core.projectbase;
