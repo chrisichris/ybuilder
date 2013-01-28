@@ -157,7 +157,7 @@ createProjectBaseConfig config dependencies =
     done;
     
 
-    (config is baseConfig )  with {
+    config = (config is baseConfig )  with {
         artifactDependencies = list ad,
         projectDependencies = list pd,
         remoteRepositories = list rp,
@@ -186,7 +186,8 @@ createProjectBaseConfig config dependencies =
         warFileset = [config.dir.webapp : [Include "**/*.*"]],
 
         continuesDirs = array [config.dir.src],
-    } with (createBuildConfig()));
+    } with (createBuildConfig());
+    config);
     
 
 //pathes

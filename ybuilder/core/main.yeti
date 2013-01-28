@@ -17,6 +17,7 @@
 program ybuilder.core.main;
 
 load ybuilder.core.base;
+build = load ybuilder.core.build;
 
 import java.lang.Thread;
 import java.io:File;
@@ -26,119 +27,7 @@ import yeti.lang.compiler.yeti;
 file n = new File(n is string);
 args = list _argv;
 
-config = {
-    dir = {
-        ybuilder = "lib/ybuilder/",
-        ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
-        //ybuilderLibsManaged = 
-        //    (load ybuilder.core.build).ybuilderLibsManagedDir;
-    }
-};
-
-retrieveBuildDependencies () =
-   (import java.util.regex: Pattern;
-    //content = readFile "project.yeti" "utf-8" getContents;
-    {deps, reps} = if (file "project.yeti")#exists() then
-        inLines = readFile "project.yeti" "utf-8" getLines;
-        content = strJoin "" 
-            ((map ((flip strRight) 2) . filter ((flip strStarts?) "//"))
-             inLines) ;
-
-        deps = 
-            array 
-                (catSome (matchAll '\s*@buildDependency\s([^;]*);' 
-                do smatch:
-                s = smatch.[1];
-                a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)' s) ();//"
-                if empty? a then 
-                    failWith "Error in @buildDependency: Arguments wrong: \(s)";
-                else
-                    rs = strTrim (a.[4]);
-                    if strLength rs == 0 then
-                        Some {dep = a, exc = []};
-                    else
-                        a2 = (like '\[(.*)\]' rs) ();
-                        if empty? a2 then
-                            Some {dep = a, exc = []};
-                        else
-                            exs = a2.[1];
-                            exc = matchAll 
-                                '\s*exclusion\s*"([^"]*)"\s*"([^"]*)"\s*,?\s*' 
-                                    do s: 
-                                        pair s.[1] s.[2] 
-                                    done
-                                do ws:
-                                    failWith ("Error in @buildDependency: "
-                                    ^"Exclusion Arguments wrong: \(s):[\(ws)]")
-                                done
-                                exs;
-                            Some {dep = a, exc};
-                        fi
-                    fi;            
-                fi;
-            done
-            \none
-            content));
-            
-        reps = array (catSome (matchAll '\s*@buildRepository\s([^;]*);' 
-            do smatch:
-                s = smatch.[1];
-                a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
-                if empty? a then 
-                    failWith "Error in @buildRepository: Arguments wrong: \(s)";
-                else
-                    Some a
-                fi;
-            done
-            \none
-            content));
-        {deps, reps}
-    else
-        {deps = array [], reps = array []}
-    fi;
-
-    //push to deps also jgit and stringtemplate
-    //push reps ["jgit-repository", "http://download.eclipse.org/jgit/maven"];
-    
-    
-    //retrieve the libs
-    (load ybuilder.core.build;
-    maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
-    project = createProject();
-    
-    antTask "delete" ["dir":config.dir.ybuilderLibsManaged] [] project;
-    antTask "mkdir" ["dir":config.dir.ybuilderLibsManaged] [] project;
-    if not empty? deps then
-        antTask (maven "dependencies") 
-                ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
-                ([el (maven "localRepository") 
-                     ["layout":"default", 
-                      "path":"${user.home}/.m2/repository"] []] 
-                 ++ (map do rr: 
-                        el (maven "remoteRepository") 
-                           ["id":rr.[1], "url":rr.[2],"layout":"default"] 
-                           [] 
-                     done reps) 
-                 ++ (map do d: 
-                        el (maven "dependency") 
-                           ["groupId" : d.dep.[1],
-                            "artifactId" : d.dep.[2],
-                            "version" : d.dep.[3],
-                            "scope" : "runtime"]
-                            (map do exc: 
-                                 el (maven "exclusion") 
-                                    ["groupId":exc.fst, 
-                                     "artifactId":exc.snd] [] 
-                                 done d.exc) 
-                     done deps)) 
-                project;
-                    
-        antTask "copy" ["todir":config.dir.ybuilderLibsManaged] 
-                [el "fileset" ["refid":"dependenciesFS"][],
-                 el "mapper" ["type":"flatten"] []] 
-                project;
-    fi;
-    ));
+config = build.buildDependenciesConfig;
     
 _withBuildClassLoader dirPrefix antFiles fn = 
    (load ybuilder.core.build;
@@ -168,96 +57,11 @@ _withBuildClassLoader dirPrefix antFiles fn =
     
 if (file "project.yeti")#exists() 
     and not (file config.dir.ybuilderLibsManaged)#exists() then
-    retrieveBuildDependencies ();
+    build.retrieveBuildDependencies config;
 fi;	
 
-if (not (file "project.yeti")#exists()) 
-    and (not empty? args) and ((head args) == "newProject") then
-    load ybuilder.core.build;
-    load ybuilder.core.base;
-    projectName = 
-        if not empty? (tail args) then 
-            (head (tail args)) 
-        else 
-            "."; 
-        fi;
-    createNewYetiProject baseConfig projectName (createProject ()); 
-    retrieveBuildDependencies ();
-elif (not empty? args) and ((head args) == "new") then
-    build = load ybuilder.core.build;
-    
-    name = if length args > 1 then
-                "(Some '\((array args).[1])')"
-           else "none" fi;
-    
-    ///retrieve git dependencies
-    import java.nio.file.Files;
-    tempDir = Files#createTempDirectory("ybuilder_gitjars", [])#toFile();
-    tempDir#deleteOnExit();
-    
-    project = build.createProject ();
- 
-    deps = [{dep = array ["","org.eclipse.jgit", "org.eclipse.jgit","1.3.0.201202151440-r"],
-             exc = []},
-            {dep = array ["","org.antlr", "stringtemplate","4.0.2"],
-             exc = []}];
-    maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
- 
-    build.antTask (maven "dependencies") 
-            ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
-            [build.el (maven "localRepository") 
-                 ["layout":"default", 
-                  "path":"${user.home}/.m2/repository"] [], 
-             build.el (maven "dependency") 
-                   ["groupId" : "org.eclipse.jgit",
-                    "artifactId" : "org.eclipse.jgit",
-                    "version" :"1.3.0.201202151440-r",
-                    "scope" : "runtime"]
-                   []]
-            project;
-                
-    build.antTask "copy" ["todir":string tempDir] 
-            [build.el "fileset" ["refid":"dependenciesFS"][],
-             build.el "mapper" ["type":"flatten"] []] 
-            project;
 
-    //load the template
-     antFiles = build.listFiles (string tempDir) [Include "*.jar"];
-   
-    _withBuildClassLoader (string tempDir ^ string File#separator) 
-            antFiles do ctxtLoader:
-        m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
-                      #getMethod("main",array [classOf java.lang.String[]]);
-        _ = m#invoke((),
-                (array 
-                    [(array ["-e", "(load ybuilder.core.projecttemplate).newFromTemplate \(name)"]) as ~String[]]
-                ) as ~String[][]);
-    done;
-
-    _lib_builder = "ybuilder";
-
-    //run the newproject file
-    if (new File("newproject.yeti"))#exists() then
-        antFiles = 
-            ((load ybuilder.core.build).listFiles) "."
-                [Include "\(config.dir.ybuilder)extlib/*.jar", 
-                 Include "\(config.dir.ybuilderLibsManaged)*.jar"];
-
-        _withBuildClassLoader "" antFiles do ctxtLoader:
-            m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
-                          #getMethod("main",array [classOf java.lang.String[]]);
-            _ = m#invoke((),
-                    (array 
-                        [(array ("newproject.yeti" :: args)) as ~String[]]
-                    ) as ~String[][]);
-        done;
-        //delete the file
-        build.antTask "delete" ["file":"newproject.yeti"] [] project;
-    fi;
-
-    println "new project successful";
-
-elif (not (file "project.yeti")#exists()) then
+if (not (file "project.yeti")#exists()) and empty? args then
     yv = (load ybuilder.core.build).ybuilderVersion ;
     println "ybuilder - version \(yv)\n";
     println ' 
@@ -274,12 +78,15 @@ To use ybuilder create a new ybuilder project:
 
 For detailed description google ybuilder yeti (there is no homepage yet)
 '
-
+elif not (file "poject.yeti")#exists() then
+    load ybuilder.core.ifnoproject;    
 elif (not empty? args) and ((head args) == "cleanBuildLibs") then
-    load ybuilder.core.build;
-    antTask "delete" ["dir":config.dir.ybuilderLibsManaged][] (createProject());
+    build.antTask "delete" 
+                ["dir":config.dir.ybuilderLibsManaged] 
+                [] 
+                (build.createProject());
 elif (not empty? args) and ((head args) == "retrieveBuildLibs") then
-    retrieveBuildDependencies ();
+    build.retrieveBuildDependencies config;
 else
     antFiles = 
         ((load ybuilder.core.build).listFiles) "."

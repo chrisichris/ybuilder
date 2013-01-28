@@ -468,6 +468,119 @@ readProperties propsFile =
          values = vas};
     fi);
 
+buildDependenciesConfig = {
+    dir = {
+        ybuilder = "lib/ybuilder/",
+        ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
+        //ybuilderLibsManaged = 
+        //    (load ybuilder.core.build).ybuilderLibsManagedDir;
+    }
+};
+
+retrieveBuildDependencies config =
+   (import java.util.regex: Pattern;
+    //content = readFile "project.yeti" "utf-8" getContents;
+    {deps, reps} = if (file "project.yeti")#exists() then
+        inLines = readFile "project.yeti" "utf-8" getLines;
+        content = strJoin "" 
+            ((map ((flip strRight) 2) . filter ((flip strStarts?) "//"))
+             inLines) ;
+
+        deps = 
+            array 
+                (catSome (matchAll '\s*@buildDependency\s([^;]*);' 
+                do smatch:
+                s = smatch[1];
+                a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*"([^"]+)"(.*)' s) ();//"
+                if empty? a then 
+                    failWith "Error in @buildDependency: Arguments wrong: \(s)";
+                else
+                    rs = strTrim (a[4]);
+                    if strLength rs == 0 then
+                        Some {dep = a, exc = []};
+                    else
+                        a2 = (like '\[(.*)\]' rs) ();
+                        if empty? a2 then
+                            Some {dep = a, exc = []};
+                        else
+                            exs = a2[1];
+                            exc = matchAll 
+                                '\s*exclusion\s*"([^"]*)"\s*"([^"]*)"\s*,?\s*' 
+                                    do s: 
+                                        pair s[1] s[2] 
+                                    done
+                                do ws:
+                                    failWith ("Error in @buildDependency: "
+                                    ^"Exclusion Arguments wrong: \(s):[\(ws)]")
+                                done
+                                exs;
+                            Some {dep = a, exc};
+                        fi
+                    fi;            
+                fi;
+            done
+            \none
+            content));
+            
+        reps = array (catSome (matchAll '\s*@buildRepository\s([^;]*);' 
+            do smatch:
+                s = smatch[1];
+                a = (like '\s*"([^"]+)"\s*"([^"]+)"\s*$' s) (); 
+                if empty? a then 
+                    failWith "Error in @buildRepository: Arguments wrong: \(s)";
+                else
+                    Some a
+                fi;
+            done
+            \none
+            content));
+        {deps, reps}
+    else
+        {deps = array [], reps = array []}
+    fi;
+
+    //push to deps also jgit and stringtemplate
+    //push reps ["jgit-repository", "http://download.eclipse.org/jgit/maven"];
+    
+    
+    //retrieve the libs
+    (maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
+    project = createProject();
+    
+    antTask "delete" ["dir":config.dir.ybuilderLibsManaged] [] project;
+    antTask "mkdir" ["dir":config.dir.ybuilderLibsManaged] [] project;
+    if not empty? deps then
+        antTask (maven "dependencies") 
+                ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
+                ([el (maven "localRepository") 
+                     ["layout":"default", 
+                      "path":"${user.home}/.m2/repository"] []] 
+                 ++ (map do rr: 
+                        el (maven "remoteRepository") 
+                           ["id":rr[1], "url":rr[2],"layout":"default"] 
+                           [] 
+                     done reps) 
+                 ++ (map do d: 
+                        el (maven "dependency") 
+                           ["groupId" : d.dep[1],
+                            "artifactId" : d.dep[2],
+                            "version" : d.dep[3],
+                            "scope" : "runtime"]
+                            (map do exc: 
+                                 el (maven "exclusion") 
+                                    ["groupId":exc.fst, 
+                                     "artifactId":exc.snd] [] 
+                                 done d.exc) 
+                     done deps)) 
+                project;
+                    
+        antTask "copy" ["todir":config.dir.ybuilderLibsManaged] 
+                [el "fileset" ["refid":"dependenciesFS"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+    fi;
+    ));
+
 registerBuildTargets config =
     (
     cmdYbuilderVersion = 
@@ -577,6 +690,9 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
     antPathElements,
     //antPathById,
     file,
+
+    buildDependenciesConfig,
+    retrieveBuildDependencies, 
 }
 
 
