@@ -55,8 +55,134 @@ _withBuildClassLoader dirPrefix antFiles fn =
 
     
 if not (file "poject.yeti")#exists() then
-    load ybuilder.core.ifnoproject;    
+    //no project file create default project with some default targets
+    load ybuilder.core.build;
+    load ybuilder.core.projectbase;
+    config = createProjectBaseConfig 
+        baseConfig
+        [];
+    config = config with registerProjectBaseTargets config;
+
+    _ = target config "new" "newproject" 
+            [Description "creates a basic new project",
+            ShortName()] do p:
+            
+        load ybuilder.core.base;
+        projectName = 
+            if not empty? (tail p.args) then 
+                (head (tail p.args)) 
+            else 
+                "."; 
+            fi;
+        createNewYetiProject baseConfig projectName (createProject ()); 
+        retrieveBuildDependencies ();
+
+    done;
+
+    _ = target config "new" "new"
+        [Description "creates a new project from a git repo",
+        ShortName()] do p:
+        
+        name = if length p.args > 0 then
+                    "(Some '\((array p.args)[0])')"
+               else "none" fi;
+        
+        ///retrieve git dependencies
+        import java.nio.file.Files;
+        tempDir = Files#createTempDirectory("ybuilder_gitjars", [])#toFile();
+        tempDir#deleteOnExit();
+        
+        project = createProject ();
+     
+        deps = [{dep = array ["","org.eclipse.jgit", 
+                                "org.eclipse.jgit","1.3.0.201202151440-r"],
+                 exc = []},
+                {dep = array ["","org.antlr", "stringtemplate","4.0.2"],
+                 exc = []}];
+        maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
+     
+        antTask (maven "dependencies") 
+                ["filesetId" : "dependenciesFS", "useScope":"runtime"] 
+                [el (maven "localRepository") 
+                     ["layout":"default", 
+                      "path":"${user.home}/.m2/repository"] [], 
+                 el (maven "dependency") 
+                       ["groupId" : "org.eclipse.jgit",
+                        "artifactId" : "org.eclipse.jgit",
+                        "version" :"1.3.0.201202151440-r",
+                        "scope" : "runtime"]
+                       []]
+                project;
+                    
+        antTask "copy" ["todir":string tempDir] 
+                [el "fileset" ["refid":"dependenciesFS"][],
+                 el "mapper" ["type":"flatten"] []] 
+                project;
+
+        //load the template
+         antFiles = listFiles (string tempDir) [Include "*.jar"];
+       
+        _withBuildClassLoader (string tempDir ^ string File#separator) 
+                antFiles do ctxtLoader:
+            m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
+                          #getMethod("main",array [classOf java.lang.String[]]);
+            _ = m#invoke((),
+                    (array 
+                        [(array ["-e", "(load ybuilder.core.projecttemplate).newFromTemplate \(name)"]) as ~String[]]
+                    ) as ~String[][]);
+        done;
+
+        _lib_builder = "ybuilder";
+
+        //run the newproject file
+        if (new File("newproject.yeti"))#exists() then
+            antFiles = 
+                ((load ybuilder.core.build).listFiles) "."
+                    [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
+                     Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
+
+            _withBuildClassLoader "" antFiles do ctxtLoader:
+                m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
+                              #getMethod("main",array [classOf java.lang.String[]]);
+                _ = m#invoke((),
+                        (array 
+                            [(array ("newproject.yeti" :: p.args)) as ~String[]]
+                        ) as ~String[][]);
+            done;
+            //delete the file
+            antTask "delete" ["file":"newproject.yeti"] [] project;
+        fi;
+
+        println "new project successful";
+        
+    done;
+
+
+    emptyHelp = target config "new" "help" 
+            [Description "help shown when there is no project.yeti"] do p:
+        println "ybuilder - version \(ybuilderVersion)\n";
+        println ' 
+    ybuilder is a simple build-enviroment for YETI the functional 
+    programming-language for JVM.
+
+    To use ybuilder create a new ybuilder project:
+
+    1.) copy the "ybuilder.jar" file to a new directory and 
+    2.) run "java -jar ybuilder.jar new chrisichris/basic" to create 
+        the needed files and directories from the basic template
+    3.) edit the "project.yeti" file as described in the comments
+    4.) run "java -jar ybuilder.jar" again to get a detailed help message
+
+    For detailed description google ybuilder yeti (there is no homepage yet)
+    '
+    done;
+
+    config.defaultTarget := Some emptyHelp;
+
+    run config;
 else
+    //project file exists
+    //so run it
     if not 
         (file build.buildDependenciesConfig.ybuilderLibsManaged)#exists() 
         then
