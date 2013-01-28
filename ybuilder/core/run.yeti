@@ -44,25 +44,6 @@ evalFun = (load yeti.lang.compiler.eval).evaluateYetiCode [] [Bind()];
 evaluate config argv = 
     if empty? argv then
         "\n";
-    elif (head argv) == "-yeti" then
-        cl = 
-            (load ybuilder.core.base;
-             runTarget config.livecycleTargets.initialize [];
-             pat = createAntPath (pathes.testRuntime config);
-             new AntClassLoader(ClassLoader#getSystemClassLoader()#getParent(), 
-                                pat#getProject(), pat, false));
-        _ = (oldCl = Thread#currentThread()#getContextClassLoader();
-             Thread#currentThread()#setContextClassLoader(cl);
-             try
-                m = cl#loadClass("yeti.lang.compiler.yeti")
-                        #getMethod("main",array [classOf java.lang.String[]]);
-                  m#invoke((),(array [(array (tail argv)) as ~String[] ]) 
-                                as ~String[][]);
-             finally
-                Thread#currentThread()#setContextClassLoader(oldCl)
-             yrt);
-        
-        "\n";
     else
         if strStarts? (head argv) "#" then
             code = strRight (strJoin " " argv) 1;
