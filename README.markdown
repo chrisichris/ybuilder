@@ -49,19 +49,23 @@ Join the discussion mailing list at:
 >
 >6. edit `project.yeti` file to set the projects name, artifact id etc and add 
 >   dependencies 
+>	
+>	 baseProject with {
+>    name = "first-test",
+>    groupId ="org.foo",
+>    artifactId = "first-test",
+>    version = "0.1-alpha",
+>    description = "First ybuilder based project"
+>    }
+>    [ 
+>    dependency "org.yeti" "yeti" "0.9.3" [],
+>    dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
+>    dependency "junit" "junit" "3.8.2" [TestScope()],
+>    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()],
+>	 ]
 >
->    project.name := "first-test";
->    project.groupId :="org.foo";
->    project.artifactId := "first-test";
->    project.version := "0.1-alpha";
->    project.description := "First ybuilder based project";    
->    
->    dependency "org.yeti" "yeti" "0.9.3" [];
->    dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
->    dependency "junit" "junit" "3.8.2" [TestScope()];
->    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
->
->7. run `java -jar ybuilder.jar` to get help and see that project.yeti compiles
+>7. run `java -jar ybuilder.jar targets` to get help and see that 
+>   project.yeti compiles
 >
 >8. add a source file to the src/ directory 
 >    
