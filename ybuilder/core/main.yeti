@@ -61,24 +61,7 @@ if (file "project.yeti")#exists()
 fi;	
 
 
-if (not (file "project.yeti")#exists()) and empty? args then
-    yv = (load ybuilder.core.build).ybuilderVersion ;
-    println "ybuilder - version \(yv)\n";
-    println ' 
-ybuilder is a simple build-enviroment for YETI the functional 
-programming-language for JVM.
-
-To use ybuilder create a new ybuilder project:
-
-1.) copy the "ybuilder.jar" file to a new directory and 
-2.) run "java -jar ybuilder.jar new chrisichris/basic" to create 
-    the needed files and directories from the basic template
-3.) edit the "project.yeti" file as described in the comments
-4.) run "java -jar ybuilder.jar" again to get a detailed help message
-
-For detailed description google ybuilder yeti (there is no homepage yet)
-'
-elif not (file "poject.yeti")#exists() then
+if not (file "poject.yeti")#exists() then
     load ybuilder.core.ifnoproject;    
 elif (not empty? args) and ((head args) == "cleanBuildLibs") then
     build.antTask "delete" 
