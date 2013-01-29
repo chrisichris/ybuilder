@@ -164,6 +164,7 @@ It takes following arguments:
 - the project-structure: which is given to the target-function
 
 For example the following ant-xml task definition:
+
 	<javac srcdir="src" 
 		   destdir="target/classes" 
 		   includes="**/*.jar" 
