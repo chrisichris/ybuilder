@@ -37,10 +37,10 @@ createBaseConfig config dependencies =
          "includeAntRuntime":"false",
          "fork": "true"],
          
-    javacCompilerarg = "",
+    var javacCompilerarg = "",
 
-    yeticIncludes = [Include "**/*.yeti"],
-    yeticSourceReaderCode = none is Some string | None (),
+    yeticIncludes = array [Include "**/*.yeti"],
+    var yeticSourceReaderCode = none is Some string | None (),
 
     javacTestAttributes = 
         ["srcdir" : config.dir.test, 
@@ -50,7 +50,7 @@ createBaseConfig config dependencies =
          "includeAntRuntime": "false",
          "fork": "true"],
 
-    javacTestCompilerarg = "",
+    var javacTestCompilerarg = "",
 
     javadocAttributes = 
         ["sourcepath" : config.dir.src,
@@ -65,7 +65,7 @@ createBaseConfig config dependencies =
 
     //java targets
     resourcesPatterns = 
-        [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"],
+        array [Include "**/*.*", Exclude "**/*.java", Exclude "**/*.yeti"],
     });
 
 

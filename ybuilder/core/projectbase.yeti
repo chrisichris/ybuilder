@@ -32,46 +32,46 @@ maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 
 //directories
 baseConfig is baseConfig = {
-    name = "",
-    version = "", 
-    artifactId = "", 
-    groupId = "",
-    description = "",
-    organization = "",
-    homePage = "",
-    license = "",
-    licenseURL = "",
+    var name = "",
+    var version = "", 
+    var artifactId = "", 
+    var groupId = "",
+    var description = "",
+    var organization = "",
+    var homePage = "",
+    var license = "",
+    var licenseURL = "",
 
     localRepository = { 
-        layout = "default", 
-        path = "${user.home}/.m2"
+        var layout = "default", 
+        var path = "${user.home}/.m2"
     },
 
     deployRepository = {
-        url = undef_str,
-        providerArtifactId = undef_str,
-        providerVersion = "1.0-beta2",
+        var url = undef_str,
+        var providerArtifactId = undef_str,
+        var providerVersion = "1.0-beta2",
         params = [] is list<xmlelement>,
-        uniqueVersion = false
+        var uniqueVersion = false
     },
     
     dir = {
-        libManaged = "lib/managed/",
-        lib = "lib/unmanaged/",	
-        target = "target/",
-        src = "src/",
-        test = "test/",
-        reports = "target/reports/",
-        doc = "target/doc/",
-        ybuilder = "lib/ybuilder/",
-        targetClasses = "target/classes/",
-        targetTestClasses = "target/testclasses/",
+        var libManaged = "lib/managed/",
+        var lib = "lib/unmanaged/",	
+        var target = "target/",
+        var src = "src/",
+        var test = "test/",
+        var reports = "target/reports/",
+        var doc = "target/doc/",
+        var ybuilder = "lib/ybuilder/",
+        var targetClasses = "target/classes/",
+        var targetTestClasses = "target/testclasses/",
 
-        webapp = "webapp/",
-        resources = "resources/",
-        resourcesTest = "test-resources/",
-        javadoc = "target/doc/javadoc/",
-        yetidoc = "target/doc/yetidoc/",
+        var webapp = "webapp/",
+        var resources = "resources/",
+        var resourcesTest = "test-resources/",
+        var javadoc = "target/doc/javadoc/",
+        var yetidoc = "target/doc/yetidoc/",
 
         buildExtlib = "lib/ybuilder/extlib/",
     }
@@ -158,15 +158,15 @@ createProjectBaseConfig config dependencies =
     
 
     config = (config is baseConfig )  with {
-        artifactDependencies = list ad,
-        projectDependencies = list pd,
-        remoteRepositories = list rp,
-        pathScopeLib is pathPatternType = list _pathScopeLib, 
-        pathScopeCompile is pathPatternType = list _pathScopeCompile,
-        pathScopeRuntime is pathPatternType = list _pathScopeRuntime,
-        pathScopeSystem is pathPatternType = list _pathScopeSystem,
-        pathScopeProvided is pathPatternType = list _pathScopeProvided,
-        pathScopeTest is pathPatternType = list _pathScopeTest,
+        artifactDependencies = ad,
+        projectDependencies = pd,
+        remoteRepositories = rp,
+        pathScopeLib is pathPatternType = _pathScopeLib, 
+        pathScopeCompile is pathPatternType = _pathScopeCompile,
+        pathScopeRuntime is pathPatternType = _pathScopeRuntime,
+        pathScopeSystem is pathPatternType = _pathScopeSystem,
+        pathScopeProvided is pathPatternType = _pathScopeProvided,
+        pathScopeTest is pathPatternType = _pathScopeTest,
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
                                  
@@ -192,23 +192,23 @@ createProjectBaseConfig config dependencies =
 
 //pathes
 buildExtPath config is 'a -> pathPatternType =  
-          [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
+          array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath config is 'a -> pathPatternType =  
-          [Patterns \config.pathScopeCompile,
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeRuntime,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
 compilePath config is 'a -> pathPatternType = 
-          [Patterns \config.pathScopeCompile,
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeLib];
            
 testPath config is 'a -> pathPatternType = 
-          [Patterns \config.pathScopeCompile,
+          array [Patterns \config.pathScopeCompile,
            Patterns \config.pathScopeProvided,
            Patterns \config.pathScopeSystem,
            Patterns \config.pathScopeRuntime,
@@ -216,7 +216,7 @@ testPath config is 'a -> pathPatternType =
            Patterns \config.pathScopeLib];
            
 testRuntimePath config is 'a -> pathPatternType = 
-         [Patterns \(testPath config)];
+         array [Patterns \(testPath config)];
 
 
 //dependency management

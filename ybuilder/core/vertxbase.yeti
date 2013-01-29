@@ -41,11 +41,11 @@ createVertxConfig useVertxHomeOnSystemPath config =
             (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
     {
-        useVertxHomeOnSystemPath = false,
-        vertxHome,
-        vertxModsDir = "mods/",
-        vertxModuleName = "\(config.groupId).\(config.artifactId)-v0", 
-        vertxFullModuleName = 
+        var useVertxHomeOnSystemPath = useVertxHomeOnSystemPath,
+        var vertxHome = vertxHome,
+        var vertxModsDir = "mods/",
+        var vertxModuleName = "\(config.groupId).\(config.artifactId)-v0", 
+        var vertxFullModuleName = 
             "\(config.groupId).\(config.artifactId)-v\(config.version)", 
     });
 

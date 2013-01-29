@@ -59,11 +59,11 @@ typedef targetType = {
 };
 
 
-typedef filePatternType = list<Include string
+typedef filePatternType = list?<Include string
                                 | Exclude string 
                                 | Patterns ( () -> filePatternType) >;
                                 
-typedef pathPatternType = list<Fileset hash<string, filePatternType>
+typedef pathPatternType = list?<Fileset hash<string, filePatternType>
                                 | Dirset hash<string, filePatternType> 
                                 | Location string 
                                 | Path string 
