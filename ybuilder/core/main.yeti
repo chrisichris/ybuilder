@@ -81,9 +81,23 @@ if not (file "project.yeti")#exists() then
         [Description "creates a new project from a git repo",
         ShortName()] do p:
         
-        name = if length p.args > 0 then
-                    "(Some '\((array p.args)[0])')"
+        projectDir = if length p.args > 0 then
+                head p.args;
+            else 
+                print "\nPlease enter the project's name: ";
+                strTrim (readln());
+            fi;
+        
+        
+        if (file projectDir)#exists() then
+            println "error a directory with name \(projectDir) already exists";
+            System#exit(-1);
+        fi;
+
+        name = if length p.args > 1 then
+                    "(Some '\((array p.args)[1])')"
                else "none" fi;
+                    
         
         ///retrieve git dependencies
         import java.nio.file.Files;
@@ -126,16 +140,16 @@ if not (file "project.yeti")#exists() then
                           #getMethod("main",array [classOf java.lang.String[]]);
             _ = m#invoke((),
                     (array 
-                        [(array ["-e", "(load ybuilder.core.projecttemplate).newFromTemplate \(name)"]) as ~String[]]
+                        [(array ["-e", "(load ybuilder.core.projecttemplate).newFromTemplate \"\(projectDir)\" \(name)"]) as ~String[]]
                     ) as ~String[][]);
         done;
 
         _lib_builder = "ybuilder";
 
         //run the newproject file
-        if (new File("newproject.yeti"))#exists() then
+        if (new File(projectDir^"/newproject.yeti"))#exists() then
             antFiles = 
-                ((load ybuilder.core.build).listFiles) "."
+                ((load ybuilder.core.build).listFiles) projectDir
                     [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
                      Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
 
@@ -144,7 +158,8 @@ if not (file "project.yeti")#exists() then
                               #getMethod("main",array [classOf java.lang.String[]]);
                 _ = m#invoke((),
                         (array 
-                            [(array ("newproject.yeti" :: p.args)) as ~String[]]
+                            [(array (projectDir^"newproject.yeti" :: p.args)) 
+                                as ~String[]]
                         ) as ~String[][]);
             done;
             //delete the file

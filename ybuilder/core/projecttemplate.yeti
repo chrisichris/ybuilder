@@ -28,7 +28,7 @@ load ybuilder.core.build;
 
 //cloning a default project
 
-newFromTemplate nameOpt =
+newFromTemplate projectDir nameOpt=
    (project = createProject();
     println "--------------------------\nybuilder project template download\n";
     println "installation happens in current directory";
@@ -39,7 +39,8 @@ newFromTemplate nameOpt =
          strTrim (readln ()));
     Some n: n;
     esac;
-   
+
+
     //parse the name
     {url,dir} = if strStarts? name "http::"
        or strStarts? name "https::"
@@ -71,7 +72,8 @@ newFromTemplate nameOpt =
                    FileReader;
     import java.util.Properties;
 
-    tempDir = Files#createTempDirectory("ybuilder_templateproject", [])#toFile();
+    tempDir = Files#createTempDirectory(
+                "ybuilder_templateproject/"^projectDir, [])#toFile();
     tempDir#deleteOnExit();
     
     println "Cloning \(url) to \(tempDir) ...";
@@ -101,10 +103,9 @@ newFromTemplate nameOpt =
     //properties to replace
     props = readProperties (new File(sourceDir, "ybtemplate.properties"));
     {names, values} = if not "name" in props.values then
+        props.values["name"] := projectDir;
         {names = "name" :: props.names,
-         values = (props.values.["name"] :=
-                    string ((file ".")#getCanonicalFile()#getName());
-                  props.values)}
+         values = props.values}
     else
         props
     fi;
@@ -138,7 +139,8 @@ newFromTemplate nameOpt =
     for names (\() . readProp);    
     
     
-    antTask "copy" ["todir":".", "verbose":"true","includeEmptyDirs":"true"] [
+    antTask "copy" ["todir":projectDir, 
+                    "verbose":"true","includeEmptyDirs":"true"] [
         el "fileset" ["dir":string sourceDir, 
                       "defaultexcludes":"false", 
                       "excludes":"**/.git/**"] [],
@@ -150,13 +152,13 @@ newFromTemplate nameOpt =
     ] project;
 
     
-    antTask "delete" ["file":"ybtemplate.properties", 
+    antTask "delete" ["file":projectDir^"/ybtemplate.properties", 
                       "failonerror":"false",
                       "deleteonexit":"true"][] project;
     
     //write the properties
     import java.io.FileWriter;
-    wr = new FileWriter("ybtr.properties");
+    wr = new FileWriter("\(projectDir)/ybtr.properties");
     propsObj = new Properties();
     forHash resProps do k v:
         _ = propsObj#put(k as ~Object, v as ~Object);
@@ -165,8 +167,7 @@ newFromTemplate nameOpt =
         propsObj#store(wr, "");
     finally
         wr#close();
-    yrt;
-    );
+    yrt);
 
  {
     newFromTemplate,
