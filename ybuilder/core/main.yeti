@@ -57,11 +57,8 @@ _withBuildClassLoader dirPrefix antFiles fn =
 if not (file "project.yeti")#exists() then
     //no project file create default project with some default targets
     load ybuilder.core.build;
-    load ybuilder.core.projectbase;
-    config = createProjectBaseConfig 
-        (baseConfig ())
-        [];
-    config = config with registerProjectBaseTargets config;
+    config = createBuildConfig (); 
+    config = config with registerBuildTargets config;
 
     _ = target config "new" "newproject" 
             [Description "creates a basic new project",
@@ -74,6 +71,7 @@ if not (file "project.yeti")#exists() then
             else 
                 "."; 
             fi;
+        config = createBaseConfig (baseConfig()) [];
         createNewYetiProject config projectName (createProject ()); 
         retrieveBuildDependencies ();
 
