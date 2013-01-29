@@ -35,10 +35,12 @@ createVertxConfig useVertxHomeOnSystemPath config =
                     ^"some tasks will not work")
     fi;
    
-    if useVertxHomeOnSystemPath then
+    pathScopeLib = if useVertxHomeOnSystemPath then
         //add all the vert.x dependencies
-        push config.pathScopeLib 
-            (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
+        Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]] ::
+            config.pathScopeLib
+    else
+        config.pathScopeLib
     fi;
     {
         var useVertxHomeOnSystemPath = useVertxHomeOnSystemPath,
