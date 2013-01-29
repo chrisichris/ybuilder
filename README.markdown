@@ -44,9 +44,9 @@ init, compile etc. which is executed only once during a build.
 
 ### Hello World
 
-You run a ybuilder project using the `ybuilder.jar`, which in turn executes 
-the `project.yeti` (the build script) which insantiates and configures 
-the targets of the project.
+You run a ybuilder project using the `ybuilder.jar`, which executes 
+the `project.yeti` (the build-script). The build-script insantiates and 
+configures the targets of the project.
 
 To try that out create the following `project.yeti` file:
 
@@ -66,26 +66,22 @@ In a command-line shell execute the build script:
 
 What's going on here? 
 
-When from the command-line the `ybuilder.jar` is executed it looks for the
-`project.yeti` file (the build-script), adds the yeti.jar, ant.jar 
-to the classpath and executes build-script.
+When the `ybuilder.jar` is executed it the yeti.jar, ant.jar and ant-maven.jar 
+to the classpath and executes build-script `project.yeti`.
 
 The build-script first creates a `config` structure. This
-config structure is than used to create the target with the `target` function.
+config structure is used to register the target using the `target` function.
 
-The target function is than used to register in the config-structure 
-a new target `hello:world` which prints "Hello World!" when it is excuted.
-. takes the config structure, a group name, the target's 
-name within the group, a list of options (ie dependencies, description etc), 
-and than a function which gets executed when the target is executed.
+The target function is than used create the `hello:world` target and register
+it in the config structure. The `hello:world` target prints "Hello World!" 
+when it is excuted.
 
-The `config` now contains the target. At the end of the build-script 
-the `config`, which contains now the `hello:world` is given to the 
-`run` function.
+The `config` structure now contains the target. As a last step the 
+the `config` structure is given to the `run` function.
 
 The `run` function reads from the command-line-args the name of the target
-to execute (`hello:world`) and than looks up the target by name in the `config`
-and than executes it.
+to execute (`hello:world`), looks up the target by name in the `config`
+and finally executes it.
 
 That's it.
 
@@ -94,7 +90,7 @@ All `project.yeti` files are normal yeti programms. You can use all the
 language constructs to construct them.
 
 ### Targets
-As seen the target function is used to register targets with config.
+As seen the target function is used to create and register targets with config.
 
 The target function takes as arguments:
 - config: this is the config structure it registers the target with
@@ -146,10 +142,10 @@ In a command-line shell execute the build script:
 
 ### Using Ant Tasks
 
-Ybuilder provides excellent integration for Ant tasks.
+Ybuilder provides integration for Ant tasks.
 
-The module `yubilder.core.build`contains the function antTask which is used
-to define and execute an ant task, where similar to what you would do in
+The module `yubilder.core.build` contains the function `antTask` which is used
+to define and execute an ant task very similar to what you would do in
 xml.
 
 It takes following arguments:
