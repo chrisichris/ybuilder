@@ -33,7 +33,218 @@ Join the discussion mailing list at:
 
 <http://groups.google.com/group/yeti-lang>
  
-## Creating a yeti project using ybuilder
+    
+
+## Ybuilder basics
+
+### Targets
+Every ybuilder project is - like an ant-project - made up of one or more 
+targets which can depend on each other. Each target represent a unit of work ie.
+init, compile etc. which is executed only once during a build. 
+
+### Hello World
+
+You run a ybuilder project using the `ybuilder.jar`, which in turn executes 
+the `project.yeti` (the build script) which insantiates and configures 
+the targets of the project.
+
+To try that out create the following `project.yeti` file:
+
+	load ybuilder.core.build;
+
+	config = createBuildConfig();
+	_ = target config "hello" "world" [] do ap:
+		println "Hello World";
+	done;
+
+	run config;
+
+In a command-line shell execute the build script:
+
+	>java -jar ybuilder.jar hello:world
+	Hello World!
+
+What's going on here? 
+
+When from the command-line the `ybuilder.jar` is executed it looks for the
+`project.yeti` file (the build-script), adds the yeti.jar, ant.jar 
+to the classpath and executes build-script.
+
+The build-script first creates a `config` structure. This
+config structure is than used to create the target with the `target` function.
+
+The target function is than used to register in the config-structure 
+a new target `hello:world` which prints "Hello World!" when it is excuted.
+. takes the config structure, a group name, the target's 
+name within the group, a list of options (ie dependencies, description etc), 
+and than a function which gets executed when the target is executed.
+
+The `config` now contains the target. At the end of the build-script 
+the `config`, which contains now the `hello:world` is given to the 
+`run` function.
+
+The `run` function reads from the command-line-args the name of the target
+to execute (`hello:world`) and than looks up the target by name in the `config`
+and than executes it.
+
+That's it.
+
+### Buildscripts are yeti code
+All `project.yeti` files are normal yeti programms. You can use all the
+language constructs to construct them.
+
+### Targets
+As seen the target function is used to register targets with config.
+
+The target function takes as arguments:
+- config: this is the config structure it registers the target with
+- groupname: the groupname of the target 
+- name: the name of the target in the group
+- a list of options:
+	- Depends target: A target which gets executed before this target
+	- Description string: A description of the target
+	- DependencyOf otherTarget: add this target to the depedency of the 
+				other target
+	- ShortName(): register this target also under its name only. So it can
+	               be executed whithout the group prefix (ie `compile` 
+				   instead of `livecyle:compile`)
+- the target's function: This is executed when the target is run.
+ 	The target function in turn gets a `project` structure which contains
+	commandline args, properties the targets already executed and an 
+	AntProject used for executing ant-tasks.
+
+The target function retuns a target struct which can be used to reference
+the target.
+
+To try it out:
+
+To try that out create the following `project.yeti` file:
+
+	load ybuilder.core.build;
+
+	config = createBuildConfig();
+	
+	taskOne = target config "hello" "one" 
+		[Description "Prints hello"] do ap:
+		println "Hello World!";
+	done;
+
+	taskTwo = target config "hello" "two" 
+			[Depends one,
+			Description "greets target",
+			ShortName()] do p:
+			println "Hello Task";
+	done;
+
+	run config;
+
+In a command-line shell execute the build script:
+
+	>java -jar ybuilder.jar two
+	Hello World!
+	Hello Task!
+
+### Using Ant Tasks
+
+Ybuilder provides excellent integration for Ant tasks.
+
+The module `yubilder.core.build`contains the function antTask which is used
+to define and execute an ant task, where similar to what you would do in
+xml.
+
+It takes following arguments:
+- name: the xml-element name of the task
+- attributes: a hash<string,string> for the xml-attributes for the task (names
+	and values are exactly like in xml)
+- a list of <xmlelement> which is represent the xml-content of the task.
+	- an xmlelement is either a Text string | Element {name is string,
+	attributes is map<string,string>, subelements is list<xmlelement> 
+	structure.
+	You use the el function to construct elements
+- the project-structure: which is given to the target-function
+
+For example the following ant-xml task definition:
+	<javac srcdir="src" 
+		   destdir="target/classes" 
+		   includes="**/*.jar" 
+		   fork="true">
+		<classpath>
+		   		<pathelement location="classes"/>
+				<fileset dir="lib">
+					<include name="**/*.jar"/>
+				</fileset>
+		</classpath>
+	</javac>
+
+is expressed in yeti-code like this:	
+
+	antTask "javac" 
+		["srcdir" : "src", 
+		 "destdir": "target/classes",
+		 "includes":"**/*.java",
+		 "fork": "true"]
+		 [el "classpath" [:]
+			[el "pathelement" ["location":"classes"],
+			 el "fileset" ["dir":"lib"] 
+				[el "include" ["name":"**/*.jar"][]]]]
+		project;
+
+The `project` struct is either gotten from the argument to the target function:
+	
+	target config "group" "name" [] do project:
+		antTask "mkdir" ["dir":"temp"] [] project;
+	done;
+
+or it can be created directly in the config-script, in which case the
+ant-task is executed immidiately when the config-script is evaluated.
+
+	antTask "mkdir" ["dir":"temp"] [] (newProject());
+
+## Using the ybuilder.jar
+
+With the ybuilder.jar you basically execute targets, where targets are
+sperated by `,` 
+
+
+    java -jar ybuilder.jar target-name [, target-name]*
+    
+i. e. to clean and compile your project type on the command line 
+
+    java -jar ybuilder.jar clean, compile
+ 
+You can also specify arguments for a target. The arguments come right
+after the targetname.
+
+	java -jar ybuilder.jar new myProjectName chrisichris/basic
+
+Here `new` is the target name and `myProjectName` and `chrisichris/basic` are
+the arguments.
+
+You can exclude certain targets form the exectuion with `-x`
+
+	java -jar ybuilder.jar compile -x "livecycle:init"
+
+To get a list of targets use help
+
+	java -jar ybuilder.jar help
+
+
+## Yeti projects
+
+So far everything shown was a general purpose ant-wrapper, which does not build
+anything out of the box.
+
+However because most yeti/java projects are quite similar Ybuilder has a 
+yeti-module (`ybuilder.core.base`) which configures a standard yeti project.
+It creates a standard directory-layout, registers targets for 
+maven-dependency-management, for compiling both java and yeti classes, for
+testing, running and packaging.
+
+It is important to note that the `ybuilder.core.base` module does nothing 
+special it just uses the `ybuilder.core.build` module exactly like 
+described in the previous section and creates this way a standard-project.
+    
+### Creating a yeti project using ybuilder
 
 >1. Load a project template from github.
 >
@@ -90,26 +301,8 @@ Join the discussion mailing list at:
 >    >java -jar ybuilder.jar clean, jar
 >    
 >10. find the result in target/first-test.jar
-    
 
-## Usage
-
-Ybuilder is like ant target based.
-
-From the root directory of your project you can execute different targets with
-
-    java -jar ybuilder.jar target-name [, target-name]*
-    
-i. e. to clean and compile your project type on the command line 
-
-    java -jar ybuilder.jar clean, compile
- 
-To get a list of the most important targets (ie compile, test, jar etc) call 
-the targets target
-
-    java -jar ybuilder.jar targets
-    
-## Directory Layout
+### Directory Layout
 
 When creating a new project `ybuilder` initializes the following directory 
 structure 
@@ -148,13 +341,6 @@ If you do not want to put your resources in the `src/` dir then you can add
     test-resources/
         <test resources>
 
-        
-        
-## Configuration         
-        
-The central definition file of ybuilder is the `project.yeti` file. 
-`project.yeti` defines the project's name, dependencies, custom build tasks etc. 
-
 ### Defining the name, groudId, artifactId, version, description
 
 `project.yeti` is a normal yeti programm. In this yeti program first a `config`
@@ -175,12 +361,11 @@ to the vars:
 ### Dependencies management
 
 `ybuilder` uses [maven ant-tasks](http://maven.apache.org/ant-tasks/index.html)
-for dependency resolution. It also uses the same build classpathes as maven
-(compile, test, runtime).
+for dependency resolution. It also uses the same build scopes and 
+classpathes as maven (compile, provided, test, runtime).
 
 Dependencies together with the classpathes are also added to the config struct. 
-To do that convienent there is a special helper:
-Dependencies are defined in the `project.yeti` file and copied to `lib/managed`.
+To do that convienently there is a special helper function :
 
 	config = config with createBaseConfig config [
 		dependency "org.yeti" "yeti" "0.9.3" [],
@@ -192,8 +377,8 @@ The scopes of the dependency is defined in the list of optional arguments. The
 scopes are the same as in maven (CompileScope, TestScope, RuntimeScope, 
 SystemScope, ProvidedScope). The default scope is `CompileScope`.
 
-To retrieve the dependencies you *must call*. Just adding the dependencies has
-no effect.
+To retrieve the dependencies you *must execute* the retrieveDependencies 
+target. Just adding the dependencies has no effect.
 
 	>java -jar ybuilder.jar retrieveDependencies
 
@@ -205,13 +390,19 @@ too long.
 To add additional remote repositories add to the list of dependencies 
 
     remoteRepository id repositoryURL
-    
+
 ie
 
-    remoteRepository "springsource-release" 
-                     "http://repository.springsource.com/maven/bundles/release"
+	config = config with createBaseConfig config [
+		remoteRepository "springsource-release" 
+				 "http://repository.springsource.com/maven/bundles/release",
+		
+		dependency "org.yeti" "yeti" "0.9.3" [],
+		dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
+		dependency "junit" "junit" "3.8.2" [TestScope()],
+		dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()]];
     
-(The chrisichris github repository is already included by default)
+The chrisichris github repository is already included by default
 
 #### Using unmanaged dependencies
 
@@ -219,48 +410,6 @@ If you do not want to use the maven dependency mechanism or you need artifacts
 which are not in a maven-repo than copy the jars to `lib/unmanaged`. `ybuilder`
 will put all jars in this directory to all build-pathes. 
    
-## Customizing the build
-
-At the base of ybuilder is a yeti wrapper around ant-tasks and a target system. 
-This wrapper is in the `ybuilder.core.build` module. 
-
-On top of that the `ybuilder.core.base` module defines standard targets 
-(compile, retrieve dependencies etc). 
-
-That's why in the default `project.yeti` file the `ybuilder.core.base` 
-module is loaded at the very top.
-
-### Defining your own targets
-
-To define your own targets use the `target` function from the `build` module:
-
-    target config name [options] code-function
-
-- name is the name of the target and has to be unique in the project.
-- [options] is a list of following options:
-    - Depends target: target which should be executed before
-    - Description text: description of this target printed in help
-    - Before (or DependencyOf which is deprecated) target: adds this target to the dependencies of the given target
-    - DoPreDependencies fn: a fuction which is executed before the dependencies
-            get executed
-- code-function is project -> (): the code which gets executed (once) when
-    the target is invoked
-    
-ie add this to project.yeti, after defining the dependencies:
-
-    load ybuilder.core.build;
-    
-    helloCompile = target "helloCompile" [Depends compile] do p:
-        println "hello"
-    done
-    
-This target will first invoke compile and than print "hello":
-
-    >java -jar ybuilder.jar helloCompile
-    
-    [javac] compiling ... files
-    hello
-
 ### Livecycle targets
 
 Similar to maven the `ybuilder.core.base` module defines different predefined 
@@ -300,58 +449,6 @@ process you just make it depend on the `compile` livecycle.
 * pre-doc
 * doc
 
-### Ant-Integration
-
-Scripting ant-targets works much the same as in an ant-xml file but instead
-of using xml we use two yeti funcitons from
-the `ybuilder.core.build` module:
-
-    antTask taskName [hash of attributes] [list of subelements] project; 
-    
-    el elementName [hash<string,string> of attributes] [list of subelements];
-    
-- taskName and elementName are the xml-names of the task. Before the name
-  you can (seperated by a space) have an url for custom namespaced tasks
-- hash of attribtes is a hash<string,string> representing the xml-attributes
-- list of subelements is a list of child-tags, creted with the `el` function
-
-The following xml-fragement
-
-    <mkdir dir="some-dir"/>
-    <copy todir="some-dir">
-        <fileset dir="src/test">
-            <include name="**/*.yeti"/>
-        </fileset>
-    </copy>
-
-is written:
-
-    load ybuilder.core.build;
-    
-    project = createProject ();
-    
-    antTask "mkdir" ["dir":"some-dir"] [] project;
-    antTask "copy" ["todir":"some-dir"]
-            [el "fileset" ["dir":"src/test"]
-                [el "include" ["name":"**/*.yeti"] []]]
-            project;
-
-Or if you put it in a target you should not create the project but use the
-one provided:
-
-    load ybuilder.core.build;
-    
-    copyTest = target "copyTest" [] do project:
-        antTask "mkdir" ["dir":"some-dir"] [] project;
-        antTask "copy" ["todir":"some-dir"]
-                [el "fileset" ["dir":"src/test"]
-                    [el "include" ["name":"**/*.yeti"] []]]
-                project;
-    done;
-    
-`ybuilder` comes with the ant.jar and the maven-ant.jar on the classpath if
-you need other tasks then put their jars in the `lib/ybuilder/extlib` directory.
-`ybuilder` will pick them up from there.
 
 ##Building ybuilder from source
 
