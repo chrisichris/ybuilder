@@ -35,39 +35,37 @@ Join the discussion mailing list at:
  
 ## Creating a yeti project using ybuilder
 
->1. make a new directory for your project 
+>1. Load a project template from github.
 >
->2. copy `ybuilder.jar` to the new directory
+>   >java -jar ybuilder.jar new projectNaem chrisichris/basic
+	
+	This will create a new directory "projectName" based on the
+	github repository chrisichris/basic.ybtr
 >
->3. cd to the new directory
+>2. Enter the values you are promted for and the project will be created
 >
->4. Load a project template from github.
->
->   >java -jar ybuilder.jar new chrisichris/basic
->
->5. Enter the values you are promted for and the project will be created
->
->6. edit `project.yeti` file to set the projects name, artifact id etc and add 
+>3. edit `project.yeti` file to set the projects name, artifact id etc and add 
 >   dependencies 
 >	
->	 baseProject with {
->    name = "first-test",
->    groupId ="org.foo",
->    artifactId = "first-test",
->    version = "0.1-alpha",
->    description = "First ybuilder based project"
->    }
+>	 config = baseConfig ();
+>    config.name := "first-test";
+>    config.groupId :="org.foo";
+>    config.artifactId := "first-test";
+>    config.version := "0.1-alpha";
+>    config.description := "First ybuilder based project";
+>    
+>	 config = createBaseConfig config
 >    [ 
 >    dependency "org.yeti" "yeti" "0.9.3" [],
 >    dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
 >    dependency "junit" "junit" "3.8.2" [TestScope()],
 >    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()],
->	 ]
+>	 ];
 >
->7. run `java -jar ybuilder.jar targets` to get help and see that 
+>4. run `java -jar ybuilder.jar targets` to get help and see that 
 >   project.yeti compiles
 >
->8. add a source file to the src/ directory 
+>5. add a source file to the src/ directory 
 >    
 >    file: src/foo.yeti:
 >    application foo.yeti;
@@ -75,23 +73,23 @@ Join the discussion mailing list at:
 >    println "Hello world!";
 >    0;
 >
->9. run it from source
+>6. run it from source
 >
 >	>java -jar ybuilder.jar runyeti foo
 >
->10. compile it
+>7. compile it
 >
 >   >java -jar ybuilder.jar compile
 >   
->11. run it the class
+>8. run it the class
 >
 >	>java -jar ybuilder.jar run foo
 >
->12. jar it
+>9. jar it
 >
 >    >java -jar ybuilder.jar clean, jar
 >    
->13. find the result in target/first-test.jar
+>10. find the result in target/first-test.jar
     
 
 ## Usage
@@ -159,14 +157,20 @@ The central definition file of ybuilder is the `project.yeti` file.
 
 ### Defining the name, groudId, artifactId, version, description
 
-`project.yeti` is a normal yeti file. You set the name, description etc as
-variable assignments to the `project` struct ie:
+`project.yeti` is a normal yeti programm. In this yeti program first a `config`
+struct is created and customized, than targets are registered based on this 
+config and finally the targets are run from the config.
 
-    project.name := "yebspec";
-    project.groupId :="org.yeb";
-    project.artifactId := "yebspec";
-    project.version := "0.1-alpha";
-    project.description := "Specification tests for yeti";    
+Therefore to define the name etc first create a baseConfig and assign name etc
+to the vars:
+
+	config = baseConfig ();
+
+    config.name := "yebspec";
+    config.groupId :="org.yeb";
+    config.artifactId := "yebspec";
+    config.version := "0.1-alpha";
+    config.description := "Specification tests for yeti";    
 
 ### Dependencies management
 
@@ -174,38 +178,31 @@ variable assignments to the `project` struct ie:
 for dependency resolution. It also uses the same build classpathes as maven
 (compile, test, runtime).
 
+Dependencies together with the classpathes are also added to the config struct. 
+To do that convienent there is a special helper:
 Dependencies are defined in the `project.yeti` file and copied to `lib/managed`.
 
-To retrieve the dependencies you *must call*  
-`java -jar ybuilder.jar retrieveDependencies'.
-
-#### Defining Dependencies 
-
-To define dependencies in your `project.yeti` file use the function:
-
-    dependency artifactId groupId version [list of optional arguments]
-    
-ie:
-
-    dependency "org.yeti" "yeti" "0.9.3" [];
-    dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
-    dependency "junit" "junit" "3.8.2" [TestScope()];
-    dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()];
-
+	config = config with createBaseConfig config [
+		dependency "org.yeti" "yeti" "0.9.3" [],
+		dependency "org.apache.commons" "commons-lang3" "3.0.1" [],
+		dependency "junit" "junit" "3.8.2" [TestScope()],
+		dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()]];
+		
 The scopes of the dependency is defined in the list of optional arguments. The 
 scopes are the same as in maven (CompileScope, TestScope, RuntimeScope, 
 SystemScope, ProvidedScope). The default scope is `CompileScope`.
 
-*NOTE:* After modifying your dependencies or adding new dependencies you have 
-to call `java -jar ybuilder.jar retrieveDependencies' so that the new
-dependencies are retrieved.
+To retrieve the dependencies you *must call*. Just adding the dependencies has
+no effect.
+
+	>java -jar ybuilder.jar retrieveDependencies
 
 Ybuilder does not retrieve dependencies on each compile because this would take
 too long.
 
 #### Remote Repositories 
 
-To add additional remote repositories use 
+To add additional remote repositories add to the list of dependencies 
 
     remoteRepository id repositoryURL
     
@@ -237,7 +234,7 @@ module is loaded at the very top.
 
 To define your own targets use the `target` function from the `build` module:
 
-    target name [options] code-function
+    target config name [options] code-function
 
 - name is the name of the target and has to be unique in the project.
 - [options] is a list of following options:
