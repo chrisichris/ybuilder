@@ -31,7 +31,7 @@ maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 
 
 //directories
-baseConfig is baseConfig = {
+baseConfig () is () -> baseConfig = {
     var name = "",
     var version = "", 
     var artifactId = "", 

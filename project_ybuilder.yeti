@@ -6,12 +6,13 @@ load ybuilder.core.build;
 
 import java.lang.System;
 
-config = baseConfig with {
-    groupId ="org.ybuilder",
-    artifactId = "ybuilder",
-    version = ybuilderVersion,
-    description = "A simple build tool for yeti",
-};
+config = baseConfig ();
+
+config.groupId :="org.ybuilder";
+config.artifactId := "ybuilder";
+config.version := ybuilderVersion;
+config.description := "A simple build tool for yeti";
+
 config = createBaseConfig config [];
 config = config with (registerBaseTargets config);
 

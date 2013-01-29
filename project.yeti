@@ -24,13 +24,14 @@ import java.lang.Thread;
 
 ybuilderDir = "ybuilder/";
 
-config = createBaseConfig 
-    (baseConfig with {
-        artifactId = "ybuilder",
-        groupId ="ybuilder",
-        version = "0.1-alpha",
-        description = "A simple build tool for yeti",
-    })
+config = baseConfig();
+config.artifactId := "ybuilder";
+config.groupId :="ybuilder";
+config.version := "0.1-alpha";
+config.description := "A simple build tool for yeti";
+
+
+config = createBaseConfig config 
     [
     dependency "junit" "junit" "3.8.2" [TestScope()],
     dependency "org.apache.commons" "commons-lang3" "3.0.1" [],

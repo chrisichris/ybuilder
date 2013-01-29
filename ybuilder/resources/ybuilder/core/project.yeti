@@ -49,15 +49,15 @@ load ybuilder.core.base;
 // (Instead of declaring the dependency you can also copy yeti.jar 
 // to the ./lib directory and remove the following line)
 
+config = baseConfig ();
+config.name := "FIXME: projects-name";
+config.groupId :="FIXME: project-groupId";
+config.artifactId := "FIXME: project artifactId";
+config.version := "FIXME: 0.1-alpha";
+config.description := "FIXME: project description";
 
 config = createBaseConfig
-    (baseConfig with {
-        name = "FIXME: projects-name",
-        groupId ="FIXME: project-groupId",
-        artifactId = "FIXME: project artifactId",
-        version = "FIXME: 0.1-alpha",
-        description = "FIXME: project description",
-    })
+    config
     [
     dependency "org.yeti" "yeti" "0.9.1+-SNAPSHOT" [],
     // examples for other dependencies
