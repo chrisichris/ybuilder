@@ -41,7 +41,9 @@ _withBuildClassLoader dirPrefix antFiles fn =
                                     #getCodeSource()#getLocation();
         
         
-    urls = map do n: (new File(dirPrefix ^ string n))#toURL() done antFiles;
+    urls = antFiles
+     |>map do n: (new File(dirPrefix ^ string n))#toURI()#toURL() done;
+
     ctxtLoader = if empty? urls then
             oL
         else
@@ -199,6 +201,8 @@ if not (file "project.yeti")#exists() then
 
     run config;
 else
+    load ybuilder.core.build;
+    project = createProject();
     //project file exists
     //so run it
     if not 
@@ -206,20 +210,47 @@ else
         then
         build.retrieveBuildDependencies ();
     fi;
+    
+    //check for project classes lib
+    projectClassesDir = buildDependenciesConfig.ybuilderProjectClasses;
+    projectClassFile = new File(file projectClassesDir, "project.class");
+    
+    if not projectClassFile#exists() 
+        or projectClassFile#lastModified() 
+            < (file "project.yeti")#lastModified() then
+        //clean/create the target dir    
+        antTask "delete" ["dir":projectClassesDir] [] project;
+        antTask "mkdir" ["dir":projectClassesDir] [] project;
+        
+        //create classLoader with libs and compile project.yeti
+        antFiles = listFiles "."
+            [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
+             Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
 
-    antFiles = 
-        ((load ybuilder.core.build).listFiles) "."
-            [Include "\(build.buildDependenciesConfig.ybuilder)extlib/*.jar", 
-             Include "\(build.buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
-
+        _withBuildClassLoader "" antFiles do ctxtLoader:
+            m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
+                          #getMethod("main",array [classOf java.lang.String[]]);
+            pars = ["-d",projectClassesDir,"project.yeti"];
+            m#invoke((), (array [pars as ~String[]]) as ~String[][]);
+        done;
+    fi;
+    
+    //now we have the compiled project.class we run it now
+    antFiles = listPath 
+        [Location projectClassesDir,
+         Fileset 
+            [".": 
+                [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
+                Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"]
+            ]];
+    
     _withBuildClassLoader "" antFiles do ctxtLoader:
-        m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
-                      #getMethod("main",array [classOf java.lang.String[]]);
+        m = ctxtLoader#loadClass("project")
+                    #getMethod("main",array [classOf java.lang.String[]]);
         m#invoke((),
-                (array 
-                    [(array ("project.yeti" :: args)) as ~String[]]
-                ) as ~String[][]);
-    done;
+                (array [(array args) as ~String[]]) as ~String[][]);
+    done;    
+    
 fi;
 
         
