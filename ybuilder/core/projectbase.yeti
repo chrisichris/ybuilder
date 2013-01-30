@@ -161,12 +161,12 @@ createProjectBaseConfig config dependencies =
         artifactDependencies = ad,
         projectDependencies = pd,
         remoteRepositories = rp,
-        pathScopeLib is pathPatternType = list _pathScopeLib, 
-        pathScopeCompile is pathPatternType = list _pathScopeCompile,
-        pathScopeRuntime is pathPatternType = list _pathScopeRuntime,
-        pathScopeSystem is pathPatternType = list _pathScopeSystem,
-        pathScopeProvided is pathPatternType = list _pathScopeProvided,
-        pathScopeTest is pathPatternType = list _pathScopeTest,
+        pathScopeLib is pathPatternType = _pathScopeLib, 
+        pathScopeCompile is pathPatternType = _pathScopeCompile,
+        pathScopeRuntime is pathPatternType = _pathScopeRuntime,
+        pathScopeSystem is pathPatternType = _pathScopeSystem,
+        pathScopeProvided is pathPatternType = _pathScopeProvided,
+        pathScopeTest is pathPatternType = _pathScopeTest,
         jarManifest = [:] is hash<string,string>,
         jarAttributes is hash<string,string> = [:],
                                  
@@ -192,31 +192,31 @@ createProjectBaseConfig config dependencies =
 
 //pathes
 buildExtPath config is 'a -> pathPatternType =  
-          [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
+          array [Fileset [config.dir.buildExtlib : [Include "**/*.jar"]], 
            Fileset ["ybuilder/extlib_managed/": [Include "*.jar"]]];
            
 runtimePath config is 'a -> pathPatternType =  
-          [Patterns \config.pathScopeCompile,
-           Patterns \config.pathScopeRuntime,
-           Patterns \config.pathScopeSystem,
-           Patterns \config.pathScopeLib];
+          array [PathPatterns \config.pathScopeCompile,
+           PathPatterns \config.pathScopeRuntime,
+           PathPatterns \config.pathScopeSystem,
+           PathPatterns \config.pathScopeLib];
            
 compilePath config is 'a -> pathPatternType = 
-          [Patterns \config.pathScopeCompile,
-           Patterns \config.pathScopeProvided,
-           Patterns \config.pathScopeSystem,
-           Patterns \config.pathScopeLib];
+          array [PathPatterns \config.pathScopeCompile,
+           PathPatterns \config.pathScopeProvided,
+           PathPatterns \config.pathScopeSystem,
+           PathPatterns \config.pathScopeLib];
            
 testPath config is 'a -> pathPatternType = 
-          [Patterns \config.pathScopeCompile,
-           Patterns \config.pathScopeProvided,
-           Patterns \config.pathScopeSystem,
-           Patterns \config.pathScopeRuntime,
-           Patterns \config.pathScopeTest,
-           Patterns \config.pathScopeLib];
+          array [PathPatterns \config.pathScopeCompile,
+           PathPatterns \config.pathScopeProvided,
+           PathPatterns \config.pathScopeSystem,
+           PathPatterns \config.pathScopeRuntime,
+           PathPatterns \config.pathScopeTest,
+           PathPatterns \config.pathScopeLib];
            
 testRuntimePath config is 'a -> pathPatternType = 
-         [Patterns \(testPath config)];
+         array [PathPatterns \(testPath config)];
 
 
 //dependency management

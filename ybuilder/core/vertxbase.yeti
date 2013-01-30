@@ -35,13 +35,12 @@ createVertxConfig useVertxHomeOnSystemPath config =
                     ^"some tasks will not work")
     fi;
    
-    pathScopeLib = if useVertxHomeOnSystemPath then
+    if useVertxHomeOnSystemPath then
         //add all the vert.x dependencies
-        Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]] ::
-            config.pathScopeLib
-    else
-        config.pathScopeLib
+        push config.pathScopeLib 
+            (Fileset ["\(vertxHome)/lib":[Include "**/*.jar"]]);
     fi;
+
     {
         var useVertxHomeOnSystemPath = useVertxHomeOnSystemPath,
         var vertxHome = vertxHome,
@@ -59,7 +58,7 @@ vertxTask config args p =
    cpP = if config.useVertxHomeOnSystemPath then
        array [Fileset [config.vertxHome^"/lib" : [Include "**/*.jar"]]];
    else
-       array [Patterns \config.pathScopeProvided];
+       array [PathPatterns \(config.pathScopeProvided is pathPatternType)];
    fi;
 
    if defined? config.vertxHome then
@@ -80,7 +79,7 @@ vertxTask config args p =
    antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
                    "fork":"true",
                    "failonerror":"true"]
-                   ([el "classpath" [:] (antPathElements (list cpP))]
+                   ([el "classpath" [:] (antPathElements (cpP))]
                     ++ (map do a: el "arg" ["value":a] [] done args)
                     ++ (mapHash do k v:
                             el "sysproperty" ["key" : k, "value":v] []
@@ -88,14 +87,14 @@ vertxTask config args p =
                     p);
 
 vertxRunPath config = 
-    listPath [Patterns \config.pathScopeCompile,
-                 Location (config.dir.targetClasses)];
+    listPath ([PathPatterns \config.pathScopeCompile,
+                 Location (config.dir.targetClasses)]);
 
 vertxTestPath config =
-    listPath [Patterns \config.pathScopeCompile, 
-                 Patterns \config.pathScopeTest,
+    listPath ([PathPatterns \config.pathScopeCompile, 
+                 PathPatterns \config.pathScopeTest,
                  Location (config.dir.targetClasses),
-                 Location (config.dir.targetTestClasses)];
+                 Location (config.dir.targetTestClasses)]);
     
 
 

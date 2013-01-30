@@ -63,11 +63,11 @@ typedef filePatternType = list<Include string
                                 | Exclude string 
                                 | Patterns ( () -> filePatternType) >;
                                 
-typedef pathPatternType = list<Fileset hash<string, filePatternType>
+typedef pathPatternType = array<Fileset hash<string, filePatternType>
                                 | Dirset hash<string, filePatternType> 
                                 | Location string 
                                 | Path string 
-                                | Patterns ( () -> pathPatternType)>;
+                                | PathPatterns ( () -> pathPatternType)>;
     
 
 class AntBuilderLocator extends Locator
@@ -119,8 +119,6 @@ el name atts subelements =
     } is xmlelement;
             
 tel name atts text = el name atts [Text text];			
-
-
 
     
 target config group namep opts fn1 
@@ -175,7 +173,6 @@ targetToString t = (
         ""
     fi
     ^ "   depends: \(strJoin ", " (map (.name) deps))");   
-
 
 printSimilarTargets targets name =
    (n = name;
@@ -247,7 +244,6 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
 
 class YbuilderAntException(String message, Exception ca) extends RuntimeException(message,ca) 
 end;
-    
         
 runTarget target opts =
     executeTarget  target opts (createProject ());
@@ -292,7 +288,6 @@ antfact antElementHandler antXmlContext elem =
     esac;
 
 _antProjectElementHandler = new ProjectHelper2$ElementHandler();
-
 
 antTaskWithElement elem ybtProject = 
     try 
@@ -346,10 +341,11 @@ antInExcludeElements patts =
             Exclude name: [el "exclude" ["name":name][]];
             Patterns pa: antInExcludeElements (pa ());
             esac 
-        done patts; 
+        done patts;
 
 antFilesetElement dir patts =  
     el "fileset" ["dir" : dir] (antInExcludeElements patts);
+
 antDirsetElement dir patts =  
     el "dirset" ["dir" : dir] (antInExcludeElements patts);
 
@@ -358,7 +354,7 @@ antPathElements patts =
     dirsets = array [];
     root = array[];
     withPatts pattsI =
-        for (pattsI is pathPatternType) do pat:
+        for pattsI  do pat:
                 case pat of
                 Fileset h: 
                     forHash h do k v: 
@@ -370,11 +366,11 @@ antPathElements patts =
                     done;
                 Path str : push root (el "pathelement" ["path" : "${\(str)}"] []);
                 Location str: push root (el "pathelement" ["location" : str] []);
-                Patterns pa: withPatts ( pa ());
+                PathPatterns pa: withPatts (list ( pa ()));
                 esac; 
             done;
-    withPatts patts;
-    list (root ++ filesets ++ dirsets)); 
+    withPatts (list patts);
+    (list (root ++ filesets ++ dirsets))); 
     
 
 _createAntPath project patts	= 
@@ -384,7 +380,8 @@ _createAntPath project patts	=
 
 createAntPath patts = _createAntPath (createProject ()) patts;
 
-listPath patts = (createAntPath patts)#list() as list<string>;   
+listPath patts = 
+    (createAntPath patts)#list() as list<string>;   
 
 createAntClassLoader patts opts =
    (var parentClassLoader = ClassLoader#getSystemClassLoader()#getParent();
