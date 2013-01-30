@@ -6,7 +6,7 @@ lib/ybuilder/extlib_managed
 /test
 target
 ybuilder/extlib_managed
-ybuilder.jar
+ybuilder*.jar
 pom.xml
 *.swp
 *.swo
