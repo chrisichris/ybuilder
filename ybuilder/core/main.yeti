@@ -16,13 +16,16 @@
 
 program ybuilder.core.main;
 
-load ybuilder.core.base;
-build = load ybuilder.core.build;
-
-import java.lang.Thread;
+import java.lang:Thread,System;
 import java.io:File;
 import java.net:URLClassLoader;
 import yeti.lang.compiler.yeti;
+
+_ = System#setProperty("ybuilder.starttime", 
+                        string System#currentTimeMillis());
+
+load ybuilder.core.base;
+build = load ybuilder.core.build;
 
 file n = new File(n is string);
 args = list _argv;
@@ -218,7 +221,6 @@ else
                 ) as ~String[][]);
     done;
 fi;
-
 
         
 System#exit(0);

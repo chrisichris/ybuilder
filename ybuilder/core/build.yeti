@@ -811,6 +811,15 @@ runCmds config args =
     else
         println (_evaluate config args)
     fi;
+
+    //print time
+    pr = System#getProperty("ybuilder.starttime");
+    if defined? pr then
+        ct = System#currentTimeMillis();
+        totalTime = (ct - (number pr)) / 1000;
+        println "\ntotal build-time: \(totalTime) s";
+    fi;
+
     System#exit(0));
 
 run config = 
