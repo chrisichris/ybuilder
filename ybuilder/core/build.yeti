@@ -469,8 +469,7 @@ readProperties propsFile =
 buildDependenciesConfig = {
     ybuilder = "lib/ybuilder/",
     ybuilderLibsManaged = "lib/ybuilder/extlib_managed/",
-    //ybuilderLibsManaged = 
-    //    (load ybuilder.core.build).ybuilderLibsManagedDir;
+    ybuilderProjectClasses = "lib/ybuilder/project"
 };
 
 retrieveBuildDependencies () =
