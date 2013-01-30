@@ -19,6 +19,7 @@ config = config with (registerBaseTargets config);
 
 ybuilderSrcDir = "ybuilder/";
 
+//adjust the compile target
 config.baseTargets.compileYeti.fn := do p:
     load ybuilder.core.projectbase;
     helpers.yeticTask 
@@ -70,17 +71,18 @@ done;
                 // p
     // done;
     
-jarFile = "ybuilder.jar";
+jarFile = "ybuilder-lib-\(ybuilderVersion).jar";
 
     
-_ = target config "custom" "jary" 
+jary = target config "custom" "jary" 
     [Depends config.livecycleTargets.preparePackage,
     ShortName()] 
     do p:
     jars = ["ant-1.8.2.jar",
             "ant-launcher-1.8.2.jar",
             "maven-ant-tasks-2.1.3.jar","yeti.jar"];
-    
+   
+    //jar the lib
     antTask 
         "jar" 
         ["jarfile":jarFile,
@@ -108,9 +110,53 @@ _ = target config "custom" "jary"
                    "value":"ybuilder.core.main"] 
                    []]]) 
             p;
+
+    //jar the launcher
+    antTask "delete" ["dir":"target/launchclasses"] [] p;
+    
+    antTask "mkdir" ["dir":"target/launchclasses"] [] p;
+    
+    antTask "copy" ["todir":"target/launchclasses"] [
+        el "fileset" ["dir":config.dir.targetClasses] [
+            el "include" ["name":"ybuilder/core/Launcher.class"] []]] p;
+    
+    antTask 
+        "jar" 
+        ["jarfile":"ybuilder.jar",
+         "basedir":"target/launchclasses", 
+         "defaultexcludes":"no"] 
+        [el "manifest" [:]
+                [el "attribute" 
+                    ["name":"Implementation-Vendor", 
+                    "value":config.organization] 
+                    [],
+                el "attribute" 
+                   ["name":"Implementation-Title", 
+                    "value":"\(config.groupId)-\(config.artifactId)"] 
+                   [],
+                el "attribute" 
+                   ["name":"Implementation-Version", "value":config.version] 
+                   [],
+                el "attribute" 
+                   ["name":"Main-Class", 
+                   "value":"ybuilder.core.Launcher"] 
+                   []]] 
+            p;
     helpers.mvnInstallOrDeploy config jarFile p;            
 done;
-            
+
+_ = target config "custom" "installjar" 
+    [Depends jary,
+    ShortName()] 
+    do p:
+        import java.lang.System;
+        homeDir = System#getProperty("user.home")^"/.ybuilder/lib";
+        antTask "copy" ["todir":homeDir,
+                        "file":jarFile,
+                        "overwrite":"true"] [] p;
+    done;
+
+
 /*
 dependency "junit" "junit" "3.8.2" [TestScope()];
 dependency "org.apache.commons" "commons-lang3" "3.0.1" [];
