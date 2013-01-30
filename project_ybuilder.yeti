@@ -40,7 +40,11 @@ _ = target config "custom" "ybuilderinit"
     
     antTask "copy" ["todir":config.dir.src ^ "ybuilder"] [
         el "fileset" ["dir":ybuilderSrcDir] [
-            el "include" ["name":"core/*.java"] []]] p;
+            el "include" ["name":"core/*.java"] []],
+        el "filterchain" [:] [
+            el "replacetokens" [:] [
+                el "token" ["key":"VERSION", "value":ybuilderVersion] []]]]
+        p;
 
     antTask "copy" ["todir":config.dir.src ^ "ybuilder"] [
         el "fileset" ["dir":ybuilderSrcDir] [

@@ -21,7 +21,7 @@ import java.net.*;
 
 public class Launcher {
 
-	public static final String VERSION = "0.5";
+	public static final String VERSION = "@VERSION@";
 	
 	public static final String JAR_NAME = "ybuilder-lib-"+VERSION+".jar";
 	
@@ -65,8 +65,10 @@ public class Launcher {
 
 	public static void main(String[] args) throws Exception {
 		//check -version
-		if (args != null && args.length > 0 && "-version".equals(args[0]))
+		if (args != null && args.length > 0 && "-version".equals(args[0])) {
 			System.out.println(VERSION);
+			return;
+		};
 		
 		//check wheter we have the home dir
 		if(!HOME_DIR.exists())
