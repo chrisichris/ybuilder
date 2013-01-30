@@ -1,5 +1,6 @@
 lib/managed
 lib/ybuilder/extlib_managed
+lib/ybuilder/project
 /src
 /resources
 /etprojects
