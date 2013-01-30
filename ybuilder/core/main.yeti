@@ -221,7 +221,8 @@ else
         //clean/create the target dir    
         antTask "delete" ["dir":projectClassesDir] [] project;
         antTask "mkdir" ["dir":projectClassesDir] [] project;
-        
+       
+        println "[yetic] Compiling project.yeti";
         //create classLoader with libs and compile project.yeti
         antFiles = listFiles "."
             [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
@@ -231,8 +232,9 @@ else
             m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
                           #getMethod("main",array [classOf java.lang.String[]]);
             pars = ["-d",projectClassesDir,"project.yeti"];
-            m#invoke((), (array [pars as ~String[]]) as ~String[][]);
+            _ = m#invoke((), (array [pars as ~String[]]) as ~String[][]);
         done;
+        println "-----------------";
     fi;
     
     //now we have the compiled project.class we run it now
