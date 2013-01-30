@@ -21,7 +21,7 @@ import java.net.*;
 
 public class Launcher {
 
-	public static final String VERSION = "0.6";
+	public static final String VERSION = "0.5";
 	
 	public static final String JAR_NAME = "ybuilder-lib-"+VERSION+".jar";
 	
@@ -42,6 +42,7 @@ public class Launcher {
     	FileOutputStream fout = null;
     	try
     	{
+			System.out.println("Downloading "+JAR_NAME+" to "+target); 
     		in = new BufferedInputStream(new URL(sourceUrl).openStream());
     		fout = new FileOutputStream(target);
 
@@ -50,7 +51,7 @@ public class Launcher {
     		while ((count = in.read(data, 0, 1024)) != -1)
     		{
     			fout.write(data, 0, count);
-				System.out.println(".");
+				System.out.print(".");
     		}
     	}
     	finally
@@ -65,7 +66,7 @@ public class Launcher {
 	public static void main(String[] args) throws Exception {
 		//check -version
 		if (args != null && args.length > 0 && "-version".equals(args[0]))
-			System.out.println("Ybuilder launcher version "+VERSION);
+			System.out.println(VERSION);
 		
 		//check wheter we have the home dir
 		if(!HOME_DIR.exists())
@@ -77,7 +78,7 @@ public class Launcher {
 				saveUrl(JAR_FILE,JAR_URL);
 			}catch(Exception ex) {
 				System.out.println(
-					"Could not retrieve ybuilder.jar at:"+JAR_URL);
+					"\n\nERRROR: Could not retrieve ybuilder.jar at:"+JAR_URL);
 				System.out.println("Reason: "+ex);
 				System.exit(-1);
 			}
