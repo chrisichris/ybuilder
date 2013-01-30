@@ -21,6 +21,7 @@ import java.net.*;
 
 public class Launcher {
 
+
 	public static final String VERSION = "@VERSION@";
 	
 	public static final String JAR_NAME = "ybuilder-lib-"+VERSION+".jar";
@@ -31,9 +32,8 @@ public class Launcher {
 	public static final File JAR_FILE =
 		new File(HOME_DIR, JAR_NAME);
 	
-	public static final String JAR_URL =
- 		"http://chrisichris.github.com/chrisis-maven-repo/ybuilder/"
-		+ JAR_NAME;
+	public static final String GITHUB_REPO =
+ 		"http://chrisichris.github.com/chrisis-maven-repo/ybuilder/";
 
 	private static void saveUrl(File target, String sourceUrl) 
 			throws MalformedURLException, IOException
@@ -74,13 +74,33 @@ public class Launcher {
 		if(!HOME_DIR.exists())
 			HOME_DIR.mkdirs();
 		
+		//check other download url
+		final String YBUILDER_URL_CMD = "-ybuilder_url:";
+		boolean download = !JAR_FILE.exists();
+		String downloadUrl = GITHUB_REPO;
+
+		if(args != null && args.length > 0 && args[0] != null
+				&& args[0].startsWith(YBUILDER_URL_CMD)) {
+			download = true;
+			downloadUrl = 
+				args[0].substring(YBUILDER_URL_CMD.length(),
+								 args[0].length());
+			if(downloadUrl.length() == 0)
+				downloadUrl = GITHUB_REPO;
+
+			String[] newArgs = new String[args.length -1];
+			System.arraycopy(args,1,newArgs, 0,args.length -1);
+			args = newArgs;
+		}
+					
 		//check wheter we have the jar
-		if(!JAR_FILE.exists()) {
+		if(download) {
+			String jarUrl = downloadUrl + JAR_NAME;
 			try {
-				saveUrl(JAR_FILE,JAR_URL);
+				saveUrl(JAR_FILE,jarUrl);
 			}catch(Exception ex) {
 				System.out.println(
-					"\n\nERRROR: Could not retrieve ybuilder.jar at:"+JAR_URL);
+					"\n\nERRROR: Could not retrieve ybuilder.jar at:"+jarUrl);
 				System.out.println("Reason: "+ex);
 				System.exit(-1);
 			}
