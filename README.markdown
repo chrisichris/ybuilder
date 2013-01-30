@@ -18,8 +18,8 @@ and maven based dependency- and classpath-management.
 
 There is no real installation. Just download the `ybuilder.jar` from the
 downloads section at github/ybuilder
- 
-<https://github.com/chrisichris/ybuilder/downloads> 
+
+<http://chrisichris.github.com/chrisis-maven-repo/ybuilder/ybuilder.jar>
 
 and copy it to the root-directory of your project. 
 
