@@ -8,6 +8,7 @@ target
 ybuilder/extlib_managed
 ybuilder*.jar
 pom.xml
+copylib.bat
 *.swp
 *.swo
 *~
