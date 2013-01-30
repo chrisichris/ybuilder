@@ -31,7 +31,7 @@ load ybuilder.core.build;
 newFromTemplate projectDir nameOpt=
    (project = createProject();
     println "--------------------------\nybuilder project template download\n";
-    println "installation happens in current directory";
+    println "installation happens in [\(projectDir)] directory";
 
     name = case nameOpt of
     None _: 
@@ -73,7 +73,7 @@ newFromTemplate projectDir nameOpt=
     import java.util.Properties;
 
     tempDir = Files#createTempDirectory(
-                "ybuilder_templateproject/"^projectDir, [])#toFile();
+                "ybuilder_templateproject", [])#toFile();
     tempDir#deleteOnExit();
     
     println "Cloning \(url) to \(tempDir) ...";
