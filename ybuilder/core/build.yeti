@@ -80,7 +80,7 @@ class AntBuilderLocator extends Locator
     String getSystemId() "",
 end;
 
-ybuilderVersion = "0.5";
+ybuilderVersion = "0.6";
 
 
 createBuildConfig () = {
