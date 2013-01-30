@@ -33,7 +33,7 @@ public class Launcher {
 		new File(HOME_DIR, JAR_NAME);
 	
 	public static final String GITHUB_REPO =
- 		"http://chrisichris.github.com/chrisis-maven-repo/ybuilder/";
+ 		"http://chrisichris.github.com/chrisis-maven-repo/ybuilder/lib/";
 
 	private static void saveUrl(File target, String sourceUrl) 
 			throws MalformedURLException, IOException
@@ -42,17 +42,23 @@ public class Launcher {
     	FileOutputStream fout = null;
     	try
     	{
-			System.out.println("Downloading "+JAR_NAME+" to "+target); 
+			System.out.print("Downloading "+JAR_NAME+" to "+target+" ..."); 
     		in = new BufferedInputStream(new URL(sourceUrl).openStream());
     		fout = new FileOutputStream(target);
 
     		byte data[] = new byte[1024];
     		int count;
+			int loadCount = 0;
     		while ((count = in.read(data, 0, 1024)) != -1)
     		{
     			fout.write(data, 0, count);
-				System.out.print(".");
+				loadCount = loadCount + count;
+				if(loadCount > (20 * 1024)) {
+					System.out.print(".");
+					loadCount = 0;
+				}
     		}
+			System.out.println("\n");
     	}
     	finally
     	{
@@ -100,7 +106,7 @@ public class Launcher {
 				saveUrl(JAR_FILE,jarUrl);
 			}catch(Exception ex) {
 				System.out.println(
-					"\n\nERRROR: Could not retrieve ybuilder.jar at:"+jarUrl);
+					"\n\n\nERRROR: Could not retrieve ybuilder.jar at:"+jarUrl);
 				System.out.println("Reason: "+ex);
 				System.exit(-1);
 			}

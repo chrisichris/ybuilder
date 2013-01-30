@@ -756,7 +756,7 @@ _evaluate config argv =
             try 
                for nargs do ps:
 
-                    ns = list ps.names;
+                    ns = (reverse . list) ps.names;
                     var props = [];
                     n = if (head ns) == "-x" then
                             if not empty? (tail ns) then
