@@ -423,6 +423,15 @@ file name =
 
 assert text cond = if not cond then failWith text else () fi;
 
+millisSinceStart () =
+    (pr = System#getProperty("ybuilder.starttime");
+    if defined? pr then
+        System#currentTimeMillis() - (number pr);
+    else
+        -1000
+    fi);
+
+
 readProperties propsFile =        
    (import java.util:Properties,
                     LinkedHashSet,
@@ -812,12 +821,7 @@ runCmds config args =
     fi;
 
     //print time
-    pr = System#getProperty("ybuilder.starttime");
-    if defined? pr then
-        ct = System#currentTimeMillis();
-        totalTime = (ct - (number pr)) / 1000;
-        println "\ntotal build-time: \(totalTime) s";
-    fi;
+    println "\ntotal build-time: \((millisSinceStart ()) / 1000) s";
 
     System#exit(0));
 
@@ -856,6 +860,7 @@ run config =
     antPathElements,
     //antPathById,
     file,
+    millisSinceStart,
 
     buildDependenciesConfig,
     retrieveBuildDependencies, 

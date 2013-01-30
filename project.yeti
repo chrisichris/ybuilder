@@ -23,6 +23,8 @@ et = load ybuilder.core.extensiontest;
 import junit.framework.TestCase;
 import java.lang.Thread;
 
+println "millis since start \((millisSinceStart ()) / 1000)";
+
 ybuilderDir = "ybuilder/";
 
 config = baseConfig();
