@@ -16,6 +16,7 @@
 
 load ybuilder.core.build;
 load ybuilder.core.base;
+load ybuilder.core.vertxbase;
 
 et = load ybuilder.core.extensiontest;
 
@@ -38,10 +39,14 @@ config = createBaseConfig config
     dependency "javax.servlet" "servlet-api" "2.4" [ProvidedScope()],
     ];    
 
-config = config with registerBaseTargets config;
 
 config = config with et.createExtensionTestConfig config;
+config = config with createVertxConfig false config;
+
+
+config = config with registerBaseTargets config;
 config = config with et.registerExtensionTestTargets config;
+config = config with registerVertxTargets config;
 
 project = createProject(); 
 
