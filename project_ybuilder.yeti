@@ -21,16 +21,6 @@ config = config with (registerBaseTargets config);
 ybuilderSrcDir = "ybuilder/";
 
 //adjust the compile target
-config.baseTargets.compileYeti.fn := do p:
-    load ybuilder.core.projectbase;
-    helpers.yeticTask 
-        config.dir.targetClasses 
-        "." 
-        [Include "ybuilder/core/*.yeti"] 
-        config.yeticSourceReaderCode
-        (pathes.compile config) 
-        p;
-done;
 
 _ = target config "custom" "ybuilderinit" 
     [Before config.livecycleTargets.initialize] do p:

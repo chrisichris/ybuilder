@@ -334,7 +334,8 @@ yetidocTask config targetDir files project=
     yetiMainTask args (testPath config) true config.dir.src project);
     
 yeticTask targetDir srcDir includes sourceReaderCode path project =
-   (files = listFiles srcDir includes;
+   (files = listFiles srcDir includes 
+        |>map (srcDir^);
     println String#format(
         "%1$11s Compiling \(length files) files to \(targetDir)", 
         array ["[yetic]"]);
