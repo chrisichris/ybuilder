@@ -488,53 +488,57 @@ _mvnInstallOrDeploy config fileName project =
 //lifecycle targets
 
 registerProjectBaseTargets config = 
-(continues = 
-    target config "util" "continues" 
-       [Description "Continuesly runs the target given as argument"]
+(continuous = 
+    target config "util" "continuous" 
+       [Description "Continouesly runs the target given as argument",
+       ShortName()]
        do p:
             if empty? p.args then
                 failWith 
                     "No command to run for continue please pvoide one as arg";
             fi;
             cmd = head (list p.args);
+            args = tail (list p.args);
+
             if not cmd in config.targets then
                 failWith "[\(cmd)] is no target";
             fi;
+
+            scf = if "dir" in p.properties then
+                [file p.properties["dir"]];
+            else
+                map file config.continuesDirs;
+            fi;
             
             tar = config.targets[cmd];
-            args = tail (list p.args);
             props = p.properties;
             
             println "---\nStarting continues target [\(cmd) \(args)]\n";
 
-            fsc dirs time =
-               (var ntime = time;
-                for (dirs is list<~File>) do dir:
-                    if dir#exists() then
-                        ntime := max ntime (dir#lastModified());
-                        if (dir is ~File)#isDirectory() then
-                            ntime := fsc (list(dir#listFiles())) 
-                                         ntime;
-                        fi
-                    fi
-                done;
-                ntime);
+            import java.nio.file:FileSystems,
+                                StandardWatchEventKinds;
 
-            var oldTime = System#currentTimeMillis();
-            scf = map file config.continuesDirs;
-
-            true loop 
-               (nt = fsc scf oldTime;
-                if nt > oldTime then
-                    println ("---\nSource changed running [\(cmd) \(args)],"
-                            ^" (\(nt),\(oldTime))\n");
-                    oldTime := nt;
-                    
-                    
-                    runTarget tar [Args args,
-                                 Properties props]
+            fileWatcher = FileSystems#getDefault()#newWatchService();
+            
+            registerDirs file is ~File -> () = 
+                if file#isDirectory() then
+                    _ = file#toPath()#register(fileWatcher, 
+                                     [StandardWatchEventKinds#ENTRY_CREATE,
+                                      StandardWatchEventKinds#ENTRY_DELETE,
+                                      StandardWatchEventKinds#ENTRY_MODIFY]);
+                   for (array file#listFiles()) registerDirs;
                 fi;
-                Thread#sleep(1000));
+            for scf registerDirs;
+            true loop 
+                (//wait blocking for next file event
+                _ = fileWatcher#take();
+                //clear off other file events in the queue
+                (nullptr? fileWatcher#poll()) loop ();
+                
+                time = System#currentTimeMillis();
+                _ = runTarget tar [Args args, Properties props];
+                println 
+                  "build-time: \((System#currentTimeMillis() - time) / 1000)");
        done;
 
 
@@ -789,7 +793,7 @@ initBuildPathes =
 
 
 for [clean, retrieveLibs, compile, test, jar, war, 
-     doc, pom, cleanLibs, cleanAll, continues]
+     doc, pom, cleanLibs, cleanAll, continuous]
     (push config.targetsInHelp);
 
 (registerBuildTargets config) with {
@@ -824,6 +828,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jar,
         jarOnly,
         pom,
+        continuous,
     },
 
 
