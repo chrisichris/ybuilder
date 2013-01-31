@@ -1,6 +1,12 @@
 Ybuilder - a simple build tool for Yeti the funtional language for JVM
 ==========================================================
 
+*Important Note: Currently Jan 31st 2013 ybuilder is in reworking and 
+has some serious bugs which make this version unusable. It is here just for
+testing. This should be fixed in a few days
+
+Please use in the mean-time olderversions*
+
 Ybuilder is a yeti [yeti](http://mth.github.com/yeti/) wrapper around ant 
 combined with the dependency management of maven. 
 
@@ -14,30 +20,87 @@ On top of the ant-wrapper there is standard and cutomizable build-script
 livecycle-targets (clean, compile, test etc), directories, 
 and maven based dependency- and classpath-management. 
 
-## Download and Installation
+## Installation and Updates / Download
 
-There is no real installation. Just download the `ybuilder.jar` from the
-downloads section at github/ybuilder
+Ybuilder's functinonality is contained in a single all-in one jar. You can
+either download that directly and copy it in each project or use the launcher.
+
+### Pre-requisites
+
+For both alterantives Java7 is needed, preferable on the path.
+
+### Direct Usage of the jar
+
+Everything needed to run ybuilder is in the executable jar 
+`ybuilder-lib-0.6.jar`.
+
+Just download it from:
+
+<http://chrisichris.github.com/chrisis-maven-repo/ybuilder/lib/ybuilder-lib-0.6.jar>
+
+copy it to your project directory and rename it to `ybuilder.jar`
+
+Now you can launch it with:
+
+	>java -jar ybuilder.jar
+
+The advantage of this approache is that you will always use the same version
+of ybuilder for this single project, which makes the build more stable.
+
+The disadvantage is that the `ybuilder-lib-0.6.jar` has a size of about 4MB and
+storing it with each project maybe too space consuming in your repo.
+
+### Installation using the launcher
+
+With the second alternative a launcher is used. The launcher is also an 
+executable jar called `ybuilder.jar` but it is only about 4KB big.
+
+The first time it is executed, the launcher downloads the 
+above `ybuilder-lib-0.6.jar` to the `userhome/.ybuilder/lib` directory and 
+than delegates every call to this jar.
+
+For each project of the same user the launcher uses the same 
+`ybuilder-lib-0.6.jar` and version.
+
+You can download the launcher from this link:
 
 <http://chrisichris.github.com/chrisis-maven-repo/ybuilder/ybuilder.jar>
 
-and copy it to the root-directory of your project. 
+Copy the launcher jar again to the root-directory of your project. 
 
-You can than run ybuilder with
+It can be run exactly like the lib jar with
  
-    java -jar ybuilder
+    >java -jar ybuilder.jar
+
+The advantage of the launcher is that it is much smaller than the lib if
+it is stored with your project and that one update updates all of the launchers.
+
+### Updating the ybuilder lib
+
+Because ybuilder is still in development you should quite regularly update.
+
+For the direct usage just replace the latest version of the jar with a new one.
+The latest version is always found at the download link above.
+
+To update the lib used with the launcher run the launcher with
+
+	>java -jar ybuilder.jar -ybuilder_url:
+
+Or if you want to update from a custom-url use
+
+	>java -jar ybuilder.jar -ybuilder_url:http://custom_url_with_ybuilder/lib
+	
+This will redownload the `ybuilder-lib-0.6.jar` to the `~/.ybuilder/lib`
+directory.
 
 ## Support
 
-Join the discussion mailing list at:
-
 <http://groups.google.com/group/yeti-lang>
  
-    
-
 ## Ybuilder basics
 
 ### Targets
+
 Every ybuilder project is - like an ant-project - made up of one or more 
 targets which can depend on each other. Each target represent a unit of work ie.
 init, compile etc. which is executed only once during a build. 
@@ -140,6 +203,15 @@ In a command-line shell execute the build script:
 	Hello World!
 	Hello Task!
 
+### Default Target
+
+A target which is run when no target is named on the command line can be set
+on config
+
+	config.defaultTarget = config.livecycleTargets.compile;
+
+If no default target is set. `Help` is executed.
+
 ### Using Ant Tasks
 
 Ybuilder provides integration for Ant tasks.
@@ -148,7 +220,21 @@ The module `yubilder.core.build` contains the function `antTask` which is used
 to define and execute an ant task very similar to what you would do in
 xml.
 
-It takes following arguments:
+Ybuilder tries to be as close to the xml-definitions of ant-tasks as 
+possible, so that the noumerous ant-examples can be entered more or less 
+one to one, with the same names and value of elements, attributes etc.
+
+Elements are represented by the `el elementname attributes sublements` 
+function. Where elementname is a string, attributes is as hash<string,string> and
+subelements is a list of other elements.
+
+To be as close as possible to ant-xml Ybuilder does not 
+instantiate/call the various task java-classes directly, 
+but rather drives the Ant-SAXHandler to generate the tasks.
+
+The antTask function is of the form: 
+`antTask taskname attributes subelements project` where
+
 - name: the xml-element name of the task
 - attributes: a hash<string,string> for the xml-attributes for the task (names
 	and values are exactly like in xml)
@@ -186,7 +272,10 @@ is expressed in yeti-code like this:
 				[el "include" ["name":"**/*.jar"][]]]]
 		project;
 
-The `project` struct is either gotten from the argument to the target function:
+The task is immidiately executed when the function is called.
+
+The `project` struct (last argument) is either gotten from 
+the argument to the target function:
 	
 	target config "group" "name" [] do project:
 		antTask "mkdir" ["dir":"temp"] [] project;
@@ -195,7 +284,8 @@ The `project` struct is either gotten from the argument to the target function:
 or it can be created directly in the config-script, in which case the
 ant-task is executed immidiately when the config-script is evaluated.
 
-	antTask "mkdir" ["dir":"temp"] [] (newProject());
+	antTask "mkdir" ["dir":"temp"] [] (createProject());
+
 
 ## Using the ybuilder.jar
 
@@ -225,6 +315,70 @@ To get a list of targets use help
 
 	java -jar ybuilder.jar help
 
+## Template support
+
+Ybuilder can generate files and directories from templates published on github
+or another git-repository.
+
+### Usage
+
+Template repsitories should reside on git-hub and end with `.ybtr`.
+
+To download such a template execute the `new` target from the parent-directory
+of the new project.
+
+	>java -jar ybuilder.jar new new_project_name chrisichris/basic
+
+Where`new_project_name` is the name of the subdirectory of the new project and
+and `chrisichris/basic` points to the github repository 
+`chrisichris/basic.ybtr`. 
+
+You will than be prompted for different properties. Enter them
+or leave the default values given in square brackets.
+
+After that ybuilder will create a new directory  
+and just copy the content of the repository to the new 
+directory.
+
+The properties entered are applied to replace tokens in the text-files of
+the template-repository when copying the text. This is done using
+the ant replace tokens filter 
+<http://ant.apache.org/manual/Types/filterchain.html#replacetokens>.
+
+### Creating your own Template repository
+
+Creating your own template-repository is easy. Just create a github
+project with a name ending with `.ybtr` and add all the neccessary
+direcotries and files
+
+If you want to apply properties as tokens add a `ybtemplate.properties` file.
+
+For example:
+
+	group_id = @name@
+	version = 0.1-alpha
+	description = some description
+
+The user is asked to enter for each property a value. The default value ist
+the value given in the `ybtemplate.properties` file. If you want to refer to 
+another a property before as the default value
+use `@propertyName@` in the value field.
+
+The property `name` is always present. It is the name given as directory
+to the `new` target.
+
+Each `@propertyName@` token in any of the text files of template is than 
+replaced with the value the user entered ie.
+
+If the template's project.yeti file is:
+
+	config = baseConfig();
+	confg.name := "@projectname@";
+
+and the user enters for projectname foo. Than the project.yeti created will be
+
+	config = baseConfig();
+	confg.name := "foo";
 
 ## Yeti projects
 
@@ -447,7 +601,7 @@ process you just make it depend on the `compile` livecycle.
 * doc
 
 
-##Building ybuilder from source
+## Building ybuilder from source
 
 The main sourcode is in `ybuilder/core` dir.
 
@@ -458,6 +612,11 @@ To build it use:
 or on Windows use the ybuilder.bat file
 
     ybuilder clean, jary
+
+if you want the resulting `ybulder-lib-0.6.jar`copied to user-home .ybuilder
+repostiory for the launcher use the `installjar` target instead of `jary`
+
+	ybuilder clean, installjar
  
  
     
