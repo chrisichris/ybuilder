@@ -81,22 +81,22 @@ public class Launcher {
 			HOME_DIR.mkdirs();
 		
 		//check other download url
-		final String YBUILDER_URL_CMD = "-ybuilder_url:";
+		final String YBUILDER_URL_CMD = "-update";
 		boolean download = !JAR_FILE.exists();
 		String downloadUrl = GITHUB_REPO;
 
-		if(args != null && args.length > 0 && args[0] != null
-				&& args[0].startsWith(YBUILDER_URL_CMD)) {
+		if(args != null && args.length > 0 && YBUILDER_URL_CMD.equals(args[0])) {
 			download = true;
-			downloadUrl = 
-				args[0].substring(YBUILDER_URL_CMD.length(),
-								 args[0].length());
-			if(downloadUrl.length() == 0)
-				downloadUrl = GITHUB_REPO;
-
+			if (args.length > 1) {
+				downloadUrl = args[1];
+				System.out.println("Downloading from: "+downloadUrl);
+			}
+					
 			String[] newArgs = new String[args.length -1];
 			System.arraycopy(args,1,newArgs, 0,args.length -1);
 			args = newArgs;
+
+			if(JAR_FILE.exists()) JAR_FILE.delete();
 		}
 					
 		//check wheter we have the jar

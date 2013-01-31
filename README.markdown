@@ -84,11 +84,11 @@ The latest version is always found at the download link above.
 
 To update the lib used with the launcher run the launcher with
 
-	>java -jar ybuilder.jar -ybuilder_url:
+	>java -jar ybuilder.jar -update
 
 Or if you want to update from a custom-url use
 
-	>java -jar ybuilder.jar -ybuilder_url:http://custom_url_with_ybuilder/lib
+	>java -jar ybuilder.jar -update http://custom_url_with_ybuilder/lib
 	
 This will redownload the `ybuilder-lib-0.6.jar` to the `~/.ybuilder/lib`
 directory.
