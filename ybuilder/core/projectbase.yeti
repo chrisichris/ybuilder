@@ -301,7 +301,7 @@ yetiMainTask args path fork dir project =
                 project;
     else
         urls = 
-            map do n: (file n)#toURL() done (listPath path);
+            map do n: (file n)#toURI()#toURL() done (listPath path);
         
         import java.lang.ClassLoader;
         import java.net.URLClassLoader;
