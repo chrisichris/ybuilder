@@ -363,8 +363,10 @@ yeticTask targetDir srcDir includes sourceReaderCode path project =
 """import yeti.lang.compiler.CompileException;
 ret = try
     eval = load yeti.lang.compiler.eval;
-    eval.compileYetiFiles [To '\(targetDir)'
-        , Warn do ex: println ('Warning: '^ex#getMessage()) done       
+    eval.compileYetiFiles [To '\(targetDir)',
+        Warn do ex: 
+             println ('Warning: '^(ex is ~CompileException)#getMessage()) 
+          done    
         \(sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
         [SourceDir '\(srcDir)']
         ['\(strJoin "','" files)'];
@@ -375,6 +377,7 @@ catch CompileException ex:
 yrt;
 ret 
 """;
+
 
         args = ["-e", code];
         yetiMainTask args path true "." project
@@ -405,7 +408,9 @@ runYetiTask sourceName args srcDirs path project =
 ret = try
     eval = load yeti.lang.compiler.eval;
     eval.compileYetiFiles
-        [Warn do ex: println ('Warning: '^ex#getMessage()) done]
+        [Warn do ex: 
+            println ('Warning: '^(ex is ~CompileException)#getMessage()) 
+        done]
         [Exec [\(strJoin "," args)],
         \(srcDirs |> map do s:"SourceDir '\(s)'" done |> strJoin ",")]
         ['sourceName'];
