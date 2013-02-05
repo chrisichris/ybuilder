@@ -279,11 +279,11 @@ exclusion groupId artifactId =
 
 
 //helper functions
-runJavaTask mainClassName args dir path project =
+runJavaTask mainClassName args path project =
     (antTask "java"
         ["classname":mainClassName,
          "fork":"true",
-         "dir":dir,
+         "dir":".",
          "failonerror":"true"]
         ((el "classpath" [:] (antPathElements path)
          :: (map do a: el "arg" ["value":a] [] done args)))
@@ -322,11 +322,6 @@ yetiMainTask args path fork dir project =
         ();
     fi;
 
-runYetiTask sourceName args dir path project =
-    (println String#format(
-        "%1$11s Running \(sourceName) at \(dir)", 
-        array ["[yeti]"]);
-    yetiMainTask (sourceName :: args) path true dir project);
     
      
 yetidocTask config targetDir files project=     
@@ -369,6 +364,7 @@ yeticTask targetDir srcDir includes sourceReaderCode path project =
 ret = try
     eval = load yeti.lang.compiler.eval;
     eval.compileYetiFiles [To '\(targetDir)'
+        , Warn do ex: println ('Warning: '^ex#getMessage()) done       
         \(sourceReaderCode |> maybe "]" do c: ", \(c)]" done)
         [SourceDir '\(srcDir)']
         ['\(strJoin "','" files)'];
@@ -384,7 +380,44 @@ ret
         yetiMainTask args path true "." project
     fi);    
 
-           
+runYetiTask sourceName args srcDirs path project =
+    (println String#format(
+        "%1$11s Running \(sourceName) \(args)", 
+        array ["[yeti]"]);
+    if "verbose" in project.properties then
+        println String#format(
+            "%1$11s source [params]: \(sourceName) \(args)", 
+            array ["[yeti]"]);
+        println String#format(
+            "%1$11s source dirs: \(srcDirs)", 
+            array ["[yeti]"]);
+        println String#format(
+            "%1$11s path:", 
+            array ["[yeti]"]);
+        for (listPath path) do f:
+            println String#format(
+                "%1$11s \(f)", 
+                array [""]);
+        done;
+    fi;
+    code =
+"""import yeti.lang.compiler.CompileException;
+ret = try
+    eval = load yeti.lang.compiler.eval;
+    eval.compileYetiFiles
+        [Warn do ex: println ('Warning: '^ex#getMessage()) done]
+        [Exec [\(strJoin "," args)],
+        \(srcDirs |> map do s:"SourceDir '\(s)'" done |> strJoin ",")]
+        ['sourceName'];
+        System#exit(0);
+catch CompileException ex: 
+    println ('Compile Error: \n' ^ ex#getMessage());
+    System#exit(1)
+yrt;
+ret 
+""";
+
+   yetiMainTask ["-e", code] path true "." project);
 
 _mvnDependencyTags artifactDependencies =     
     map do dep: 

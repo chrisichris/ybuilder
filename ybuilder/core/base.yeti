@@ -58,9 +58,9 @@ createBaseConfig config dependencies =
 
     runConfig = {
         var mainModule = "main",
-        var dir = ".",
         var args = [] is list<string>,
-        var pathfn = pathes.compile, 
+        var yetiSrcDirs = [config.dir.src,config.dir.test],
+        var pathfn = pathes.test, 
     },
 
     //java targets
@@ -219,9 +219,9 @@ registerBaseTargets config = (
                 args = tail p.args}
             fi;
         helpers.runYetiTask 
-            (config.dir.src ^ name ^ ".yeti") 
+            name
             args 
-            config.runConfig.dir
+            config.runConfig.yetiSrcDirs
             (config.runConfig.pathfn config)
             p
     done;
@@ -240,7 +240,6 @@ registerBaseTargets config = (
         helpers.runJavaTask 
             name 
             args 
-            config.runConfig.dir
             (config.runConfig.pathfn config)
             p
     done;
