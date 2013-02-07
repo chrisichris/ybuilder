@@ -242,10 +242,15 @@ else
             ]];
     
     _withBuildClassLoader "" antFiles do ctxtLoader:
+        import java.lang.reflect:InvocationTargetException;
         m = ctxtLoader#loadClass("project")
                     #getMethod("main",array [classOf java.lang.String[]]);
-        m#invoke((),
+        try
+            m#invoke((),
                 (array [(array args) as ~String[]]) as ~String[][]);
+        catch InvocationTargetException ex:
+            throw ex#getCause();
+        yrt
     done;    
     
 fi;
