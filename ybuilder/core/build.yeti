@@ -410,7 +410,7 @@ listDirs dir patts	=
     antTask "dirset" ["dir":dir, "id" : name] (antInExcludeElements patts)
         project;
     r = ((project.antProject#getReference(name)) unsafely_as ~DirSet)
-        #getDirectoryScanner()#getIncludedFiles();
+        #getDirectoryScanner()#getIncludedDirectories();
     map (strReplace File#separator "/") r);
     
     
