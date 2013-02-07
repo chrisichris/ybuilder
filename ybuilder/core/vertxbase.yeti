@@ -62,17 +62,17 @@ vertxTask config args p =
    fi;
 
    if defined? config.vertxHome then
-       sysProps.["java.util.logging.config.file"] 
+       sysProps["java.util.logging.config.file"] 
             := config.vertxHome^"/conf/logging.properties";
        push cpP (Location (config.vertxHome^"/conf"));
    fi;
    if defined? jythonHome then
        push cpP (Location (jythonHome^"/jython.jar"));
-       sysProps.["jython.home"] := jythonHome;
+       sysProps["jython.home"] := jythonHome;
    fi;
    if defined? jrubyHome then
        push cpP (Location (jrubyHome^"/lib/jruby.jar"));
-       sysProps.["jruby.home"] := jrubyHome;
+       sysProps["jruby.home"] := jrubyHome;
    fi;
   
     

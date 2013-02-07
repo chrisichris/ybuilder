@@ -57,13 +57,13 @@ newFromTemplate projectDir nameOpt=
         if empty? strs then
             failWith "please provide a full name for the repo";
         else
-            np = if not strEnds? strs.[2] ".ybtr" then
-                    strs.[2]^".ybtr";
+            np = if not strEnds? strs[2] ".ybtr" then
+                    strs[2]^".ybtr";
                 else 
-                    strs.[2];
+                    strs[2];
                 fi;
-            {url = "git://github.com/\(strs.[1])/\(np).git",
-             dir = strs.[4]}
+            {url = "git://github.com/\(strs[1])/\(np).git",
+             dir = strs[4]}
         fi
     fi;
 
@@ -114,15 +114,15 @@ newFromTemplate projectDir nameOpt=
     
     readProp k =
         if (k is string) in resProps then
-            resProps.[k];
+            resProps[k];
         else    
-            vue = values.[k];
+            vue = values[k];
             v = 
                (va = like '^@([^@]+)@$' vue ();
                 if empty? va then
                     vue
                 else
-                    readProp va.[1]
+                    readProp va[1]
                 fi);
                 
             println "\(k) [\(v)]:";
@@ -133,7 +133,7 @@ newFromTemplate projectDir nameOpt=
                     rv 
                  fi;
             
-            resProps.[k] := ov;
+            resProps[k] := ov;
             ov;
         fi;
     for names (\() . readProp);    

@@ -111,11 +111,6 @@ if not (file "project.yeti")#exists() then
         
         project = createProject ();
      
-        deps = [{dep = array ["","org.eclipse.jgit", 
-                                "org.eclipse.jgit","1.3.0.201202151440-r"],
-                 exc = []},
-                {dep = array ["","org.antlr", "stringtemplate","4.0.2"],
-                 exc = []}];
         maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
      
         antTask (maven "dependencies") 
@@ -149,18 +144,17 @@ if not (file "project.yeti")#exists() then
                     ) as ~String[][]);
         done;
 
-        _lib_builder = "ybuilder";
-
         //run the newproject file
         if (new File(projectDir^"/newproject.yeti"))#exists() then
             antFiles = 
                 ((load ybuilder.core.build).listFiles) projectDir
                     [Include "\(buildDependenciesConfig.ybuilder)extlib/*.jar", 
-                     Include "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
+                     Include 
+                        "\(buildDependenciesConfig.ybuilderLibsManaged)*.jar"];
 
             _withBuildClassLoader "" antFiles do ctxtLoader:
                 m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
-                              #getMethod("main",array [classOf java.lang.String[]]);
+                        #getMethod("main",array [classOf java.lang.String[]]);
                 _ = m#invoke((),
                         (array 
                             [(array (projectDir^"newproject.yeti" :: p.args)) 
@@ -230,7 +224,7 @@ else
 
         _withBuildClassLoader "" antFiles do ctxtLoader:
             m = ctxtLoader#loadClass("yeti.lang.compiler.yeti")
-                          #getMethod("main",array [classOf java.lang.String[]]);
+                        #getMethod("main",array [classOf java.lang.String[]]);
             pars = ["-d",projectClassesDir,"project.yeti"];
             _ = m#invoke((), (array [pars as ~String[]]) as ~String[][]);
         done;
