@@ -45,7 +45,8 @@ createVertxConfig useVertxHomeOnSystemPath config =
         var useVertxHomeOnSystemPath = useVertxHomeOnSystemPath,
         var vertxHome = vertxHome,
         var vertxModsDir = "mods/",
-        var vertxModuleName = "\(config.groupId).\(config.artifactId)-v0", 
+        var vertxModuleName = "main",
+        var vertxTestModuleName = "test",
         var vertxFullModuleName = 
             "\(config.groupId).\(config.artifactId)-v\(config.version)", 
     });
@@ -122,7 +123,8 @@ registerVertxTargets config =
             [Depends config.livecycleTargets.compile,
              Depends config.projectBaseTargets.jarOnly,
              Before config.livecycleTargets.testCompile,
-             Description "Makes jar for the vertxModule and copies it in"]
+             Description 
+                "Makes jar or classes in src  copies it to vertx module"]
         do p:
             targetDir = config.vertxModsDir^config.vertxModuleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
@@ -176,7 +178,7 @@ registerVertxTargets config =
                 or the one given as name"]
         do p:
             mn = if empty? p.args then
-                "text-v0"
+                config.vertxTestModuleName
             else
                 head p.args
             fi;
