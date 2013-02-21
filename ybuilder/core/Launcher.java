@@ -34,7 +34,7 @@ public class Launcher {
 		new File(HOME_DIR, JAR_NAME);
 
 
-	public statid final File PROJECT_CLASS_FILE =
+	public static final File PROJECT_CLASS_FILE =
 		new File("lib/ybuilder/project/project.class");
 	
 	public static final String GITHUB_REPO =
@@ -122,7 +122,7 @@ public class Launcher {
 		if(PROJECT_CLASS_FILE.exists() && 
 				PROJECT_CLASS_FILE.lastModified() < JAR_FILE.lastModified()) {
 			PROJECT_CLASS_FILE.delete();
-		fi;
+		};
 
 		//load the jar in a classlaoder
 		ClassLoader cl = 
