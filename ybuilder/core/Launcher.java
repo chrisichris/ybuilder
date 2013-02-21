@@ -18,6 +18,7 @@ package ybuilder.core;
 
 import java.io.*;
 import java.net.*;
+import java.lang.reflect.InvocationTargetException;
 
 public class Launcher {
 
@@ -31,6 +32,10 @@ public class Launcher {
 	
 	public static final File JAR_FILE =
 		new File(HOME_DIR, JAR_NAME);
+
+
+	public statid final File PROJECT_CLASS_FILE =
+		new File("lib/ybuilder/project/project.class");
 	
 	public static final String GITHUB_REPO =
  		"http://chrisichris.github.com/chrisis-maven-repo/ybuilder/lib/";
@@ -69,7 +74,7 @@ public class Launcher {
     	}
     }
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Throwable {
 		//check -version
 		if (args != null && args.length > 0 && "-version".equals(args[0])) {
 			System.out.println(VERSION);
@@ -112,6 +117,13 @@ public class Launcher {
 			}
 		}
 
+		//check wheter the ybuilder jar is newer than the project
+		//in that case recompile it
+		if(PROJECT_CLASS_FILE.exists() && 
+				PROJECT_CLASS_FILE.lastModified() < JAR_FILE.lastModified()) {
+			PROJECT_CLASS_FILE.delete();
+		fi;
+
 		//load the jar in a classlaoder
 		ClassLoader cl = 
 			new URLClassLoader(
@@ -121,9 +133,13 @@ public class Launcher {
 		Thread.currentThread().setContextClassLoader(cl);
 		
 		//and start the main application
-		cl.loadClass("ybuilder.core.main")
+		try{
+			cl.loadClass("ybuilder.core.main")
 				.getMethod("main", new Class[]{String[].class})
 				.invoke(null, new Object[]{args});
+		}catch(InvocationTargetException ex) {
+			throw ex.getCause();
+		}
 
 	}
 
