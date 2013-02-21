@@ -112,10 +112,12 @@ registerVertxTargets config =
         do p:
             targetDir = config.vertxModsDir^config.vertxModuleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
-            antTask "copy" ["todir":targetDir^"lib",
+            if (file (config.dir.target ^config.artifactId))#exists() then
+                antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
                     [antFilesetElement config.dir.target 
                         [Include "\(config.artifactId).jar"]] p;
+            fi;
         done;    
 
     vertxZipModule = 
