@@ -337,30 +337,15 @@ yeticTask targetDir srcDirI includes sourceReaderCode path project =
             fi;
    files = listFiles srcDir includes 
         |>map (srcDir^);
-    println String#format(
-        "%1$11s Compiling \(length files) files to \(targetDir)", 
-        array ["[yetic]"]);
-    if "verbose" in project.properties then
-        println String#format(
-            "%1$11s files", 
-            array ["[yetic]"]);
-        for files do f:
-            println String#format(
-                "%1$11s \(f)", 
-                array [""]);
-        done;
-        println String#format(
-            "%1$11s sourceDir: \(srcDir)", 
-            array ["[yetic]"]);
-        println String#format(
-            "%1$11s path", 
-            array ["[yetic]"]);
-        for (listPath path) do f:
-            println String#format(
-                "%1$11s \(f)", 
-                array [""]);
-        done;
-    fi;
+   
+   logInfo project "yetic" "Compiling \(length files) files to \(targetDir)"; 
+   if "verbose" in project.properties then
+        logInfo project "yetic" "files";
+        for files (logInfo project "" . string);
+        logInfo project "yetic" "sourceDir: \(srcDir)";
+        logInfo project "yetic" "path";
+        for (listPath path) (logInfo project "" . string)
+   fi;
 
     //files = ["ybuilder/core/base.yeti"]; 
 
@@ -390,24 +375,12 @@ ret
     fi);    
 
 runYetiTask sourceName args srcDirs path project =
-    (println String#format(
-        "%1$11s Running \(sourceName) \(args)", 
-        array ["[yeti]"]);
+    (logInfo project "yeti" "Running \(sourceName) \(args)";
     if "verbose" in project.properties then
-        println String#format(
-            "%1$11s source [params]: \(sourceName) \(args)", 
-            array ["[yeti]"]);
-        println String#format(
-            "%1$11s source dirs: \(srcDirs)", 
-            array ["[yeti]"]);
-        println String#format(
-            "%1$11s path:", 
-            array ["[yeti]"]);
-        for (listPath path) do f:
-            println String#format(
-                "%1$11s \(f)", 
-                array [""]);
-        done;
+        logInfo project "yeti" "params: \(sourceName) \(args)"; 
+        logInfo project "yeti" "source dirs: \(srcDirs)";
+        logInfo project "yeti" "path";
+        for (listPath path) (logInfo project "" . string)
     fi;
     code =
 """import yeti.lang.compiler.CompileException;
@@ -557,7 +530,8 @@ registerProjectBaseTargets config =
             tar = config.targets[cmd];
             props = p.properties;
             
-            println "---\nStarting continues target [\(cmd) \(args)]\n";
+            logInfo p "continous" 
+                    "Starting continues target [\(cmd) \(args)]";
 
             import java.nio.file:FileSystems,
                                 StandardWatchEventKinds;
@@ -582,7 +556,7 @@ registerProjectBaseTargets config =
                 time = System#currentTimeMillis();
                 _ = executeTarget tar [Args args, Properties props] 
                     (createProject ());
-                println 
+                logInfo p "coninous"  
                   "build-time: \((System#currentTimeMillis() - time) / 1000)");
        done;
 
