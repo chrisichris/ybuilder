@@ -206,7 +206,7 @@ printSimilarTargets targets name =
     ts = filter do t: strStarts? t.name n done 
         (mapHash do k t: t done targets);
     if empty? ts then
-        println "" "There are no targets starting with [\(n)]";
+        println "There are no targets starting with [\(n)]";
     else
         println "Targets starting with [\(n)]:\n";
         for ts do t:
@@ -259,10 +259,10 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
             executeTarget t [] project;
         done;
         if "verbose" in project.properties then
-            println "--\(target.name)";
+            logInfo project "MAIN-TARGET" target.name;
         fi;
         try
-            //println "Exectuing target \(target.name)";
+            logVerbose project "target" "Exectuing target \(target.name)";
             target.fn project;
         finally
             project.args := oldArgs;
@@ -272,8 +272,6 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
 class YbuilderAntException(String message, Exception ca) extends RuntimeException(message,ca) 
 end;
         
-runTarget target opts =
-    executeTarget  target opts (createProject ());
 
 antfact antElementHandler antXmlContext elem =
     case (elem is xmlelement) of
@@ -803,20 +801,25 @@ _evaluate config argv =
                         else
                             (head ns)
                         fi;
-                    if n == "" then
+
+					proj = createProject();	
+                    
+					if n == "" then
                         () 
                     elif not n in config.targets then
-                        println "\n--target: [\(n)] is no target!\n";
+                        logError proj "no-target" "\(n) is no target";
                         printSimilarTargets config.targets n;
                         throw new YbuilderAntException("\(n) is no target",());
                     else
                         t = config.targets[n];
-                        println "--target: \(n)";
+                        logInfo proj "TARGET" "\(n) ...";
                         if not empty? ps.excludes then
-                            println "  -x \(ps.excludes)";
+                            logInfo proj "excluding" (string ps.excludes);
                         fi;
-                        runTarget t ([Args (tail ns), Properties ps.properties] 
-                                     ++ (map ExcludeByName ps.excludes));
+    					executeTarget t 
+									([Args (tail ns), Properties ps.properties] 
+                                     ++ (map ExcludeByName ps.excludes))
+									proj;
                     fi 
                 done;
                 "Build successful";
@@ -883,7 +886,6 @@ run config =
     
     target,
     doAfterTarget,
-    runTarget,
     executeTarget,
     createProject,
     el,
