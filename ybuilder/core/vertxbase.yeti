@@ -60,9 +60,8 @@ vertxTask config args p =
        println "           classpath: \(cpP)";
    fi;
 
-   antTask "java" ["classname":"org.vertx.java.deploy.impl.cli.Starter",
+   antTask "java" ["classname":"org.vertx.java.platform.impl.cli.Starter",
                    "fork":"true",
-                   "spawn":"true",
                    "failonerror":"true"]
                    ([el "classpath" [:] (antPathElements (cpP))]
                     ++ (map do a: el "arg" ["value":a] [] done args)
