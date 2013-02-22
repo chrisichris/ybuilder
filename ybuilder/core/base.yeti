@@ -373,7 +373,8 @@ registerBaseTargets config = (
             import java.lang:ClassLoader;
             import org.apache.tools.ant:AntClassLoader;
 
-             runTarget livecycleTargets.initialize [];
+             executeTarget livecycleTargets.initialize []
+                            (createProject ());
              pat = createAntPath (pathes.testRuntime config);
              cl = new AntClassLoader(
                         ClassLoader#getSystemClassLoader()#getParent(), 
