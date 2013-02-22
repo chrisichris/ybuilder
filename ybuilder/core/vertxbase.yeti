@@ -55,7 +55,7 @@ vertxTask config args p =
     fi;
     */
 
-    logInfo p "vertx" "running vertx \(args)";
+    logInfo p "vertx" "running vertx \(strJoin " " args)";
     if "verbose" in p.properties then
         logInfo p "vertx" "System-Properties: \(sysProps)";
         logInfo p "vertx" "classpath: \(listPath cpP)";
@@ -66,7 +66,7 @@ vertxTask config args p =
     antTask "java" ["classname":"org.vertx.java.platform.impl.cli.Starter",
                    "fork":"true",
                    "failonerror":"true",
-                   "taskname":""]
+                   "taskname":"vertx"]
                    ([el "classpath" [:] (antPathElements (cpP))]
                     ++ (map do a: el "arg" ["value":a] [] done args)
                     ++ (mapHash do k v:

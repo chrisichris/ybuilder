@@ -67,7 +67,7 @@ _doExtensionTest config name project = (
                     ["jar":"ybuilder.jar", "fork":"true", 
                      "failonerror":"true",
                      "dir":dir#getAbsolutePath(),
-                     "taskname":""] 
+                     "taskname":"extension-test"] 
                     [el "arg" ["line":args] []] 
                     project;
         done;
