@@ -116,7 +116,8 @@ registerVertxTargets config =
         do p:
             targetDir = config.vertxModsDir^config.vertxModuleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
-            if (file (config.dir.target ^config.artifactId))#exists() then
+            if (file (config.dir.target ^config.artifactId^".jar"))
+                    #exists() then
                 antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
                     [antFilesetElement config.dir.target 
