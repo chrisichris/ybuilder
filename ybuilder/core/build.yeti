@@ -131,7 +131,11 @@ log level {antProject} prefix msg =
     		
     (antProject is ~Project)#log(msg is string, level is number));
 
-
+logDebug = log (Project#MSG_DEBUG);
+logError = log (Project#MSG_ERR);
+logInfo = log (Project#MSG_INFO);
+logVerbose = log (Project#MSG_VERBOSE);
+logWarn = log (Project#MSG_WARN);
 
 
 el name atts subelements = 
@@ -202,7 +206,7 @@ printSimilarTargets targets name =
     ts = filter do t: strStarts? t.name n done 
         (mapHash do k t: t done targets);
     if empty? ts then
-        println "There are no targets starting with [\(n)]";
+        println "" "There are no targets starting with [\(n)]";
     else
         println "Targets starting with [\(n)]:\n";
         for ts do t:
@@ -613,8 +617,7 @@ retrieveBuildDependencies () =
     ));
 
 registerBuildTargets config =
-    (
-    cmdYbuilderVersion = 
+    (cmdYbuilderVersion = 
         target config "help" "version"
             [Description "The verstion of ybuilder: \(ybuilderVersion)",
             ShortName()] 
@@ -854,11 +857,13 @@ run config =
 {
 	get logLevel () = _logLevel,
     log,
-    logDebug = log (Project#MSG_DEBUG),
-    logError = log (Project#MSG_ERR),
-    logInfo = log (Project#MSG_INFO),
-    logVerbose = log (Project#MSG_VERBOSE),
-    logWarn = log (Project#MSG_WARN),
+	logDebug,
+	logError,
+	logInfo,
+	logVerbose,
+	logWarn,
+
+
 
     createBuildConfig,
     registerBuildTargets,
