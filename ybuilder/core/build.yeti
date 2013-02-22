@@ -109,8 +109,27 @@ createProject () =
         properties = [:]
      } is projectType);		
 
+_prefixLength = 12;
+_prefixSpace = strPad " " _prefixLength ""; 
+
 log level {antProject} prefix msg =
-    (antProject is ~Project)#log(msg is string, level is number);
+	(msg = if prefix == "-" then
+		msg
+	else
+		preS = if prefix == undef_str or prefix == "" then
+				""
+			else
+				"[\(prefix)] ";
+			fi;
+		pl = _prefixLength - strLength preS;
+		if pl > 0 then
+			(strLeft _prefixSpace pl) ^preS^msg
+		else
+			preS^msg
+		fi
+	fi;
+    		
+    (antProject is ~Project)#log(msg is string, level is number));
 
 
 

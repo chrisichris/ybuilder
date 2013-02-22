@@ -6,7 +6,7 @@ load ybuilder.core.build;
 
 import java.lang.System;
 
-logInfo (createProject ()) "" "running project_ybuilder.yeti";
+logInfo (createProject ()) "project" "running project_ybuilder.yeti";
 
 config = baseConfig ();
 
