@@ -39,7 +39,7 @@ createExtensionTestDirs config name project =
 
 _doExtensionTest config name project = (
     if (file (config.extensionTestDir ^ name))#exists() then 
-        println "\n================\nextension test [\(name)]";
+        logInfo project "extension-test" name;
         antTask "copy" ["todir":config.extensionTestTargetDir ^ name] 
                 [el "fileset" ["dir":config.extensionTestDir ^ name] []] 
                 project;
@@ -61,12 +61,13 @@ _doExtensionTest config name project = (
                 fis#close();
             yrt);
         for argLines do args:
-            println "\n---\ntarget: \(args)";
+            logInfo project "extension-test" "running target: \(args)";
                         
             antTask "java" 
                     ["jar":"ybuilder.jar", "fork":"true", 
                      "failonerror":"true",
-                     "dir":dir#getAbsolutePath()] 
+                     "dir":dir#getAbsolutePath(),
+                     "taskname":""] 
                     [el "arg" ["line":args] []] 
                     project;
         done;
