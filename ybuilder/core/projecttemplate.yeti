@@ -22,7 +22,6 @@ import java.util:Properties,
                  Collections,
                  Set;
 
-base = load ybuilder.core.base;
 load ybuilder.core.build;
 
 

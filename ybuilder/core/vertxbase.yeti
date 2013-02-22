@@ -19,7 +19,6 @@ module ybuilder.core.vertxbase;
 import java.lang.System;
 
 load ybuilder.core.build;
-b = load ybuilder.core.projectbase;
 bu = load ybuilder.core.build;
 
 createVertxConfig config = 
@@ -34,10 +33,7 @@ createVertxConfig config =
     };
 
 vertxTask config args p = 
-    (jythonHome =System#getenv("JYTHON_HOME");  
-    jrubyHome =System#getenv("JRUBY_HOME");  
-   
-    sysProps = copy config.vertxSysProps; 
+   (sysProps = copy config.vertxSysProps; 
     cpP = array [PathPatterns \(config.pathScopeProvided is pathPatternType)];
 
     //config for vertx
@@ -47,6 +43,8 @@ vertxTask config args p =
    
 
     /* Language support is now in submodules do not put here
+    jythonHome =System#getenv("JYTHON_HOME");  
+    jrubyHome =System#getenv("JRUBY_HOME");  
     if defined? jythonHome then
         push cpP (Location (jythonHome^"/jython.jar"));
         sysProps["jython.home"] := jythonHome;
