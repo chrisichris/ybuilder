@@ -580,7 +580,8 @@ registerProjectBaseTargets config =
                 (nullptr? fileWatcher#poll()) loop ();
                 
                 time = System#currentTimeMillis();
-                _ = runTarget tar [Args args, Properties props];
+                _ = executeTarget tar [Args args, Properties props] 
+                    (createProject ());
                 println 
                   "build-time: \((System#currentTimeMillis() - time) / 1000)");
        done;
