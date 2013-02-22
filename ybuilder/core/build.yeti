@@ -90,10 +90,12 @@ createBuildConfig () = {
     
 };
 
+var _logLevel = Project#MSG_INFO;
+
 createProject () = 
     (antProject = new Project();
      logger = new NoBannerLogger();
-     logger#setMessageOutputLevel(Project#MSG_INFO);
+     logger#setMessageOutputLevel(_logLevel);
      logger#setOutputPrintStream(System#out);
      logger#setErrorPrintStream(System#err);
      antProject#addBuildListener(logger);
@@ -107,7 +109,7 @@ createProject () =
         properties = [:]
      } is projectType);		
 
-log level {antProject} msg = 
+log level {antProject} prefix msg =
     (antProject is ~Project)#log(msg is string, level is number);
 
 
@@ -831,6 +833,7 @@ run config =
     runCmds config (list _argv);
 
 {
+	get logLevel () = _logLevel,
     log,
     logDebug = log (Project#MSG_DEBUG),
     logError = log (Project#MSG_ERR),
