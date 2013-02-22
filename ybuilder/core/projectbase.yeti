@@ -340,12 +340,12 @@ yeticTask targetDir srcDirI includes sourceReaderCode path project =
         |>map (srcDir^);
    
    logInfo project "yetic" "Compiling \(length files) files to \(targetDir)"; 
-   if "verbose" in project.properties then
-        logInfo project "yetic" "files";
-        for files (logInfo project "" . string);
-        logInfo project "yetic" "sourceDir: \(srcDir)";
-        logInfo project "yetic" "path";
-        for (listPath path) (logInfo project "" . string)
+   if logVerbose? then
+        logVerbose project "yetic" "files";
+        for files (logVerbose project "" . string);
+        logVerbose project "yetic" "sourceDir: \(srcDir)";
+        logVerbose project "yetic" "path";
+        for (listPath path) (logVerbose project "" . string)
    fi;
 
     //files = ["ybuilder/core/base.yeti"]; 
@@ -377,11 +377,11 @@ ret
 
 runYetiTask sourceName args srcDirs path project =
     (logInfo project "yeti" "Running \(sourceName) \(args)";
-    if "verbose" in project.properties then
-        logInfo project "yeti" "params: \(sourceName) \(args)"; 
-        logInfo project "yeti" "source dirs: \(srcDirs)";
-        logInfo project "yeti" "path";
-        for (listPath path) (logInfo project "" . string)
+    if logVerbose? then
+        logVerbose project "yeti" "params: \(sourceName) \(args)"; 
+        logVerbose project "yeti" "source dirs: \(srcDirs)";
+        logVerbose project "yeti" "path";
+        for (listPath path) (logVerbose project "" . string)
     fi;
     code =
 """import yeti.lang.compiler.CompileException;

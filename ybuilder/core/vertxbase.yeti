@@ -56,10 +56,10 @@ vertxTask config args p =
     */
 
     logInfo p "vertx" "command: vertx \(strJoin " " args)";
-    if "verbose" in p.properties then
-        logInfo p "vertx" "System-Properties: \(sysProps)";
-        logInfo p "vertx" "classpath: \(listPath cpP)";
-        logInfo p "vertx" ("configDir: \(config.vertxConfDir) exists: "
+    if logVerbose? then
+        logVerbose p "vertx" "System-Properties: \(sysProps)";
+        logVerbose p "vertx" "classpath: \(listPath cpP)";
+        logVerbose p "vertx" ("configDir: \(config.vertxConfDir) exists: "
                ^ "\((file config.vertxConfDir)#exists())");                      
     fi;
 
