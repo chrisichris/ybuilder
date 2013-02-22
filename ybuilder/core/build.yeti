@@ -45,7 +45,6 @@ typedef xmlelement = Text string
 typedef projectType = {
     antProject is ~Project, 
     executedTargets is hash<string,boolean>, 
-    logger is string -> (),
     properties is hash<string,string>,
     var args is list<string>
 };
@@ -104,7 +103,6 @@ createProject () =
      {
         antProject, 
         executedTargets = [:], 
-        logger txt = println txt, 
         var args = [], 
         properties = [:]
      } is projectType);		
