@@ -289,13 +289,14 @@ runJavaTask mainClassName args path project =
          :: (map do a: el "arg" ["value":a] [] done args)))
         project);
 
-yetiMainTask args path fork dir project = 
+yetiMainTask taskName args path fork dir project = 
    if fork then
         antTask "java" 
                 ["classname":"yeti.lang.compiler.yeti", 
                  "fork":"true",
                  "dir": dir,
-                 "failonerror":"true"]
+                 "failonerror":"true",
+                 "taskName":taskName]
                 ((el "classpath" [:] (antPathElements path) 
                  :: (map do a: el "arg" ["value":a] [] done args))) 
                 project;
@@ -326,7 +327,7 @@ yetiMainTask args path fork dir project =
      
 yetidocTask config targetDir files project=     
    (args = ["-doc", "../"^targetDir] ++ files;
-    yetiMainTask args (testPath config) true config.dir.src project);
+    yetiMainTask "yetidoc" args (testPath config) true config.dir.src project);
     
 yeticTask targetDir srcDirI includes sourceReaderCode path project =
    (srcDir = if not strEnds? srcDirI "/" 
@@ -371,7 +372,7 @@ ret
 
 
         args = ["-e", code];
-        yetiMainTask args path true "." project
+        yetiMainTask "yetic" args path true "." project
     fi);    
 
 runYetiTask sourceName args srcDirs path project =
@@ -401,7 +402,7 @@ yrt;
 ret 
 """;
 
-   yetiMainTask ["-e", code] path true "." project);
+   yetiMainTask "yeti" ["-e", code] path true "." project);
 
 _mvnDependencyTags artifactDependencies =     
     map do dep: 
