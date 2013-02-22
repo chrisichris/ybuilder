@@ -60,7 +60,9 @@ vertxTask config args p =
     if "verbose" in p.properties then
         println "vertxTask: arguments: \(args)";
         println "           System-Properties: \(sysProps)";
-        println "           classpath: \(cpP)";
+        println "           classpath: \(listPath cpP)";
+        println ("           configDir: \(config.vertxConfDir) exists: "
+               ^ "\((file config.vertxConfDir)#exists())");                      
     fi;
 
     antTask "java" ["classname":"org.vertx.java.platform.impl.cli.Starter",
