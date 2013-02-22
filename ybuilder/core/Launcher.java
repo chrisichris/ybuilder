@@ -19,9 +19,11 @@ package ybuilder.core;
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 public class Launcher {
 
+	public static final String YBUILDER_URL_CMD = "-update";
 
 	public static final String VERSION = "@VERSION@";
 	
@@ -76,17 +78,43 @@ public class Launcher {
 
 	public static void main(String[] args) throws Throwable {
 		//check -version
-		if (args != null && args.length > 0 && "-version".equals(args[0])) {
+		if (args == null)
+			args = new String[]{};
+
+		if (args.length > 0 && "-version".equals(args[0])) {
 			System.out.println(VERSION);
 			return;
 		};
+
+		//check systemproperties
+		ArrayList<String> _newArgs = new ArrayList<String>();
+		for (String arg:args) {
+			if(arg.startsWith("-D")){
+				String nv = arg.substring(2,arg.length());
+				int cut = nv.indexOf("=");
+				if(cut < 0)
+					System.setProperty(nv,"");
+				else{
+					if(cut == 0)
+						throw new IllegalArgumentException(
+										"SystemProperty "+arg);
+					else{
+						System.setProperty(
+								nv.substring(0,cut),
+								nv.substring(cut+1, nv.length()));
+					}
+				}
+			}else{
+				_newArgs.add(arg);
+			}
+		}
+		args = _newArgs.toArray(new String[_newArgs.size()]);
 		
 		//check wheter we have the home dir
 		if(!HOME_DIR.exists())
 			HOME_DIR.mkdirs();
 		
 		//check other download url
-		final String YBUILDER_URL_CMD = "-update";
 		boolean download = !JAR_FILE.exists();
 		String downloadUrl = GITHUB_REPO;
 

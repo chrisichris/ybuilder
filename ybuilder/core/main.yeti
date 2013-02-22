@@ -58,6 +58,7 @@ _withBuildClassLoader dirPrefix antFiles fn =
         Thread#currentThread()#setContextClassLoader(oL);
     yrt);
 
+
     
 if not (file "project.yeti")#exists() then
     //no project file create default project with some default targets
