@@ -109,6 +109,12 @@ createProject () =
         properties = [:]
      } is projectType);		
 
+log level {antProject} msg = 
+    (antProject is ~Project)#log(msg is string, level is number);
+
+
+
+
 el name atts subelements = 
     Element {
         name,
@@ -827,6 +833,13 @@ run config =
     runCmds config (list _argv);
 
 {
+    log,
+    logDebug = log (Project#MSG_DEBUG),
+    logError = log (Project#MSG_ERR),
+    logInfo = log (Project#MSG_INFO),
+    logVerbose = log (Project#MSG_VERBOSE),
+    logWarn = log (Project#MSG_WARN),
+
     createBuildConfig,
     registerBuildTargets,
 
