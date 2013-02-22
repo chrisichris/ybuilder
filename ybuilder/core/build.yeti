@@ -90,12 +90,28 @@ createBuildConfig () = {
     
 };
 
-var _logLevel = Project#MSG_INFO;
+logLevel = 
+    case string System#getProperty("loglevel","info") of
+    "debug":Project#MSG_DEBUG;
+    "error":Project#MSG_ERR;
+    "info":Project#MSG_INFO;
+    "verbose":Project#MSG_VERBOSE;
+    "warn":Project#MSG_WARN;
+    _ : Project#MSG_INFO;
+    esac;
+
+ 
+logDebug? = logLevel >= Project#MSG_DEBUG;
+logError? = logLevel >= Project#MSG_ERR;
+logInfo? = logLevel >= Project#MSG_INFO;
+logVerbose? = logLevel >= Project#MSG_VERBOSE;
+logWarn? = logLevel >= Project#MSG_WARN;
+
 
 createProject () = 
     (antProject = new Project();
      logger = new NoBannerLogger();
-     logger#setMessageOutputLevel(_logLevel);
+     logger#setMessageOutputLevel(logLevel);
      logger#setOutputPrintStream(System#out);
      logger#setErrorPrintStream(System#err);
      antProject#addBuildListener(logger);
@@ -258,9 +274,7 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
         for target.depends do t:
             executeTarget t [] project;
         done;
-        if "verbose" in project.properties then
-            logInfo project "MAIN-TARGET" target.name;
-        fi;
+        logVerbose project "MAIN-TARGET" target.name;
         try
             logVerbose project "target" "Exectuing target \(target.name)";
             target.fn project;
@@ -858,15 +872,19 @@ run config =
     runCmds config (list _argv);
 
 {
-	get logLevel () = _logLevel,
+    logLevel,
     log,
-	logDebug,
-	logError,
-	logInfo,
-	logVerbose,
-	logWarn,
+    logDebug,
+    logError,
+    logInfo,
+    logVerbose,
+    logWarn,
 
-
+    logDebug?,
+    logError?,
+    logWarn?,
+    logInfo?,
+    logVerbose?,
 
     createBuildConfig,
     registerBuildTargets,
