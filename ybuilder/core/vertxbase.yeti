@@ -55,7 +55,7 @@ vertxTask config args p =
     fi;
     */
 
-    logInfo p "vertx" "running vertx \(strJoin " " args)";
+    logInfo p "vertx" "command: vertx \(strJoin " " args)";
     if "verbose" in p.properties then
         logInfo p "vertx" "System-Properties: \(sysProps)";
         logInfo p "vertx" "classpath: \(listPath cpP)";
