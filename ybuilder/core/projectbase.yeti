@@ -429,11 +429,11 @@ _mvnDependencyTags artifactDependencies =
                  done dep.exclusions) 
     done artifactDependencies;
 
-_pomName config = config.dir.target^"pom.xml";
+writePom dir name config p = 
+    (//first see wheter file or dir
+    fileName = dir^name;
 
-writePom config p=
-    (//first init pom
-    antTask "mkdir" ["dir":config.dir.target] [] p;
+    antTask "mkdir" ["dir":dir] [] p;
     antTask (maven "pom") 
         ["id" : "pom",
          "groupId" : config.groupId,
@@ -451,13 +451,27 @@ writePom config p=
                 (config.artifactDependencies
                 ++ map (.artifact) config.projectDependencies))
         p;
-    antTask "delete" ["file":_pomName config] [] p;
+    antTask "delete" ["file":fileName] [] p;
     antTask (maven "writepom")
-             ["pomRefId" : "pom", "file":_pomName config] [] p);
+             ["pomRefId" : "pom", "file":fileName] [] p;
+    fileName);
+
+
+preparePom orig dir name config p =
+    if (file orig)#exists() then
+        fileName = dir^name;
+        antTask "mkdir" ["dir":dir] [] p;
+        antTask "copy" ["file":orig, 
+                        "tofile":fileName, 
+                        "overwrite":"true"] [] p;
+        fileName
+    else
+        writePom dir name config p
+    fi;
+        
     
 mvnInstall config fileName project = 
-   (pomfile = _pomName config;
-    writePom config project;
+   (pomfile = preparePom "pom.xml" config.dir.target "pom.xml" config project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
             ["file": fileName]
@@ -471,8 +485,9 @@ mvnDeploy config fileName project =
                  "version":config.deployRepository.providerVersion] 
                 [] project;
     fi;
-    pomfile = _pomName config;
-    writePom config project;
+    pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
+            config project;
+    
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
             ["file":fileName, 
@@ -640,8 +655,33 @@ doc = target config "doc" "doc" [Depends preDoc,
         
              
 pom =
-    target config "maven" "pom" [Description "Writes a pom.xml"] 
-           do p: writePom config p done;
+    target config "maven" "pom" [Description "Writes a pom.xml"] do p: 
+        if empty? p.args then
+            _ = writePom "" "pom.xml" config p;
+        else
+            path = head p.args;
+            {dir,name} = 
+                if strEnds? path "/" then
+                    {dir = path,
+                     name = "pom.xml"}
+                else
+                    f = file path;
+                    dir = if not defined? (f#getParent()) then
+                            ""
+                        else
+                            string f#getParent()
+                        fi;
+                    name = string f#getName();
+                    name = if name == "" then
+                            "pom.xml"
+                        else
+                            name
+                        fi;
+                    {dir,name}
+                fi;
+            _ = writePom dir name config p 
+        fi;
+    done;
 
 prepareLibs = 
     target config "libs" "prepareLibs" 
@@ -871,6 +911,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         yeticTask,
         runYetiTask,
         runJavaTask,
+        preparePom,
         writePom,
         mvnInstall,
         mvnDeploy,
