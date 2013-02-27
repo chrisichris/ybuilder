@@ -55,7 +55,8 @@ baseConfig groupId artifactId version
     },
 
     deployRepository = {
-        var url = undef_str,
+        var url = 
+            "https://oss.sonatype.org/service/local/staging/deploy/maven2/",
         var providerArtifactId = undef_str,
         var providerVersion = "1.0-beta2",
         params = [] is list<xmlelement>,
@@ -63,7 +64,7 @@ baseConfig groupId artifactId version
     },
     
     snapshotRepository = {
-        var url = undef_str,
+        var url = "https://oss.sonatype.org/content/repositories/snapshots/",
         var providerArtifactId = undef_str,
         var providerVersion = "1.0-beta2",
         params = [] is list<xmlelement>,
@@ -103,7 +104,9 @@ createProjectBaseConfig config dependencies =
         layout = "default" },
         { id = "chrisichris", 
         url = "http://chrisichris.github.com/chrisis-maven-repo/releases",
-        layout = "default" }];
+        layout = "default" },
+        {id = "sonatype-snapshots",
+        url = "http://oss.sonatype.org/content/repositories/snapshots/"];
         
     _pathScopeLib = 
         array [Fileset [config.dir.lib : [Include "**/*.jar"]]]; 
