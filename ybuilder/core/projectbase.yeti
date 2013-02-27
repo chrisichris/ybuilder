@@ -82,6 +82,7 @@ baseConfig groupId artifactId version
         var ybuilder = "lib/ybuilder/",
         var targetClasses = "target/classes/",
         var targetTestClasses = "target/testclasses/",
+        var targetArtifacts = "target/artifacts/",
 
         var webapp = "webapp/",
         var resources = "resources/",
@@ -106,7 +107,8 @@ createProjectBaseConfig config dependencies =
         url = "http://chrisichris.github.com/chrisis-maven-repo/releases",
         layout = "default" },
         {id = "sonatype-snapshots",
-        url = "http://oss.sonatype.org/content/repositories/snapshots/"];
+        url = "http://oss.sonatype.org/content/repositories/snapshots/",
+        layout ="default" }];
         
     _pathScopeLib = 
         array [Fileset [config.dir.lib : [Include "**/*.jar"]]]; 
@@ -855,7 +857,11 @@ jarOnly =
     target config "package" "jarOnly" 
            [Description "Makes a jar file in dir.target"] 
            do p:
-                destfl = config.dir.target ^ config.artifactId ^ ".jar";
+                antTask "mkdir" ["dir" : config.dir.targetArtifacts] [] p;
+                destfl = config.dir.targetArtifacts 
+                         ^ config.artifactId 
+                         ^ "-" ^ config.version
+                         ^ ".jar";
                 antTask "jar" 
                         (nh = copy config.jarAttributes;
                          nh["destfile"] := destfl;
@@ -877,7 +883,10 @@ jar =
                  ^"and/or :deploy param(s) to maven install/deploy the war"),
             ShortName()] 
     do p:
-        destfl = config.dir.target ^ config.artifactId ^ ".jar";
+        destfl = config.dir.targetArtifacts 
+                 ^ config.artifactId 
+                 ^ "-" ^ config.version
+                 ^ ".jar";
         _mvnInstallOrDeploy config destfl "jar" p;
     done;
     
@@ -888,7 +897,11 @@ war =
                ^"and/or :deploy param(s) to maven install/deploy the war"),
             ShortName()]
             do p:
-                destfl = config.dir.target ^ config.artifactId ^ ".war";
+                antTask "mkdir" ["dir":config.dir.targetArtifacts] [] p;
+                destfl = config.dir.targetArtifacts 
+                    ^ config.artifactId 
+                    ^ "-" ^ config.version
+                    ^ ".war";
                 antTask "war" 
                         (nh = copy config.warAttributes;
                          nh["destfile"] := destfl;
