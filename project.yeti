@@ -27,10 +27,7 @@ println "setup millis since start \((millisSinceStart ()) / 1000)";
 
 ybuilderDir = "ybuilder/";
 
-config = baseConfig();
-config.artifactId := "ybuilder";
-config.groupId :="ybuilder";
-config.version := "0.1-alpha";
+config = baseConfig "com.github.chrisichris" "ybuilder" "0.2-SNAPSHOT";
 config.description := "A simple build tool for yeti";
 
 

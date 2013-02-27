@@ -31,16 +31,23 @@ maven str = ("antlib:org.apache.maven.artifact.ant " ^ str);
 
 
 //directories
-baseConfig () is () -> baseConfig = {
-    var name = "",
-    var version = "", 
-    var artifactId = "", 
-    var groupId = "",
-    var description = "",
-    var organization = "",
-    var homePage = "",
-    var license = "",
-    var licenseURL = "",
+baseConfig groupId artifactId version 
+    is string -> string -> string -> baseConfig = 
+{
+    var name = artifactId is string,
+    var version = version is string, 
+    var artifactId = artifactId is string, 
+    var groupId = groupId,
+    var description = undef_str,
+    var organization = undef_str,
+    var projectUrl = undef_str,
+    var scmConnection = undef_str,
+    var scmDeveloperConnection = undef_str,
+    var scmUrl = undef_str,
+    var issueManagementSystem = undef_str,
+    var issueManagementUrl = undef_str,
+    licenses = array [] is array<{name is string, url is string}>,
+    developers = array [] is array <{name is string}>,
 
     localRepository = { 
         var layout = "default", 
@@ -429,35 +436,83 @@ _mvnDependencyTags artifactDependencies =
                  done dep.exclusions) 
     done artifactDependencies;
 
-writePom dir name config p = 
+pomParts config packaging = 
+    {pomHash = 
+        (ha = [
+        "id" : "pom",
+        "packaging" : packaging is string];
+
+        if defined? config.groupId then
+            ha["groupId"] := config.groupId;
+        fi;
+        if defined? config.artifactId then
+            ha["artifactId"] := config.artifactId
+        fi;
+        if defined? config.version then
+            ha["version"] := config.version;
+        fi;
+        if defined? config.name then
+            ha["name"] := config.name
+        fi;
+        if defined? config.description then
+            ha["descritption"] := config.description;
+        fi;
+        if defined? config.organization then
+            ha["organization"] := config.organization;
+        fi;
+        if defined? config.projectUrl then
+            ha["url"] := config.projectUrl
+        fi;
+        ha),
+    pomEls = 
+        (ls = array [];
+        if defined? config.issueManagementUrl then
+            ha = ["url":config.issueManagementUrl];
+            if defined? config.issueManagementSystem then
+                ha["system"] := config.issueManagementSystem
+            fi;
+            push ls (el (maven "issueManagement") ha []);
+        fi;
+
+        for config.licenses do {name, url}:
+            push ls (el (maven "license") ["name" : name, "url":url] []);
+        done;
+
+        for config.developers do {name}:
+            push ls (el (maven "developer") ["name":name] [])
+        done;
+        
+        if defined? config.scmConnection then
+            ha = ["connection" : config.scmConnection,
+                  "url":config.scmUrl];
+            if defined? config.scmDeveloperConnection then
+                ha["developerConnection"] := config.scmDeveloperConnection;
+            fi
+        fi;
+
+        dels = _mvnDependencyTags 
+                (config.artifactDependencies
+                ++ map (.artifact) config.projectDependencies);
+        for dels (push ls);
+        list ls)
+    };
+        
+                    
+        
+    
+writePom dir name {pomHash, pomEls} config p = 
     (//first see wheter file or dir
     fileName = dir^name;
 
     antTask "mkdir" ["dir":dir] [] p;
-    antTask (maven "pom") 
-        ["id" : "pom",
-         "groupId" : config.groupId,
-         "artifactId" : config.artifactId,
-         "version" : config.version,
-         "name" : config.name]
-        (if (strLength config.license) > 0 
-             and (strLength config.licenseURL) > 0 then
-            [el "license" ["name":config.license,
-                          "url": config.licenseURL] []]
-         else
-            []
-         fi 
-         ++  _mvnDependencyTags 
-                (config.artifactDependencies
-                ++ map (.artifact) config.projectDependencies))
-        p;
+    antTask (maven "pom") pomHash pomEls p;
     antTask "delete" ["file":fileName] [] p;
     antTask (maven "writepom")
              ["pomRefId" : "pom", "file":fileName] [] p;
     fileName);
 
 
-preparePom orig dir name config p =
+preparePom orig dir name pomParts config p =
     if (file orig)#exists() then
         fileName = dir^name;
         antTask "mkdir" ["dir":dir] [] p;
@@ -466,19 +521,20 @@ preparePom orig dir name config p =
                         "overwrite":"true"] [] p;
         fileName
     else
-        writePom dir name config p
+        writePom dir name pomParts config p
     fi;
         
     
-mvnInstall config fileName project = 
-   (pomfile = preparePom "pom.xml" config.dir.target "pom.xml" config project;
+mvnInstall config fileName packaging project = 
+   (pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
+              (pomParts config packaging) config project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
             ["file": fileName]
             [el "pom" ["refid":"installPom"] []]
             project);
 
-mvnDeploy config fileName project =
+mvnDeploy config fileName packaging project =
    (if defined? config.deployRepository.providerArtifactId then
         antTask (maven "install-provider") 
                 ["artifactId":config.deployRepository.providerArtifactId,
@@ -486,7 +542,7 @@ mvnDeploy config fileName project =
                 [] project;
     fi;
     pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-            config project;
+            (pomParts config packaging) config project;
     
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
@@ -507,12 +563,12 @@ mvnDeploy config fileName project =
              ++ [el "pom" ["refid":"installPom"] []])
              project);
     
-_mvnInstallOrDeploy config fileName project = 
+_mvnInstallOrDeploy config fileName packaging project = 
    (if contains? ":install" project.args then
-        mvnInstall config fileName project;
+        mvnInstall config fileName packaging project;
     fi;
     if contains? ":deploy" project.args then
-        mvnDeploy config fileName project;
+        mvnDeploy config fileName packaging project;
     fi);
 
             
@@ -657,7 +713,7 @@ doc = target config "doc" "doc" [Depends preDoc,
 pom =
     target config "maven" "pom" [Description "Writes a pom.xml"] do p: 
         if empty? p.args then
-            _ = writePom "" "pom.xml" config p;
+            _ = writePom "" "pom.xml" (pomParts config "jar") config p;
         else
             path = head p.args;
             {dir,name} = 
@@ -679,7 +735,7 @@ pom =
                         fi;
                     {dir,name}
                 fi;
-            _ = writePom dir name config p 
+            _ = writePom dir name (pomParts config "jar") config p 
         fi;
     done;
 
@@ -775,7 +831,7 @@ jar =
             ShortName()] 
     do p:
         destfl = config.dir.target ^ config.artifactId ^ ".jar";
-        _mvnInstallOrDeploy config destfl p;
+        _mvnInstallOrDeploy config destfl "jar" p;
     done;
     
 war = 
@@ -800,7 +856,7 @@ war =
                             antFilesetElement dir ie;
                           done config.warFileset))
                         p;
-                _mvnInstallOrDeploy config destfl p;
+                _mvnInstallOrDeploy config destfl "war" p;
             done;
 /*
 jetty =

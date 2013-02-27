@@ -8,11 +8,8 @@ import java.lang.System;
 
 logInfo (createProject ()) "project" "running project_ybuilder.yeti";
 
-config = baseConfig ();
+config = baseConfig "com.github.chrisichris" "ybuilder" ybuilderVersion;
 
-config.groupId :="org.ybuilder";
-config.artifactId := "ybuilder";
-config.version := ybuilderVersion;
 config.description := "A simple build tool for yeti";
 
 config = createBaseConfig config [];
@@ -138,7 +135,7 @@ jary = target config "custom" "jary"
                    "value":"ybuilder.core.Launcher"] 
                    []]] 
             p;
-    helpers.mvnInstallOrDeploy config jarFile p;            
+    helpers.mvnInstallOrDeploy config jarFile "jar" p;            
 done;
 
 _ = target config "custom" "installjar" 

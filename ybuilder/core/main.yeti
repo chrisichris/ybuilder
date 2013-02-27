@@ -77,7 +77,7 @@ if not (file "project.yeti")#exists() then
             else 
                 "."; 
             fi;
-        config = createBaseConfig (baseConfig()) [];
+        config = createBaseConfig (baseConfig "" "" "") [];
         createNewYetiProject config projectName (createProject ()); 
         retrieveBuildDependencies ();
 
