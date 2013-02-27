@@ -62,6 +62,14 @@ baseConfig groupId artifactId version
         var uniqueVersion = false
     },
     
+    snapshotRepository = {
+        var url = undef_str,
+        var providerArtifactId = undef_str,
+        var providerVersion = "1.0-beta2",
+        params = [] is list<xmlelement>,
+        var uniqueVersion = false
+    },
+
     dir = {
         var libManaged = "lib/managed/",
         var lib = "lib/unmanaged/",	
@@ -534,7 +542,36 @@ mvnInstall config fileName packaging project =
             [el "pom" ["refid":"installPom"] []]
             project);
 
-mvnDeploy config fileName packaging project =
+_mvnDeploySnapshot config fileName packaging project =
+   (if defined? config.snapshotRepository.providerArtifactId then
+        antTask (maven "install-provider") 
+                ["artifactId":config.snapshotRepository.providerArtifactId,
+                 "version":config.snapshotRepository.providerVersion] 
+                [] project;
+    fi;
+    pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
+            (pomParts config packaging) config project;
+    
+    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "deploy") 
+            ["file":fileName, 
+             "uniqueVersion": string config.snapshotRepository.uniqueVersion]
+            (if defined? config.snapshotRepository.url then
+                [el "remoteRepository" ["url":config.snapshotRepository.url]
+                    (list config.snapshotRepository.params)]
+             else
+                args = list project.args;
+                if (length args) < 2 then
+                    []
+                else
+                    rep = head (tail args);
+                    [el "remoteRepository" ["url":rep] []]
+                fi
+             fi
+             ++ [el "pom" ["refid":"installPom"] []])
+             project);
+    
+_mvnDeployFinal config fileName packaging project =
    (if defined? config.deployRepository.providerArtifactId then
         antTask (maven "install-provider") 
                 ["artifactId":config.deployRepository.providerArtifactId,
@@ -562,7 +599,14 @@ mvnDeploy config fileName packaging project =
              fi
              ++ [el "pom" ["refid":"installPom"] []])
              project);
-    
+
+mvnDeploy config fileName packaging project =
+    if strEnds? config.version "-SNAPSHOT" then
+        _mvnDeploySnapshot config fileName packaging project;
+    else
+        _mvnDeployFinal config fileName packaging project;
+    fi;
+
 _mvnInstallOrDeploy config fileName packaging project = 
    (if contains? ":install" project.args then
         mvnInstall config fileName packaging project;
