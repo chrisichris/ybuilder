@@ -537,17 +537,15 @@ preparePom orig dir name pomParts config p =
     fi;
         
     
-mvnInstall config pomParts fileName project = 
-   (pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-              pomParts config project;
-    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+mvnInstall config pomFile fileName project = 
+    (antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
             ["file": fileName]
             [el "pom" ["refid":"installPom"] []]
             project);
 
     
-mvnDeploy config pomParts fileName project =
+mvnDeploy config pomFile fileName project =
    (//snapshot or normal
    repo = if strEnds? config.version "-SNAPSHOT" then
             config.snapshotRepository
@@ -593,8 +591,6 @@ mvnDeploy config pomParts fileName project =
                  "version":repo.providerVersion] 
                 [] project;
     fi;
-    pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-            pomParts config project;
     
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
@@ -616,12 +612,12 @@ mvnDeploy config pomParts fileName project =
              project);
 
 
-_mvnInstallOrDeploy config pomParts fileName project = 
+_mvnInstallOrDeploy config pomFile fileName project = 
    (if contains? ":install" project.args then
-        mvnInstall config pomParts fileName project;
+        mvnInstall config pomFile fileName project;
     fi;
     if contains? ":deploy" project.args then
-        mvnDeploy config pomParts fileName project;
+        mvnDeploy config pomFile fileName project;
     fi);
 
             
@@ -921,7 +917,9 @@ jar =
             executeTarget jarArtifacts [] project;
         fi;
         //check for install or deploy
-        _mvnInstallOrDeploy config (pomParts config "jar") destfl p;
+        pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
+            (pomParts config "jar") config project;
+        _mvnInstallOrDeploy config pomfile destfl p;
     done;
     
 war = 
