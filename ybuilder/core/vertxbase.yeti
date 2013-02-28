@@ -19,7 +19,6 @@ module ybuilder.core.vertxbase;
 import java.lang.System;
 
 load ybuilder.core.build;
-bu = load ybuilder.core.build;
 
 createVertxConfig config = 
     {
@@ -102,7 +101,7 @@ moduleLibsFn config p=
 
 registerVertxTargets config =
     (//add fn to retrieveDependencies target
-    bu.doAfterTarget 
+    doAfterTarget 
         config.projectBaseTargets.retrieveLibs 
         (moduleLibsFn config);
 
