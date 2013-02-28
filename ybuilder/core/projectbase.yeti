@@ -468,7 +468,7 @@ pomParts config packaging =
             ha["name"] := config.name
         fi;
         if defined? config.description then
-            ha["descritption"] := config.description;
+            ha["description"] := config.description;
         fi;
         if defined? config.organization then
             ha["organization"] := config.organization;
