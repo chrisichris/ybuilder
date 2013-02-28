@@ -211,5 +211,6 @@ registerVertxTargets config =
         vertxTask,
         vertxRunPath,
         vertxTestPath,
+        vertxModule,
     }
 }
