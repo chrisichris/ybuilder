@@ -556,9 +556,7 @@ mvnDeploy config pomParts fileName project =
         fi;
 
 
-   //create all the artifacts
-   executeTarget (config.targets["package:artifactJars"])
-                 [] project;
+   //attach all the artifacts in the artifacts dir
    attachedFiles = listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
         |> concatMap do fn:
             if fn == fileName then
@@ -856,8 +854,8 @@ prepareLibs =
             _ =executeTarget prepareLibs [RunAlways true] p;
         done;
 
-artifactJars =
-    target config "package" "artifactJars"
+jarArtifacts =
+    target config "package" "jarAtrifacts"
         [Depends preparePackage, Depends doc,
         Description "Creates the source and doc jars"]
     do p:
@@ -918,6 +916,11 @@ jar =
                  ^ config.artifactId 
                  ^ "-" ^ config.version
                  ^ ".jar";
+        //create all the artifacts
+        if contains? ":deploy" project.args then
+            executeTarget jarArtifacts [] project;
+        fi;
+        //check for install or deploy
         _mvnInstallOrDeploy config (pomParts config "jar") destfl p;
     done;
     
