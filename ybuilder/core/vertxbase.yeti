@@ -25,7 +25,7 @@ createVertxConfig config =
     {
         var vertxModsDir = "mods/",
         var vertxConfDir = "mods/conf/",
-        var vertxModuleName = "main",
+        var vertxMainModuleName = "main",
         var vertxSysProps = ["org.vertx.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test",
         var vertxFullModuleName = 
@@ -89,7 +89,7 @@ vertxTestPath config =
 
 //fn to copy module libs to module dir
 moduleLibsFn config p=
-    (targetDir = config.vertxModsDir^config.vertxModuleName^"/lib/";
+    (targetDir = config.vertxModsDir^config.vertxMainModuleName^"/lib/";
     antTask "delete" ["dir":targetDir] [] p;
     antTask "mkdir" ["dir":targetDir] [] p;
     antTask "copy" ["todir":targetDir]
@@ -113,7 +113,7 @@ registerVertxTargets config =
              Description 
                 "Makes jar or classes in src  copies it to vertx module"]
         do p:
-            targetDir = config.vertxModsDir^config.vertxModuleName^"/";
+            targetDir = config.vertxModsDir^config.vertxMainModuleName^"/";
             antTask "mkdir" ["dir":targetDir] [] p;
             if (file (config.dir.target ^config.artifactId^".jar"))
                     #exists() then
@@ -131,20 +131,19 @@ registerVertxTargets config =
                               copies it to target"]
         do p:
             tDir = config.dir.target
-                    ^config.vertxModsDir
-                    ^config.vertxFullModuleName;
+                    ^config.vertxModsDir;
             antTask "delete" ["dir":tDir] [] p;
             antTask "mkdir" ["dir":tDir] [] p;
 
             antTask "copy" ["todir":tDir] 
                            [antFilesetElement 
                                 (config.vertxModsDir
-                                ^config.vertxModuleName) []] p;
+                                ^config.vertxMainModuleName) []] p;
 
             antTask "zip" ["destfile":config.dir.target
                                 ^config.vertxFullModuleName]
                           [antFilesetElement config.vertxModsDir 
-                            [Include (config.vertxModuleName^"/**")]] p;
+                            [Include (config.vertxMainModuleName^"/**")]] p;
         done;
 
     
@@ -154,7 +153,7 @@ registerVertxTargets config =
             given as paremeter"]
         do p:
             mn = if empty? p.args then
-                config.vertxModuleName
+                config.vertxMainModuleName
             else
                 head p.args
             fi;

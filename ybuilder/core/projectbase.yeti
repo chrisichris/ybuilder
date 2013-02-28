@@ -889,7 +889,7 @@ jarOnly =
            [Description "Makes a jar file in dir.target"] 
            do p:
                 antTask "mkdir" ["dir" : config.dir.targetArtifacts] [] p;
-                destfl = config.dir.targetArtifacts 
+                destfl = config.dir.target 
                          ^ config.artifactId 
                          ^ "-" ^ config.version
                          ^ ".jar";
@@ -914,7 +914,7 @@ jar =
                  ^"and/or :deploy param(s) to maven install/deploy the war"),
             ShortName()] 
     do p:
-        destfl = config.dir.targetArtifacts 
+        destfl = config.dir.target 
                  ^ config.artifactId 
                  ^ "-" ^ config.version
                  ^ ".jar";
@@ -929,7 +929,7 @@ war =
             ShortName()]
             do p:
                 antTask "mkdir" ["dir":config.dir.targetArtifacts] [] p;
-                destfl = config.dir.targetArtifacts 
+                destfl = config.dir.target 
                     ^ config.artifactId 
                     ^ "-" ^ config.version
                     ^ ".war";
