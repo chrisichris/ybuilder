@@ -547,11 +547,53 @@ mvnInstall config fileName packaging project =
             [el "pom" ["refid":"installPom"] []]
             project);
 
-_mvnDeploySnapshot config fileName packaging project =
-   (if defined? config.snapshotRepository.providerArtifactId then
+    
+mvnDeploy config fileName packaging project =
+   (//snapshot or normal
+   repo = if strEnds? config.version "-SNAPSHOT" then
+            config.snapshotRepository
+        else
+            config.deployRepository
+        fi;
+
+
+   //create all the artifacts
+   executeTarget (config.targets["package:artifactJars"])
+                 [] project;
+   attachedFiles = listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
+        |> concatMap do fn:
+            if fn == fileName then
+                []
+            else
+                fna = string (file fn)#getName();
+                cut = strLastIndexOf fna "." (strLength fn);
+                if cut == -1 then
+                    logInfo project "deploy" 
+                        "File \(fn) in artifacts but has no extension";
+                    []
+                else
+                    ext = strRight fna (cut + 1);
+                    cut2 = strLastIndexOf fna "-" cut;
+                    if cut2 == -1 then
+                        logInfo project "deploy"
+                            "File \(fn) in artifacts has no classifier";
+                        []
+                    else
+                        classifier = strSlice fna (cut2 + 1) cut;
+                        logInfo project "deploy" "attaching \(fn)";
+                        [el (maven "attach") ["file":fn, 
+                                             "type":ext,
+                                             "classifier":classifier] []] ;
+                    fi
+                fi
+            fi;
+        done;
+    
+   //load the deployProvider
+   if defined? repo.providerArtifactId then
         antTask (maven "install-provider") 
-                ["artifactId":config.snapshotRepository.providerArtifactId,
-                 "version":config.snapshotRepository.providerVersion] 
+                ["artifactId": repo.providerArtifactId,
+                 "version":repo.providerVersion] 
                 [] project;
     fi;
     pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
@@ -559,11 +601,10 @@ _mvnDeploySnapshot config fileName packaging project =
     
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
-            ["file":fileName, 
-             "uniqueVersion": string config.snapshotRepository.uniqueVersion]
-            (if defined? config.snapshotRepository.url then
-                [el "remoteRepository" ["url":config.snapshotRepository.url]
-                    (list config.snapshotRepository.params)]
+            ["file":fileName]
+            (if defined? repo.url then
+                [el "remoteRepository" ["url":repo.url]
+                    (list repo.params)]
              else
                 args = list project.args;
                 if (length args) < 2 then
@@ -573,44 +614,10 @@ _mvnDeploySnapshot config fileName packaging project =
                     [el "remoteRepository" ["url":rep] []]
                 fi
              fi
-             ++ [el "pom" ["refid":"installPom"] []])
-             project);
-    
-_mvnDeployFinal config fileName packaging project =
-   (if defined? config.deployRepository.providerArtifactId then
-        antTask (maven "install-provider") 
-                ["artifactId":config.deployRepository.providerArtifactId,
-                 "version":config.deployRepository.providerVersion] 
-                [] project;
-    fi;
-    pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-            (pomParts config packaging) config project;
-    
-    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
-    antTask (maven "deploy") 
-            ["file":fileName, 
-             "uniqueVersion": string config.deployRepository.uniqueVersion]
-            (if defined? config.deployRepository.url then
-                [el "remoteRepository" ["url":config.deployRepository.url]
-                    (list config.deployRepository.params)]
-             else
-                args = list project.args;
-                if (length args) < 2 then
-                    []
-                else
-                    rep = head (tail args);
-                    [el "remoteRepository" ["url":rep] []]
-                fi
-             fi
+             ++ attachedFiles
              ++ [el "pom" ["refid":"installPom"] []])
              project);
 
-mvnDeploy config fileName packaging project =
-    if strEnds? config.version "-SNAPSHOT" then
-        _mvnDeploySnapshot config fileName packaging project;
-    else
-        _mvnDeployFinal config fileName packaging project;
-    fi;
 
 _mvnInstallOrDeploy config fileName packaging project = 
    (if contains? ":install" project.args then
@@ -850,7 +857,32 @@ prepareLibs =
             _ =executeTarget prepareLibs [RunAlways true] p;
         done;
 
+artifactJars =
+    target config "package" "artifactJars"
+        [Depends preparePackage, Depends doc,
+        Description "Creates the source and doc jars"]
+    do p:
+        antTask "mkdir" ["dir":config.dir.targetArtifacts] [] p;
+        fileP = config.dir.targetArtifacts
+            ^ config.artifactId
+            ^ "-" ^ config.version ^ "-";
+        javadocFile = fileP^"javadoc.jar";
+        yetidocFile = fileP^"yetidoc.jar";
+        srcsFile = fileP^"sources.jar";
 
+        if (file config.dir.javadoc)#exists() then
+            antTask "jar" 
+                ["destfile":javadocFile, "basedir":config.dir.javadoc] [] p;
+        fi;
+        if (file config.dir.yetidoc)#exists() then
+            antTask "jar"
+                ["destfile":yetidocFile, "basedir" : config.dir.yetidoc] [] p;
+        fi;
+        if (file config.dir.src)#exists() then
+            antTask "jar"
+                ["destfile":srcsFile, "basedir" : config.dir.src] [] p;
+        fi;
+    done;
     
     
 jarOnly = 
@@ -1005,6 +1037,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jarOnly,
         pom,
         continuous,
+        artifactJars,
     },
 
 
