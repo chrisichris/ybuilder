@@ -27,6 +27,7 @@ createVertxConfig config =
         var vertxMainModuleName = "main",
         var vertxSysProps = ["org.vertx.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test",
+        var vertxArtifactId = config.artifactId ^ "-vertxmod";
     };
 
 
@@ -124,7 +125,7 @@ registerVertxTargets config =
 
     _modFile config = 
         config.dir.target 
-        ^ config.artifactId 
+        ^ config.vertxArtifactId 
         ^ "-"
         ^ config.version
         ^ ".zip";
@@ -214,5 +215,5 @@ registerVertxTargets config =
         vertxTestPath,
     },
     vertxMavenName config =
-        "maven:\(config.groupId):\(config.artifactId)-\(config.version).zip",
+     "maven:\(config.groupId):\(config.vertxArtifactId)-\(config.version).zip",
 }
