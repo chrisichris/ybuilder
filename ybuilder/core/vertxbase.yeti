@@ -140,7 +140,7 @@ registerVertxTargets config =
         do p:
 
             antTask "zip" 
-                    ["destfile": _modName config]
+                    ["destfile": _modFile config]
                     [antFilesetElement 
                             (config.vertxModsDir^config.vertxMainModuleName) 
                             [Include "**/*.*"]] 
@@ -153,11 +153,12 @@ registerVertxTargets config =
             [Depends vertxZipModule,
             Description "creates the vertx module and deploys/installs it"]
         do p:
-            pp = pomParts config "zip";
+            load ybuilder.core.projectbase;
+            pp = helpers.pomParts config "zip";
             pp = pp with {pomDeps = []};
-            pomfile = preparePom "modpom.xml" config.target "modpom.xml"
+            pomfile = helpers.preparePom "modpom.xml" config.target "modpom.xml"
                 pp config p;
-            mvnInstallOrDeploy config pomFile (_modName config) p;
+            helpers.mvnInstallOrDeploy config pomfile (_modFile config) p;
         done;
 
     

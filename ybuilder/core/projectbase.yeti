@@ -538,7 +538,7 @@ preparePom orig dir name pomParts config p =
         
     
 mvnInstall config pomFile fileName project = 
-    (antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    (antTask (maven "pom") ["id":"installPom", "file":pomFile][] project;
     antTask (maven "install") 
             ["file": fileName]
             [el "pom" ["refid":"installPom"] []]
@@ -592,7 +592,7 @@ mvnDeploy config pomFile fileName project =
                 [] project;
     fi;
     
-    antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
+    antTask (maven "pom") ["id":"installPom", "file":pomFile][] project;
     antTask (maven "deploy") 
             ["file":fileName]
             (if defined? repo.url then
@@ -913,12 +913,12 @@ jar =
                  ^ "-" ^ config.version
                  ^ ".jar";
         //create all the artifacts
-        if contains? ":deploy" project.args then
-            executeTarget jarArtifacts [] project;
+        if contains? ":deploy" p.args then
+            executeTarget jarArtifacts [] p;
         fi;
         //check for install or deploy
         pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-            (pomParts config "jar") config project;
+            (pomParts config "jar") config p;
         _mvnInstallOrDeploy config pomfile destfl p;
     done;
     
@@ -928,28 +928,30 @@ war =
             Description ("Makes a war file in dir.target - use :install" 
                ^"and/or :deploy param(s) to maven install/deploy the war"),
             ShortName()]
-            do p:
-                antTask "mkdir" ["dir":config.dir.targetArtifacts] [] p;
-                destfl = config.dir.target 
-                    ^ config.artifactId 
-                    ^ "-" ^ config.version
-                    ^ ".war";
-                antTask "war" 
-                        (nh = copy config.warAttributes;
-                         nh["destfile"] := destfl;
-                         nh)
-                        ((mapHash do dir ie:
-                            el "lib" ["dir":dir] (antInExcludeElements ie);
-                          done config.warLibset)
-                         ++ (mapHash do dir ie:
-                            el "classes" ["dir" :dir] (antInExcludeElements ie);
-                          done config.warClassesset)
-                         ++ (mapHash do dir ie:
-                            antFilesetElement dir ie;
-                          done config.warFileset))
-                        p;
-                _mvnInstallOrDeploy config (pomParts config "war") destfl p;
-            done;
+    do p:
+        antTask "mkdir" ["dir":config.dir.targetArtifacts] [] p;
+        destfl = config.dir.target 
+            ^ config.artifactId 
+            ^ "-" ^ config.version
+            ^ ".war";
+        antTask "war" 
+                (nh = copy config.warAttributes;
+                 nh["destfile"] := destfl;
+                 nh)
+                ((mapHash do dir ie:
+                    el "lib" ["dir":dir] (antInExcludeElements ie);
+                  done config.warLibset)
+                 ++ (mapHash do dir ie:
+                    el "classes" ["dir" :dir] (antInExcludeElements ie);
+                  done config.warClassesset)
+                 ++ (mapHash do dir ie:
+                    antFilesetElement dir ie;
+                  done config.warFileset))
+                p;
+        pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
+            (pomParts config "war") config p;
+        _ = _mvnInstallOrDeploy config pomfile destfl p;
+    done;
 /*
 jetty =
     target config "run" "jetty" [Depends initialize,
@@ -1037,7 +1039,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         jarOnly,
         pom,
         continuous,
-        artifactJars,
+        jarArtifacts,
     },
 
 
