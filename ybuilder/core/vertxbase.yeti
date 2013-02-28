@@ -32,6 +32,7 @@ createVertxConfig config =
             "\(config.groupId).\(config.artifactId)-v\(config.version)", 
     };
 
+
 vertxTask config args p = 
    (sysProps = copy config.vertxSysProps; 
     cpP = array [PathPatterns \(config.pathScopeProvided is pathPatternType)];
@@ -124,33 +125,46 @@ registerVertxTargets config =
             fi;
         done;    
 
+    _modFile config = 
+        config.dir.target 
+        ^ config.artifactId 
+        ^ "-"
+        ^ config.version
+        ^ ".zip";
+    
     vertxZipModule = 
         target config "vertx" "zipModule"
             [Depends config.livecycleTargets.preparePackage,
              Description "bundles creates the vertx module and 
                               copies it to target"]
         do p:
-            tDir = config.dir.target
-                    ^config.vertxModsDir;
-            antTask "delete" ["dir":tDir] [] p;
-            antTask "mkdir" ["dir":tDir] [] p;
 
-            antTask "copy" ["todir":tDir] 
-                           [antFilesetElement 
-                                (config.vertxModsDir
-                                ^config.vertxMainModuleName) []] p;
+            antTask "zip" 
+                    ["destfile": _modName config]
+                    [antFilesetElement 
+                            (config.vertxModsDir^config.vertxMainModuleName) 
+                            [Include "**/*.*"]] 
+                    p;
+             
+        done;
 
-            antTask "zip" ["destfile":config.dir.target
-                                ^config.vertxFullModuleName]
-                          [antFilesetElement config.vertxModsDir 
-                            [Include (config.vertxMainModuleName^"/**")]] p;
+    vertxModule =
+        target config "vertx" "module"
+            [Depends vertxZipModule,
+            Description "creates the vertx module and deploys/installs it"]
+        do p:
+            pp = pomParts config "zip";
+            pp = pp with {pomDeps = []};
+            pomfile = preparePom "modpom.xml" config.target "modpom.xml"
+                pp config p;
+            mvnInstallOrDeploy config pomFile (_modName config) p;
         done;
 
     
     vertxMain = 
         target config "vertx" "main" 
             [Description "runs the current main vertx module or the one
-            given as paremeter"]
+            given as parameter"]
         do p:
             mn = if empty? p.args then
                 config.vertxMainModuleName
