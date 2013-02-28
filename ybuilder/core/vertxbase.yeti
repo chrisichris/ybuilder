@@ -27,7 +27,7 @@ createVertxConfig config =
         var vertxMainModuleName = "main",
         var vertxSysProps = ["org.vertx.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test",
-        var vertxArtifactId = config.artifactId ^ "-vertxmod";
+        var vertxArtifactId = config.artifactId ^ "-module";
     };
 
 
