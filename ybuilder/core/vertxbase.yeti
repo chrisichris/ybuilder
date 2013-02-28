@@ -27,8 +27,6 @@ createVertxConfig config =
         var vertxMainModuleName = "main",
         var vertxSysProps = ["org.vertx.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test",
-        var vertxFullModuleName = 
-            "\(config.groupId).\(config.artifactId)-v\(config.version)", 
     };
 
 
@@ -155,8 +153,10 @@ registerVertxTargets config =
             load ybuilder.core.projectbase;
             pp = helpers.pomParts config "zip";
             pp = pp with {pomDeps = []};
-            pomfile = helpers.preparePom "modpom.xml" config.target "modpom.xml"
-                pp config p;
+            pomfile = helpers.preparePom "modpom.xml" config.dir.target 
+                                "modpom.xml"
+                                pp config p;
+
             helpers.mvnInstallOrDeploy config pomfile (_modFile config) p;
         done;
 
@@ -202,6 +202,7 @@ registerVertxTargets config =
             vertxMain,
             vertxCmd,
             vertxTest,
+            vertxModule,
         }
     });
 {
@@ -211,6 +212,7 @@ registerVertxTargets config =
         vertxTask,
         vertxRunPath,
         vertxTestPath,
-        vertxModule,
-    }
+    },
+    vertxMavenName config =
+        "maven:\(config.groupId):\(config.artifactId)-\(config.version).zip",
 }
