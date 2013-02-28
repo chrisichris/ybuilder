@@ -154,6 +154,8 @@ registerVertxTargets config =
             load ybuilder.core.projectbase;
             pp = helpers.pomParts config "zip";
             pp = pp with {pomDeps = []};
+            pp.pomHash["artifactId"] := config.vertxArtifactId;
+
             pomfile = helpers.preparePom "modpom.xml" config.dir.target 
                                 "modpom.xml"
                                 pp config p;
