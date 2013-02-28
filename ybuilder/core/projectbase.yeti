@@ -502,23 +502,22 @@ pomParts config packaging =
                 ha["developerConnection"] := config.scmDeveloperConnection;
             fi
         fi;
-
-        dels = _mvnDependencyTags 
+        list ls),
+    pomDeps = 
+        _mvnDependencyTags 
                 (config.artifactDependencies
-                ++ map (.artifact) config.projectDependencies);
-        for dels (push ls);
-        list ls)
+                ++ map (.artifact) config.projectDependencies),
     };
         
                     
         
     
-writePom dir name {pomHash, pomEls} config p = 
+writePom dir name {pomHash, pomEls,pomDeps} config p = 
     (//first see wheter file or dir
     fileName = dir^name;
 
     antTask "mkdir" ["dir":dir] [] p;
-    antTask (maven "pom") pomHash pomEls p;
+    antTask (maven "pom") pomHash (pomEls ++ pomDeps) p;
     antTask "delete" ["file":fileName] [] p;
     antTask (maven "writepom")
              ["pomRefId" : "pom", "file":fileName] [] p;
@@ -1060,6 +1059,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
         yeticTask,
         runYetiTask,
         runJavaTask,
+        pomParts,
         preparePom,
         writePom,
         mvnInstall,
