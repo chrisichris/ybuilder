@@ -113,13 +113,14 @@ registerVertxTargets config =
                 "Makes jar or classes in src  copies it to vertx module"]
         do p:
             targetDir = config.vertxModsDir^config.vertxMainModuleName^"/";
+            flName = config.artifactId^"-"^config.version^".jar";
             antTask "mkdir" ["dir":targetDir] [] p;
-            if (file (config.dir.target ^config.artifactId^".jar"))
+            if (file (config.dir.target ^ flName))
                     #exists() then
                 antTask "copy" ["todir":targetDir^"lib",
                             "overwrite":"true"]
                     [antFilesetElement config.dir.target 
-                        [Include "\(config.artifactId).jar"]] p;
+                        [Include flName]] p;
             fi;
         done;    
 
