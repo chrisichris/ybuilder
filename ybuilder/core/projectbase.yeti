@@ -537,9 +537,9 @@ preparePom orig dir name pomParts config p =
     fi;
         
     
-mvnInstall config fileName packaging project = 
+mvnInstall config pomParts fileName project = 
    (pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-              (pomParts config packaging) config project;
+              pomParts config project;
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "install") 
             ["file": fileName]
@@ -547,7 +547,7 @@ mvnInstall config fileName packaging project =
             project);
 
     
-mvnDeploy config fileName packaging project =
+mvnDeploy config pomParts fileName project =
    (//snapshot or normal
    repo = if strEnds? config.version "-SNAPSHOT" then
             config.snapshotRepository
@@ -596,7 +596,7 @@ mvnDeploy config fileName packaging project =
                 [] project;
     fi;
     pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
-            (pomParts config packaging) config project;
+            pomParts config project;
     
     antTask (maven "pom") ["id":"installPom", "file":pomfile][] project;
     antTask (maven "deploy") 
@@ -618,12 +618,12 @@ mvnDeploy config fileName packaging project =
              project);
 
 
-_mvnInstallOrDeploy config fileName packaging project = 
+_mvnInstallOrDeploy config pomParts fileName project = 
    (if contains? ":install" project.args then
-        mvnInstall config fileName packaging project;
+        mvnInstall config pomParts fileName project;
     fi;
     if contains? ":deploy" project.args then
-        mvnDeploy config fileName packaging project;
+        mvnDeploy config pomParts fileName project;
     fi);
 
             
@@ -918,7 +918,7 @@ jar =
                  ^ config.artifactId 
                  ^ "-" ^ config.version
                  ^ ".jar";
-        _mvnInstallOrDeploy config destfl "jar" p;
+        _mvnInstallOrDeploy config (pomParts config "jar") destfl p;
     done;
     
 war = 
@@ -947,7 +947,7 @@ war =
                             antFilesetElement dir ie;
                           done config.warFileset))
                         p;
-                _mvnInstallOrDeploy config destfl "war" p;
+                _mvnInstallOrDeploy config (pomParts config "war") destfl p;
             done;
 /*
 jetty =
