@@ -61,8 +61,7 @@ _withBuildClassLoader dirPrefix antFiles fn =
 
     
 if not (file "project.yeti")#exists() then
-        createNewYetiProject config projectName (createProject ()); 
-        retrieveBuildDependencies ();
+        //retrieveBuildDependencies ();
 
 
     emptyHelp = target config "new" "help" 

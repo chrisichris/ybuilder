@@ -28,14 +28,6 @@ createExtensionTestConfig config = {
 };
 
 
-createExtensionTestDirs config name project = 
-    (baseDir = config.extensionTestDir ^ name ^ "/";
-    createNewYetiProject config baseDir project;
-    antTask "copy" ["todir":baseDir, "overwrite":"false"] 
-        [el "javaresource" ["name":"ybuilder/core/targets.properties"][],
-         el "mapper" ["type":"flatten"][]] 
-        project);
-
 
 _doExtensionTest config name project = (
     if (file (config.extensionTestDir ^ name))#exists() then 
@@ -94,26 +86,14 @@ runExtensionTests config project = (
 );
 
 registerExtensionTestTargets config = 
-    (createExtensionTestProject = 
-        target config "extensiontest" "createProject" 
-               [Description ("creates a project for testing of an extension "
-                ^"in [\(config.extensionTestDir)]. The name of the "
-                ^" project must be provided as a param")] do p:
-            for p.args do n: 
-                createExtensionTestDirs config n p 
-            done;
-        done;
-
-    extensionTest = 
+    (extensionTest = 
         target config "extensiontest" "run" 
         [Before config.livecycleTargets.test] 
         do p: runExtensionTests config p done;
 
     push config.targetsInHelp extensionTest;   
-    push config.targetsInHelp createExtensionTestProject;
     {
         extenstiontestTargets = {
-            createExtensionTestProject,
             extensionTest,
         }
     });
@@ -123,6 +103,5 @@ registerExtensionTestTargets config =
     createExtensionTestConfig,
     registerExtensionTestTargets,
     runExtensionTests, 
-    createExtensionTestDirs
 }				
 

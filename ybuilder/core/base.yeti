@@ -413,25 +413,10 @@ registerBaseTargets config = (
         }
     });        
 
-createNewYetiProject config projectDir project = 
-       (for [config.dir.lib, 
-             config.dir.src, 
-             config.dir.test, 
-             config.dir.buildExtlib] 
-             do d: 
-                antTask "mkdir" ["dir":(projectDir ^ d)] [] project 
-        done;
-                
-        antTask "copy" ["todir":projectDir, "overwrite":"false"] 
-                [el "javaresource" ["name":"ybuilder/core/project.yeti"] [],
-                 el "javaresource" ["name":"ybuilder/core/.gitignore"] [],
-                 el "mapper" ["type":"flatten"] []] 
-                project);
         
  
 (load ybuilder.core.projectbase) with {
     registerBaseTargets,
     createBaseConfig,
-    createNewYetiProject, 
 }
 
