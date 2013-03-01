@@ -31,7 +31,7 @@ createVertxConfig config =
     };
 
 
-vertxTask config args p = 
+vertxTask config dir args p = 
    (sysProps = copy config.vertxSysProps; 
     cpP = array [PathPatterns \(config.pathScopeProvided is pathPatternType)];
 
@@ -64,6 +64,7 @@ vertxTask config args p =
 
     antTask "java" ["classname":"org.vertx.java.platform.impl.cli.Starter",
                    "fork":"true",
+                   "dir":dir,
                    "failonerror":"true",
                    "taskname":"vertx"]
                    ([el "classpath" [:] (antPathElements (cpP))]
@@ -175,14 +176,14 @@ registerVertxTargets config =
             else
                 head p.args
             fi;
-            vertxTask config ["runmod", mn] p;
+            vertxTask config (readArg "-dir" "." p.args) ["runmod", mn] p;
         done;
 
     vertxCmd =
         target config "vertx" "cmd"
             [Description "runs vertx with the given parameters"]
         do p:
-            vertxTask config p.args p;
+            vertxTask config (readArg "-dir" "." p.args) p.args p;
         done;
 
     vertxTest = 
@@ -196,7 +197,7 @@ registerVertxTargets config =
             else
                 head p.args
             fi;
-            vertxTask config ["runmod", mn] p;
+            vertxTask config (readArg "-dir" "." p.args) ["runmod", mn] p;
         done;
 
     {
