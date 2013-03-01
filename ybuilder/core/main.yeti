@@ -63,31 +63,21 @@ _withBuildClassLoader dirPrefix antFiles fn =
 if not (file "project.yeti")#exists() then
         //retrieveBuildDependencies ();
 
+    load ybuilder.core.build;
 
-    emptyHelp = target config "new" "help" 
-            [Description "help shown when there is no project.yeti"] do p:
         println "ybuilder - version \(ybuilderVersion)\n";
         println ' 
-    ybuilder is a simple build-enviroment for YETI the functional 
+    ybuilder a simple build-enviroment for YETI the functional 
     programming-language for JVM.
 
-    To use ybuilder create a new ybuilder project:
+    No project.yeti file found in current directory.
+
+    To use ybuilder create a new ybuilder project.
+    
+    The easiest way to do so is to clone the basic project from
+    https://github.com/chrisichris/basic.ybtr 
  
-    1.) run "java -jar ybuilder.jar new projectName chrisichris/basic" 
-        This will create a new directory "projectName" based on the
-        github repository chrisichris/basic.ybtr
-    2.) edit the "project.yeti" file in the new directory 
-        as described in the comments
-    3.) copy your ybuilder.jar to the new directy (if it is not present)
-    4.) run "java -jar ybuilder.jar" again to get a detailed help message
-
-    For detailed description google ybuilder yeti (there is no homepage yet)
     '
-    done;
-
-    config.defaultTarget := Some emptyHelp;
-
-    run config;
 else
     load ybuilder.core.build;
     project = createProject();
