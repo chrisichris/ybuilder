@@ -660,6 +660,11 @@ registerBuildTargets config =
                 printTargets config;
             done;
         
+    dependencies = 
+        target config "dependencies" "dependencies"
+            [Description "retrieves the dependencies",
+            ShortName()]
+        do p: () done;
 
     help = 
         target config "help" "help" 
@@ -732,7 +737,8 @@ cleanBuildLibs  deletes the ybuilder/libext_managed directory
         cmdYbuilderVersion,
         cmdTargets,
         buildlibsDelete,
-        buildlibsRetrieve
+        buildlibsRetrieve,
+        dependencies
     });
 
 

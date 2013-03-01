@@ -649,7 +649,9 @@ _mvnInstallOrDeploy config pomFile fileName project =
 //lifecycle targets
 
 registerProjectBaseTargets config = 
-(continuous = 
+(buildTargets = registerBuildTargets config;
+
+continuous = 
     target config "util" "continuous" 
        [Description "Continouesly runs the target given as argument",
        ShortName()]
@@ -867,6 +869,7 @@ prepareLibs =
  retrieveLibs =
     target config "libs" "retrieveLibs" 
             [Description "loads libraries in [\(config.dir.libManaged)]",
+            Before buildTargets.dependencies,
             ShortName()]
         do p:
             antTask "delete" ["dir":config.dir.libManaged] [] p;
@@ -1029,7 +1032,7 @@ for [clean, retrieveLibs, compile, test, jar, war,
      doc, pom, cleanLibs, cleanAll, continuous]
     (push config.targetsInHelp);
 
-(registerBuildTargets config) with {
+buildTargets with {
     livecycleTargets = {
         preClean, 
         clean, 

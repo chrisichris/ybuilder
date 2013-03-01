@@ -83,23 +83,26 @@ else
     project = createProject();
     //project file exists
     //so run it
-    if not 
-        (file build.buildDependenciesConfig.ybuilderLibsManaged)#exists() 
-        then
-        build.retrieveBuildDependencies ();
-    fi;
     
     //check for project classes lib
     projectClassesDir = buildDependenciesConfig.ybuilderProjectClasses;
     projectClassFile = new File(file projectClassesDir, "project.class");
     
-    if not projectClassFile#exists() 
+    args = if not projectClassFile#exists() 
         or projectClassFile#lastModified() 
             < (file "project.yeti")#lastModified() then
         //clean/create the target dir    
         antTask "delete" ["dir":projectClassesDir] [] project;
         antTask "mkdir" ["dir":projectClassesDir] [] project;
+
+        //clean the buildDependencies and retrieve them
+        antTask "delete" 
+                ["dir":build.buildDependenciesConfig.ybuilderLibsManaged,
+                "failonerror":"false"]
+                [] project;
+        build.retrieveBuildDependencies();        
        
+
         println "--- compiling project.yeti ---------";
         //create classLoader with libs and compile project.yeti
         antFiles = listFiles "."
@@ -112,6 +115,16 @@ else
             pars = ["-d",projectClassesDir,"project.yeti"];
             _ = m#invoke((), (array [pars as ~String[]]) as ~String[][]);
         done;
+        //add target to retrieve all the dependencies
+        "dependencies:dependencies,":: list _argv
+    else
+        //retrieve the buildDependencies anyway
+        if not 
+            (file build.buildDependenciesConfig.ybuilderLibsManaged)#exists() 
+            then
+            build.retrieveBuildDependencies ();
+        fi;
+        list _argv;
     fi;
     
     //now we have the compiled project.class we run it now
