@@ -23,7 +23,8 @@ and maven based dependency- and classpath-management.
 ## Installation and Updates / Download
 
 Ybuilder's functinonality is contained in a single all-in one jar. You can
-either download that directly and copy it in each project or use the launcher.
+either download that directly and copy it in each project or use a special
+launcher jar.
 
 ### Pre-requisites
 
@@ -315,71 +316,6 @@ To get a list of targets use help
 
 	java -jar ybuilder.jar help
 
-## Template support
-
-Ybuilder can generate files and directories from templates published on github
-or another git-repository.
-
-### Usage
-
-Template repsitories should reside on git-hub and end with `.ybtr`.
-
-To download such a template execute the `new` target from the parent-directory
-of the new project.
-
-	>java -jar ybuilder.jar new new_project_name chrisichris/basic
-
-Where`new_project_name` is the name of the subdirectory of the new project and
-and `chrisichris/basic` points to the github repository 
-`chrisichris/basic.ybtr`. 
-
-You will than be prompted for different properties. Enter them
-or leave the default values given in square brackets.
-
-After that ybuilder will create a new directory  
-and just copy the content of the repository to the new 
-directory.
-
-The properties entered are applied to replace tokens in the text-files of
-the template-repository when copying the text. This is done using
-the ant replace tokens filter 
-<http://ant.apache.org/manual/Types/filterchain.html#replacetokens>.
-
-### Creating your own Template repository
-
-Creating your own template-repository is easy. Just create a github
-project with a name ending with `.ybtr` and add all the neccessary
-direcotries and files
-
-If you want to apply properties as tokens add a `ybtemplate.properties` file.
-
-For example:
-
-	group_id = @name@
-	version = 0.1-alpha
-	description = some description
-
-The user is asked to enter for each property a value. The default value ist
-the value given in the `ybtemplate.properties` file. If you want to refer to 
-another a property before as the default value
-use `@propertyName@` in the value field.
-
-The property `name` is always present. It is the name given as directory
-to the `new` target.
-
-Each `@propertyName@` token in any of the text files of template is than 
-replaced with the value the user entered ie.
-
-If the template's project.yeti file is:
-
-	config = baseConfig();
-	confg.name := "@projectname@";
-
-and the user enters for projectname foo. Than the project.yeti created will be
-
-	config = baseConfig();
-	confg.name := "foo";
-
 ## Yeti projects
 
 So far everything shown was a general purpose ant-wrapper, which does not build
@@ -397,23 +333,19 @@ described in the previous section and creates this way a standard-project.
     
 ### Creating a yeti project using ybuilder
 
->1. Load a project template from github.
+The easiest way to create a new yubilder project is to clone a template
+porject and costomize the project.yeti file 
+(https://github.com/chrisichris/basic.ybtr) . 
+
+>1. clone the basic.ybtr project from github
 >
->   >java -jar ybuilder.jar new projectNaem chrisichris/basic
+>   >git clone git://github.com/chrisichris/basic.ybtr.git
 	
-	This will create a new directory "projectName" based on the
-	github repository chrisichris/basic.ybtr
->
->2. Enter the values you are promted for and the project will be created
 >
 >3. edit `project.yeti` file to set the projects name, artifact id etc and add 
 >   dependencies 
 >	
->	 config = baseConfig ();
->    config.name := "first-test";
->    config.groupId :="org.foo";
->    config.artifactId := "first-test";
->    config.version := "0.1-alpha";
+>	 config = baseConfig "your-group-id", "your-artifact-id" "verion";
 >    config.description := "First ybuilder based project";
 >    
 >	 config = createBaseConfig config
