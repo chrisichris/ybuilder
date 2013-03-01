@@ -845,10 +845,10 @@ _evaluate config argv =
                         if not empty? ps.excludes then
                             logInfo proj "excluding" (string ps.excludes);
                         fi;
-    					executeTarget t 
-									([Args (tail ns), Properties ps.properties] 
-                                     ++ (map ExcludeByName ps.excludes))
-									proj;
+    			executeTarget t 
+				([Args (tail ns), Properties ps.properties] 
+                                 ++ (map ExcludeByName ps.excludes))
+				proj;
                     fi 
                 done;
                 "Build successful";
