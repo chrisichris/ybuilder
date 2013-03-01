@@ -755,19 +755,21 @@ _evaluate config argv =
                 fold do als s:
                         addStr str =
                             (a = head als;
-                            if strStarts? str "-"then
+                            if strStarts? str "-P"then
                                 cut= strIndexOf str "=" 0;
                                 if cut > 0 then
                                     value = strRight str (cut+1);
-                                    key = strSlice str 1 cut;
+                                    key = strSlice str 2 cut;
                                     a.properties[key] := value;
                                 else
-                                    push a.params str
+                                    a.properties[strRight str 2] := ""
                                 fi;
                             elif (strLength str) > 0 then
                                 push a.params str
                             fi);
-                        if strEnds? s "," then
+                        if s == "," then
+                            {properties = [:], params = array []}::als
+                        elif strEnds? s "," then
                             sf = strLeft s ((strLength s) - 1);
                             addStr sf;
                             {properties = [:], params = array []}::als;
