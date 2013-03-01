@@ -547,15 +547,20 @@ mvnInstall config pomFile fileName project =
     
 mvnDeploy config pomFile fileName project =
    (//snapshot or normal
-   repo = if strEnds? config.version "-SNAPSHOT" then
+    repo = if strEnds? config.version "-SNAPSHOT" then
             config.snapshotRepository
         else
             config.deployRepository
         fi;
 
+    //a repo url must be definde
+    if not defined? repo.url then 
+        failWith "No \(if strEnds? config.version "-SNAPSHOT" then
+                         "snapshot" else "deploy" fi)Repository url defined"
+    fi;
 
-   //attach all the artifacts in the artifacts dir
-   attachedFiles = listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
+    //attach all the artifacts in the artifacts dir
+    attachedFiles = listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
         |> concatMap do fn:
             if fn == fileName then
                 []
@@ -584,29 +589,47 @@ mvnDeploy config pomFile fileName project =
             fi;
         done;
     
-   //load the deployProvider
-   if defined? repo.providerArtifactId then
+    //load the deployProvider
+    if defined? repo.providerArtifactId then
         antTask (maven "install-provider") 
                 ["artifactId": repo.providerArtifactId,
                  "version":repo.providerVersion] 
                 [] project;
     fi;
     
+    //read in any username/password
+    var username = undef_str;
+    var pwd = undef_str;
+    args = array (project.args);
+    (length args > 1) loop 
+        case shift args of
+        "-u" : username := shift args;
+        "-p" : pwd := shift args;
+        _ : ()
+        esac;
+
+    //read from pwd from the console if username given
+    if defined? username and not defined? pwd then
+        console = System#console();
+        if not defined? console then
+            failWith "No console defined can not read password"
+        fi;
+        println "Enter repo-password for deploy";
+        pwd := string (new String(console#readPassword()));
+    fi;
+
+    //create the pom and deploy
     antTask (maven "pom") ["id":"installPom", "file":pomFile][] project;
     antTask (maven "deploy") 
             ["file":fileName]
-            (if defined? repo.url then
-                [el "remoteRepository" ["url":repo.url]
-                    (list repo.params)]
-             else
-                args = list project.args;
-                if (length args) < 2 then
-                    []
-                else
-                    rep = head (tail args);
-                    [el "remoteRepository" ["url":rep] []]
-                fi
-             fi
+            ([el "remoteRepository" ["url":repo.url]
+                    (if defined? username and defined? pwd then
+                        [el "authentication" 
+                            ["password":pwd, "username":username] []]
+                    else
+                        []
+                    fi
+                    ++ list repo.params)]
              ++ attachedFiles
              ++ [el "pom" ["refid":"installPom"] []])
              project);
