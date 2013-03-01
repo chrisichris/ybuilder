@@ -676,10 +676,9 @@ java -jar ybuilder.jar #yeti-expression
 ---
 targets:
 
--c              Starts ybuilder in repl mode
+-c              Starts ybuilder repeated command mode. 
 
--yeti           Same as invoking the yeti.jar in your project but with the full 
-                classpath setup  
+repl            Start the yeti repl with the full classpath setup  
 
 help            Prints this message
 
