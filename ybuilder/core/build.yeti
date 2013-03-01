@@ -661,11 +661,11 @@ programming-language for the JVM.
 
 To run ybuilder targets defined in project.yeti:
 
-java -jar ybuilder.jar target [params] [-property] [, target [param] [-property] ]+
+java -jar ybuilder.jar target [params] [-Pproperty] [, target [param] [-property] ]+
 
 target       name of the target to run
 params       space seperated list of params for target
-property     space seperated list of -key=value pairs starting with - for target
+property     space seperated list of -Pkey=value pairs starting with -P 
 
 -or-
 
