@@ -470,6 +470,20 @@ millisSinceStart () =
         -1000
     fi);
 
+readArg marker default args =
+    if empty? args then 
+        default
+    elif head args == marker then
+        t = tail args;
+        if empty? t then
+            default
+        else
+            head t;
+        fi;
+    else
+        readArg marker default (tail args) 
+    fi;
+        
 
 readProperties propsFile =        
    (import java.util:Properties,
@@ -917,6 +931,7 @@ run config =
     antPathElements,
     //antPathById,
     file,
+    readArg,
     millisSinceStart,
 
     buildDependenciesConfig,
