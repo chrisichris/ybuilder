@@ -39,20 +39,8 @@ _ = target config "custom" "ybuilderinit"
         el "fileset" ["dir":ybuilderSrcDir] [
             el "include" ["name":"core/*.yeti"] []]] p;
 
-    antTask "copy" ["todir":config.dir.resources] [
-        el "fileset" ["dir":ybuilderSrcDir ^ "resources", 
-                      "defaultexcludes":"no"] 
-                     []] p;
 done;
 
-_ = target config "custom" "copygit" 
-        [Before config.baseTargets.copyResources] do p:
-    antTask "copy" 
-            ["todir":config.dir.targetClasses] 
-               [el "fileset" 
-                    ["dir":config.dir.resources, "defaultexcludes":"no"] 
-                        []] p;
-done;
 
 // compileRes = 
     // target "compileRes" [Before livecycleTargets.testCompile] do p:
