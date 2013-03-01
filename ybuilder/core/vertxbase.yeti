@@ -102,7 +102,7 @@ moduleLibsFn config p=
 registerVertxTargets config =
     (//add fn to retrieveDependencies target
     doAfterTarget 
-        config.projectBaseTargets.retrieveLibs 
+        config.projectBaseTargets.retrieveDependencies 
         (moduleLibsFn config);
 
     vertxCompile = 

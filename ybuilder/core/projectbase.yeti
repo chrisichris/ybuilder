@@ -719,14 +719,14 @@ clean =
             ShortName ()] 
            (antTask "delete" ["dir" : config.dir.target] []);
 
-cleanLibs = 
-    target config "libs" "cleanLibs" 
+cleanDependencies = 
+    target config "dependencies" "cleanDependencies" 
            [Description ("Cleans the retrieved dependencies "
                         ^"in [\(config.dir.libManaged)] directory")] 
            (antTask "delete" ["dir":config.dir.libManaged] []);
 cleanAll = 
     target config "livecycle" "cleanAll" 
-           [Dependencies[cleanLibs, clean],
+           [Dependencies[cleanDependencies, clean],
            ShortName (),
            Description "Cleans the project and all the libs"] 
            \();
@@ -813,8 +813,8 @@ pom =
         fi;
     done;
 
-prepareLibs = 
-    target config "libs" "prepareLibs" 
+prepareDependencies = 
+    target config "dependencies" "prepareDependencies" 
         [Before initialize, 
          Description "loads librararies in [\(config.dir.libManaged)]"] 
         do project:
@@ -866,14 +866,14 @@ prepareLibs =
             fi;
         done;
 
- retrieveLibs =
-    target config "libs" "retrieveLibs" 
+ retrieveDependencies =
+    target config "dependencies" "retrieveDependencies" 
             [Description "loads libraries in [\(config.dir.libManaged)]",
             Before buildTargets.dependencies,
             ShortName()]
         do p:
             antTask "delete" ["dir":config.dir.libManaged] [] p;
-            _ =executeTarget prepareLibs [RunAlways true] p;
+            _ =executeTarget prepareDependencies [RunAlways true] p;
         done;
 
 jarArtifacts =
@@ -1015,7 +1015,7 @@ jetty =
 
 //path targets    
 initDirs = 
-    target config "init" "initDirs" [Before initialize,Depends prepareLibs] 
+    target config "init" "initDirs" [Before initialize,Depends prepareDependencies] 
             do project:
                 antTask "mkdir" ["dir":config.dir.targetClasses] [] project;
                 antTask "mkdir" ["dir":config.dir.targetTestClasses][] project;
@@ -1023,13 +1023,13 @@ initDirs =
     
 initBuildPathes = 
     target config "init" "initBuildPathes" 
-            [Before initializeBuild,Depends prepareLibs] 
+            [Before initializeBuild,Depends prepareDependencies] 
           (antTask "path" ["id":"buildExtPath"] 
                     (antPathElements (buildExtPath config)));
 
 
-for [clean, retrieveLibs, compile, test, jar, war, 
-     doc, pom, cleanLibs, cleanAll, continuous]
+for [clean, retrieveDependencies, compile, test, jar, war, 
+     doc, pom, cleanDependencies, cleanAll, continuous]
     (push config.targetsInHelp);
 
 buildTargets with {
@@ -1056,9 +1056,9 @@ buildTargets with {
     projectBaseTargets = {
         //jetty,
         initBuildPathes,
-        prepareLibs,
-        retrieveLibs, 
-        cleanLibs, 
+        prepareDependencies,
+        retrieveDependencies, 
+        cleanDependencies, 
         initDirs,
         war,
         jar,
