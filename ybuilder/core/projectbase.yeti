@@ -546,8 +546,11 @@ mvnInstall config pomFile fileName project =
 
     
 mvnDeploy config pomFile fileName project =
-   (
+   (//fist install the module
+    mvnInstall config pomFile fileName project;
+    //than run the integration test in any case
     executeTarget (config.targets["livecycle:integrationTest"]) [] project;
+
     //snapshot or normal
     repo = if strEnds? config.version "-SNAPSHOT" then
             config.snapshotRepository
@@ -638,11 +641,10 @@ mvnDeploy config pomFile fileName project =
 
 
 _mvnInstallOrDeploy config pomFile fileName project = 
-   (if contains? ":install" project.args then
-        mvnInstall config pomFile fileName project;
-    fi;
-    if contains? ":deploy" project.args then
+    (if contains? ":deploy" project.args then
         mvnDeploy config pomFile fileName project;
+    elif contains? ":install" project.args then
+        mvnInstall config pomFile fileName project;
     fi);
 
             
