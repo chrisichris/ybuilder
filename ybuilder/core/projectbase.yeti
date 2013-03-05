@@ -546,7 +546,9 @@ mvnInstall config pomFile fileName project =
 
     
 mvnDeploy config pomFile fileName project =
-   (//snapshot or normal
+   (
+    executeTarget (config.targets["livecycle:integrationTest"]) [] project;
+    //snapshot or normal
     repo = if strEnds? config.version "-SNAPSHOT" then
             config.snapshotRepository
         else
@@ -772,6 +774,10 @@ test =
 preparePackage = 
     target config "livecycle" "preparePackage" 
         [Depends cleanAll, Depends test] \(); 
+
+integrationTest =
+    target config "livecycle" "integrationTest"
+        [Depends preparePackage] \();
     
 preDoc = target config "doc" "preDoc" [Depends initialize] \();
 
@@ -1050,6 +1056,7 @@ buildTargets with {
         processTestClasses, 
         test, 
         preparePackage,
+        integrationTest,
         preDoc, 
         doc,  
     },	

@@ -25,8 +25,10 @@ createVertxConfig config =
         var vertxModsDir = "mods/",
         var vertxConfDir = "mods/conf/",
         var vertxMainModuleName = "main",
-        var vertxSysProps = ["org.vertx.yeti":"yeb.vertx.YetiVerticleFactory"],
+        var vertxSysProps = [:] is hash<string,string>, 
+         //["vertx.langs.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test",
+        var vertxIntegrationTestModuleName = "integration-test",
         var vertxArtifactId = config.artifactId ^ "-module";
     };
 
@@ -84,6 +86,20 @@ vertxTestPath config =
                  Location (config.dir.targetClasses),
                  Location (config.dir.targetTestClasses)]);
     
+_runMod config default project =
+    (mn = if empty? project.args then
+        default
+    else
+        head project.args
+    fi;
+    if not (file (config.vertxModsDir^mn))#exists() then
+        logInfo project "vertx" "no module with name \(mn)";
+    else
+        vertxTask config 
+            (readArg "-dir" "." project.args) 
+            ["runmod", mn] 
+            project
+    fi);
 
 
 
@@ -170,15 +186,8 @@ registerVertxTargets config =
         target config "vertx" "main" 
             [Description "runs the current main vertx module or the one
             given as parameter"]
-        do p:
-            mn = if empty? p.args then
-                config.vertxMainModuleName
-            else
-                head p.args
-            fi;
-            vertxTask config (readArg "-dir" "." p.args) ["runmod", mn] p;
-        done;
-
+        (_runMod config config.vertxMainModuleName);
+        
     vertxCmd =
         target config "vertx" "cmd"
             [Description "runs vertx with the given parameters"]
@@ -191,15 +200,14 @@ registerVertxTargets config =
             [Before config.livecycleTargets.test,
              Description "runs the vertx test module, 
                 or the one given as name"]
-        do p:
-            mn = if empty? p.args then
-                config.vertxTestModuleName
-            else
-                head p.args
-            fi;
-            vertxTask config (readArg "-dir" "." p.args) ["runmod", mn] p;
-        done;
+        (_runMod config config.vertxTestModuleName);
 
+    vertxIntegrationTest = 
+        target config "vertx" "integrationTest"
+            [Before config.livecycleTargets.integrationTest,
+             Description "runs the vertx test module, 
+                or the one given as name"]
+        (_runMod config config.vertxIntegrationTestModuleName);
     {
         vertxTargets = {
             vertxCompile,
