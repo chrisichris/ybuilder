@@ -626,7 +626,8 @@ mvnDeploy config pomFile fileName project =
     //create the pom and deploy
     antTask (maven "pom") ["id":"installPom", "file":pomFile][] project;
     antTask (maven "deploy") 
-            ["file":fileName]
+            ["file":fileName,
+            "uniqueVersion":"true"]
             ([el "remoteRepository" ["url":repo.url]
                     (if defined? username and defined? pwd then
                         [el "authentication" 
