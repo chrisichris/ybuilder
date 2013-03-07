@@ -24,11 +24,11 @@ createVertxConfig config =
     {
         var vertxModsDir = "mods/",
         var vertxConfDir = "mods/conf/",
-        var vertxMainModuleName = "main",
+        var vertxMainModuleName = "main#main#1",
         var vertxSysProps = [:] is hash<string,string>, 
          //["vertx.langs.yeti":"yeb.vertx.YetiVerticleFactory"],
-        var vertxTestModuleName = "test",
-        var vertxIntegrationTestModuleName = "integration-test",
+        var vertxTestModuleName = "test#test#1",
+        var vertxIntegrationTestModuleName = "test#integration#1",
         var vertxArtifactId = config.artifactId ^ "-module";
     };
 
@@ -161,7 +161,17 @@ registerVertxTargets config =
                             (config.vertxModsDir^config.vertxMainModuleName) 
                             [Include "**/*.*"]] 
                     p;
-             
+            antTask "copy"
+                    ["file":_modFile config,
+                    "tofile":config.dir.target
+                             ^config.groupId
+                             ^"#"
+                             ^config.vertxArtifactId
+                             ^"#"
+                             ^config.version
+                             ^".zip"]
+                    []
+                    p;
         done;
 
     vertxModule =
@@ -203,7 +213,7 @@ registerVertxTargets config =
         (_runMod config config.vertxTestModuleName);
 
     vertxIntegrationTest = 
-        target config "vertx" "integrationTest"
+        target config "vertx" "integration-test"
             [Before config.livecycleTargets.integrationTest,
              Description "runs the vertx test module, 
                 or the one given as name"]
