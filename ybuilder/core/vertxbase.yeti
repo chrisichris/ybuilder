@@ -143,8 +143,10 @@ registerVertxTargets config =
 
     _modFile config = 
         config.dir.target 
+        ^ config.groupId
+        ^ "#"
         ^ config.vertxArtifactId 
-        ^ "-"
+        ^ "#"
         ^ config.version
         ^ ".zip";
     
@@ -160,17 +162,6 @@ registerVertxTargets config =
                     [antFilesetElement 
                             (config.vertxModsDir^config.vertxMainModuleName) 
                             [Include "**/*.*"]] 
-                    p;
-            antTask "copy"
-                    ["file":_modFile config,
-                    "tofile":config.dir.target
-                             ^config.groupId
-                             ^"#"
-                             ^config.vertxArtifactId
-                             ^"#"
-                             ^config.version
-                             ^".zip"]
-                    []
                     p;
         done;
 
