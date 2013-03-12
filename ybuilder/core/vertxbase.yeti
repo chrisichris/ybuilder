@@ -24,11 +24,11 @@ createVertxConfig config =
     {
         var vertxModsDir = "mods/",
         var vertxConfDir = "mods/conf/",
-        var vertxMainModuleName = "main#main#1",
+        var vertxMainModuleName = "main~main~1",
         var vertxSysProps = [:] is hash<string,string>, 
          //["vertx.langs.yeti":"yeb.vertx.YetiVerticleFactory"],
-        var vertxTestModuleName = "test#test#1",
-        var vertxIntegrationTestModuleName = "test#integration#1",
+        var vertxTestModuleName = "test~test~1",
+        var vertxIntegrationTestModuleName = "test~integration~1",
         var vertxArtifactId = config.artifactId ^ "-module";
     };
 
@@ -144,9 +144,9 @@ registerVertxTargets config =
     _modFile config = 
         config.dir.target 
         ^ config.groupId
-        ^ "#"
+        ^ "~"
         ^ config.vertxArtifactId 
-        ^ "#"
+        ^ "~"
         ^ config.version
         ^ ".zip";
     
