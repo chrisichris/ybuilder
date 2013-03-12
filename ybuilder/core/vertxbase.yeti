@@ -151,7 +151,7 @@ registerVertxTargets config =
         ^ ".zip";
     
     vertxZipModule = 
-        target config "vertx" "zipModule"
+        target config "vertx" "zip-module"
             [Depends config.livecycleTargets.preparePackage,
              Description "bundles creates the vertx module and 
                               copies it to target"]

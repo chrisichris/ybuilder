@@ -319,7 +319,7 @@ registerBaseTargets config = (
         done;
             
     simpleTestTarget =
-        target config "test" "simpleTest" [Before livecycleTargets.test] do p:
+        target config "test" "simple-test" [Before livecycleTargets.test] do p:
             modules = if empty? p.args then
                 if (file config.dir.test)#exists() then
                     listFiles config.dir.test [Include "**/*STest.yeti"];

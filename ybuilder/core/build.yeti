@@ -249,13 +249,12 @@ printTargets config =
     setHashDefault ha \[];
     for (list config.targets) do t:
         name = t.name;
-        prefix = strLeftOf ":" name;
-        if t.shortName != t.name then
-            if not name in printedShort then
+        if not name in printedShort then
+            printedShort[name] := true;
+            prefix = strLeftOf ":" name;
+            if t.shortName != t.name then
                 println (targetToString t);
-                printedShort[name] := true;
             fi;
-        else
             ha[prefix] := t :: ha[prefix];
         fi
     done;
@@ -716,11 +715,6 @@ targets:
 
 -c              Starts ybuilder repeated command mode. 
 
-retrieveBuildLibs 
-    downloads the build libs into ybuilder/libext_managed dir 
-
-cleanBuildLibs  
-    deletes the ybuilder/libext_managed directory triggering fresh load next time
 ';
                 
                 printTargets config;
@@ -729,9 +723,10 @@ cleanBuildLibs
             fi;
             done;
             
-    buildlibsDelete = target config "buildlibs" "delete" 
+    buildlibsDelete = target config "buildlibs" "delete-buildlibs" 
             [Description 
-            "deletes the buildlibs dir, which triggers next time a retrieve"]
+            "deletes the buildlibs dir, which triggers next time a retrieve",
+            ShortName()]
         do p:
         antTask "delete" 
                     ["dir":buildDependenciesConfig.ybuilderLibsManaged] 
@@ -740,8 +735,9 @@ cleanBuildLibs
 
         done;
 
-    buildlibsRetrieve = target config "buildlibs" "retrieve" 
-            [Description "retrieves the buildlibs"]
+    buildlibsRetrieve = target config "buildlibs" "retrieve-buildlibs" 
+            [Description "retrieves the buildlibs",
+            ShortName()]
         do p:
             retrieveBuildDependencies ();
         done;
