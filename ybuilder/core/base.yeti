@@ -319,7 +319,12 @@ registerBaseTargets config = (
         done;
             
     simpleTestTarget =
-        target config "test" "simple-test" [Before livecycleTargets.test] do p:
+        target config "test" "simple-test" 
+            [Before livecycleTargets.test,
+            Description "runs yeti programs which end with 'STest.yeti' as
+            Tests, the output of this programs is logged to 
+            target/reports/stets"] 
+        do p:
             modules = if empty? p.args then
                 if (file config.dir.test)#exists() then
                     listFiles config.dir.test [Include "**/*STest.yeti"];
@@ -329,40 +334,35 @@ registerBaseTargets config = (
             else
                 list p.args
             fi;
-            
+           
+            progNames = modules 
+                |> map do mo:
+                    if strEnds? mo ".yeti" then
+                        n = strLeft mo ((strLength mo) - 5);
+                        n2 = strReplace '/' '.' n;
+                        strReplace "\(File#separator)" '.' n2;
+                    else
+                        mo
+                    fi;
+                done;
+
             repDir = config.dir.reports ^"stests/";
             antTask "delete" ["dir":repDir] [] p;
             antTask "mkdir" ["dir":repDir] [] p;
 
-            
-            if not empty? modules then
-                code = "(var fails = 0;(" 
-                    ^ (modules |> map do mo:
-                        if strEnds? mo ".yeti" then
-                            n = strLeft mo ((strLength mo) - 5);
-                            n2 = strReplace '/' '.' n;
-                            strReplace '\' '.' n2;
-                        else
-                            mo
-                        fi
-                    done
-                    |> map do moduleName:
-                        resFile = repDir ^ moduleName ^".txt";
-                        "(res = (load \(moduleName))();"
-                        ^ "if ((strLength res) > 6) and"
-                        ^ "((strLower (strLeft res 7)) == 'failure') then"
-                        ^ " fails := fails + 1 fi;"
-                        ^ "println 'TestResult of \(moduleName)';"  
-                        ^ "println res;"
-                        ^ "_ = writeFile '\(resFile)' 'utf-8' do h: "
-                        ^ " h.write res done;);";
-                    done
-                    |> strJoin "")
-                    ^ "); if fails > 0 then System#exit(1) fi;);";
-                helpers.yetiMainTask "simpleTest" 
-                    ["-e", code] 
-                    (pathes.test config) true "." p;
-            fi;
+            for progNames do prog:
+                logInfo p "stest" "running test: \(prog)";
+                antTask "java"
+                    ["classname":prog,
+                    "fork":"true",
+                    "dir": config.dir.target,
+                    "failonerror":"true",
+                    "taskName":"stest"]
+                    [el "classpath" [:] (antPathElements (pathes.test config)),
+                    el "redirector" ["output":repDir^prog^".txt",
+                                     "alwayslog":"true"] []]
+                    p;
+            done;
         done;
     
     replTarget =
