@@ -51,6 +51,7 @@ typedef projectType = {
                     
 typedef targetType = {
     name is string, 
+    shortName is string,
     depends is array<targetType>,
     var preDependenciesFn is projectType -> (),
     var description is string,
@@ -170,9 +171,15 @@ target config group namep opts fn1
    if name in config.targets then 
         failWith "\(name) already defined as target" 
     fi;
-    
+    var sname = name;
+    for opts \case of
+        ShortName () :
+            sname := namep;
+        _ : ();
+    esac;
     t = {
-        name, 
+        name,
+        shortName = sname,
         depends = array [],
         var description = "",
         var preDependenciesFn = \(),
@@ -208,14 +215,18 @@ doAfterTarget target fn =
 
 targetToString t = (
     deps = list t.depends;
-    "---\n\(t.name)"
+    if t.name != t.shortName then 
+            "\(t.shortName) [\(t.name)]" 
+        else 
+            "\(t.name)";
+        fi
     ^ "\n"
     ^ if (strLength t.description) > 0 then
         "   \(t.description)\n"
     else
         ""
     fi
-    ^ "   depends: \(strJoin ", " (map (.name) deps))");   
+    ^ "   depends: \(strJoin ", " (map (.name) deps))\n");   
 
 printSimilarTargets targets name =
    (n = name;
@@ -233,21 +244,29 @@ printSimilarTargets targets name =
     fi);
             
 printTargets config =            
-    (ts = array (list config.targets)
-    |> groupBy do t t2:
-        cut = strIndexOf t.name ":" 0;
-        if cut < 0 then
-            strIndexOf t2.name ":" 0 == cut;
+    (ha = [:];
+    printedShort = [:];
+    setHashDefault ha \[];
+    for (list config.targets) do t:
+        name = t.name;
+        prefix = strLeftOf ":" name;
+        if t.shortName != t.name then
+            if not name in printedShort then
+                println (targetToString t);
+                printedShort[name] := true;
+            fi;
         else
-            prefix = strLeft t.name cut;
-            strStarts? t2.name (prefix^":")
+            ha[prefix] := t :: ha[prefix];
         fi
     done;
-    println "all targets"; 
-    for ts do ts2:
-        println "next...";
-        for ts2 (println . targetToString)
+
+    println "\n\nall targets:\n";
+    
+    forHash ha do prefix targets:
+        println "\nGroup \(prefix):\n---------";
+        for targets (println . targetToString);
     done);
+
     
 executeTarget target opts project is targetType -> 'a -> 'b -> 'c= 
    (var runAlways = false;
@@ -697,14 +716,11 @@ targets:
 
 -c              Starts ybuilder repeated command mode. 
 
-repl            Start the yeti repl with the full classpath setup  
+retrieveBuildLibs 
+    downloads the build libs into ybuilder/libext_managed dir 
 
-help            Prints this message
-
-retrieveBuildLibs downloads the build libs into ybuilder/libext_managed dir 
-
-cleanBuildLibs  deletes the ybuilder/libext_managed directory 
-                triggering fresh load next time
+cleanBuildLibs  
+    deletes the ybuilder/libext_managed directory triggering fresh load next time
 ';
                 
                 printTargets config;
