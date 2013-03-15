@@ -856,9 +856,9 @@ _evaluate config argv =
                             (head ns)
                         fi;
 
-					proj = createProject();	
-                    
-					if n == "" then
+                    proj = createProject();	
+
+                    if n == "" then
                         () 
                     elif not n in config.targets then
                         logError proj "no-target" "\(n) is no target";
@@ -878,11 +878,12 @@ _evaluate config argv =
                 done;
                 "Build successful";
             catch YbuilderAntException ex:
-                if defined? ex and defined? ex#getCause() then
+                str = "Build Failed:\n\(ex#getMessage())\n";
+                if defined? ex and defined? ex#getCause()  
+                    and logVerbose? then
                     ex#getCause()#printStackTrace();
                 fi;
-                "Build Failed:\n\(ex#getMessage())\n";
-                
+                str 
             yrt;
         fi;
     fi;
