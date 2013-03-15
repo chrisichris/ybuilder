@@ -156,11 +156,18 @@ logWarn = log (Project#MSG_WARN);
 
 
 el name atts subelements = 
+    (if not defined? name then failWith "no element name provided" fi;
+    attsn = [:];
+    forHash atts do k v:
+        if defined? k and defined? v then 
+            attsn[k] := v;
+        fi;
+    done;
     Element {
         name,
-        attributes = atts,
+        attributes = attsn,
         subelements,	
-    } is xmlelement;
+    } is xmlelement);
             
 tel name atts text = el name atts [Text text];			
 
@@ -871,7 +878,9 @@ _evaluate config argv =
                 done;
                 "Build successful";
             catch YbuilderAntException ex:
+                ex#getCause()#printStackTrace();
                 "Build Failed:\n\(ex#getMessage())\n\(ex#getCause())";
+                
             yrt;
         fi;
     fi;

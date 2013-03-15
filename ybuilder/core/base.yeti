@@ -301,8 +301,6 @@ registerBaseTargets config = (
             antTask "delete" ["dir":repDir] [] p;
             antTask "mkdir" ["dir":repDir] [] p;
 
-            println "prog \(progNames)";
-
             for progNames do prog:
                 logInfo p "stest" "running test: \(prog)";
                 antTask "java"
