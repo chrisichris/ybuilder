@@ -195,7 +195,7 @@ registerVertxTargets config =
     vertxRepl = 
         target config "vertx" "repl"
             [Description "runs a repl in the current main vertx module"]
-        (_runMod config config.vertxMainModuleName ["vertx.repl":"true"]);
+        (_runMod config config.vertxMainModuleName ["yvertx.repl":"true"]);
 
     vertxCmd =
         target config "vertx" "cmd"

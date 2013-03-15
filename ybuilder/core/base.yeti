@@ -268,55 +268,6 @@ registerBaseTargets config = (
             fi
         done;
         
-    yebspecTarget =
-        target config "test" "yebspec" [Before livecycleTargets.test] do p:
-            hasSpec = try
-                (createAntClassLoader (pathes.test config) [])
-                    #loadClass("org.yeb.yebspec");
-                true;
-            catch Exception e:
-                false;
-            yrt;
-            modules = if empty? p.args then
-                if (file config.dir.test)#exists() and hasSpec then
-                    listFiles config.dir.test [Include "**/*Spec.yeti"];
-                else
-                    []
-                fi    
-            else
-                if not hasSpec then
-                    failWith "No yebspec jar on path, can not run yebspec tests"
-                fi;
-                list p.args
-            fi;
-            antTask "mkdir" ["dir":config.dir.reports] [] p;
-            repFile = config.dir.reports ^"yebspecResults.txt";
-            antTask "delete" ["file":repFile] [] p;
-
-            if not empty? modules then
-                code = "ys = load org.yeb.yebspec;"
-                    ^ "res = (ys.specSuite '' [" 
-                    ^ (strJoin "," . map do mo:
-                        mn = if strEnds? mo ".yeti" then 
-                            n = strLeft mo ((strLength mo) - 5);
-                            n2 = strReplace '/' '.' n;
-                            strReplace '\' '.' n2;
-                        else
-                            mo
-                        fi;
-                        "load \(mn)"
-                    done) modules
-                    ^ "]) none;"
-                    ^ "resStr = ys.resultString res;"
-                    ^ "println resStr;"
-                    ^ "_ = writeFile '\(repFile)' 'utf-8' do h: h.write "
-                    ^ "resStr done; if (res.exceptions + res.fails) > 0 then "
-                    ^ "System#exit(1) fi;";
-                //println ("----sepec:"^code);
-                helpers.yetiMainTask "yebspec" 
-                    ["-e",code] (pathes.test config) true "." p;
-            fi;
-        done;
             
     simpleTestTarget =
         target config "test" "simple-test" 
@@ -349,6 +300,8 @@ registerBaseTargets config = (
             repDir = config.dir.reports ^"stests/";
             antTask "delete" ["dir":repDir] [] p;
             antTask "mkdir" ["dir":repDir] [] p;
+
+            println "prog \(progNames)";
 
             for progNames do prog:
                 logInfo p "stest" "running test: \(prog)";
@@ -402,7 +355,6 @@ registerBaseTargets config = (
             testCompileJava,
             javadoc,
             junit = junitTarget,
-            yebspec = yebspecTarget,
             simpleTest = simpleTestTarget,
             yetidoc,
             testCompileYeti,
