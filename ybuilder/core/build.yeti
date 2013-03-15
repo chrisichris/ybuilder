@@ -878,8 +878,10 @@ _evaluate config argv =
                 done;
                 "Build successful";
             catch YbuilderAntException ex:
-                ex#getCause()#printStackTrace();
-                "Build Failed:\n\(ex#getMessage())\n\(ex#getCause())";
+                if defined? ex and defined? ex#getCause() then
+                    ex#getCause()#printStackTrace();
+                fi;
+                "Build Failed:\n\(ex#getMessage())\n";
                 
             yrt;
         fi;
