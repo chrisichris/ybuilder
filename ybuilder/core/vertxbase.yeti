@@ -33,7 +33,7 @@ createVertxConfig config =
     };
 
 
-vertxTask config dir args sysPropsIn p = 
+vertxTask config fork dir args sysPropsIn p = 
    (sysProps = copy config.vertxSysProps;
     insertHash sysProps sysPropsIn;
 
@@ -67,7 +67,7 @@ vertxTask config dir args sysPropsIn p =
     fi;
 
     antTask "java" ["classname":"org.vertx.java.platform.impl.cli.Starter",
-                   "fork":"true",
+                   "fork":string (fork is boolean),
                    "dir":dir,
                    "failonerror":"true",
                    "taskname":"vertx"]
@@ -88,7 +88,7 @@ vertxTestPath config =
                  Location (config.dir.targetClasses),
                  Location (config.dir.targetTestClasses)]);
     
-_runMod config default sysProps project =
+_runMod config fork default sysProps project =
     (mn = if empty? project.args then
         default
     else
@@ -97,7 +97,8 @@ _runMod config default sysProps project =
     if not (file (config.vertxModsDir^mn))#exists() then
         logInfo project "vertx" "no module with name \(mn)";
     else
-        vertxTask config 
+        vertxTask config
+            fork
             (readArg "-dir" "." project.args) 
             ["runmod", mn] 
             sysProps
@@ -190,18 +191,18 @@ registerVertxTargets config =
         target config "vertx" "main" 
             [Description "runs the current main vertx module or the one
             given as parameter"]
-        (_runMod config config.vertxMainModuleName [:]);
+        (_runMod config true config.vertxMainModuleName [:]);
         
     vertxRepl = 
         target config "vertx" "repl"
             [Description "runs a repl in the current main vertx module"]
-        (_runMod config config.vertxMainModuleName ["yvertx.repl":"true"]);
+        (_runMod config false config.vertxMainModuleName ["yvertx.repl":"true"]);
 
     vertxCmd =
         target config "vertx" "cmd"
             [Description "runs vertx with the given parameters"]
         do p:
-            vertxTask config (readArg "-dir" "." p.args) p.args [:] p;
+            vertxTask config true (readArg "-dir" "." p.args) p.args [:] p;
         done;
 
     vertxTest = 
@@ -209,14 +210,14 @@ registerVertxTargets config =
             [Before config.livecycleTargets.test,
              Description "runs the vertx test module, 
                 or the one given as name"]
-        (_runMod config config.vertxTestModuleName [:]);
+        (_runMod config true config.vertxTestModuleName [:]);
 
     vertxIntegrationTest = 
         target config "vertx" "integration-test"
             [Before config.livecycleTargets.integrationTest,
              Description "runs the vertx test module, 
                 or the one given as name"]
-        (_runMod config config.vertxIntegrationTestModuleName [:]);
+        (_runMod config true config.vertxIntegrationTestModuleName [:]);
     {
         vertxTargets = {
             vertxCompile,
