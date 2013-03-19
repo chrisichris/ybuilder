@@ -25,7 +25,7 @@ public class Launcher {
 
 	public static final String YBUILDER_URL_CMD = "-update";
 
-	public static final String VERSION = "@VERSION@";
+	public static final String VERSION = "0.6";
 	
 	public static final String JAR_NAME = "ybuilder-lib-"+VERSION+".jar";
 	
@@ -34,6 +34,9 @@ public class Launcher {
 	
 	public static final File JAR_FILE =
 		new File(HOME_DIR, JAR_NAME);
+	
+	public static final File CHECK_FILE = 
+			new File(HOME_DIR, "timestamp.txt");
 
 
 	public static final File PROJECT_CLASS_FILE =
@@ -49,6 +52,8 @@ public class Launcher {
     	FileOutputStream fout = null;
     	try
     	{
+			if(target.exists()) target.delete();
+
 			System.out.print("Downloading "+JAR_NAME+" to "+target+" ..."); 
     		in = new BufferedInputStream(new URL(sourceUrl).openStream());
     		fout = new FileOutputStream(target);
@@ -66,6 +71,7 @@ public class Launcher {
 				}
     		}
 			System.out.println("\n");
+			
     	}
     	finally
     	{
@@ -75,6 +81,35 @@ public class Launcher {
     			fout.close();
     	}
     }
+
+	private static boolean checkUpdate(File target, File checkFile, 
+										String sourceUrl) {
+		long lastCheck = checkFile.lastModified();
+	
+		//check every hour
+		if(lastCheck < System.currentTimeMillis() - (1000 * 60 * 60 * 3 )) {
+			System.out.println("Checking for new ybuilder version");
+			long lastModified = 0;
+			try{
+				URLConnection con = new URL(sourceUrl).openConnection();
+				con.connect();
+				lastModified = con.getLastModified();
+				//update checkfile
+				if(checkFile.exists()) {
+					checkFile.delete();
+				}
+
+				checkFile.createNewFile();
+
+			}catch(IOException ex) {
+			}
+			
+			return lastModified > target.lastModified();
+		}else{
+			return false;
+		}
+	}
+
 
 	public static void main(String[] args) throws Throwable {
 		//check -version
@@ -113,6 +148,7 @@ public class Launcher {
 		//check wheter we have the home dir
 		if(!HOME_DIR.exists())
 			HOME_DIR.mkdirs();
+
 		
 		//check other download url
 		boolean download = !JAR_FILE.exists();
@@ -123,14 +159,15 @@ public class Launcher {
 			if (args.length > 1) {
 				downloadUrl = args[1];
 				System.out.println("Downloading from: "+downloadUrl);
+				String[] newArgs = new String[args.length -1];
+				System.arraycopy(args,1,newArgs, 0,args.length -1);
+				args = newArgs;
 			}
 					
-			String[] newArgs = new String[args.length -1];
-			System.arraycopy(args,1,newArgs, 0,args.length -1);
-			args = newArgs;
 
-			if(JAR_FILE.exists()) JAR_FILE.delete();
-		}
+		}else{
+			download = checkUpdate(JAR_FILE,CHECK_FILE, GITHUB_REPO + JAR_NAME);
+		}	
 					
 		//check wheter we have the jar
 		if(download) {
@@ -149,6 +186,7 @@ public class Launcher {
 		//in that case recompile it
 		if(PROJECT_CLASS_FILE.exists() && 
 				PROJECT_CLASS_FILE.lastModified() < JAR_FILE.lastModified()) {
+			System.out.println("New ybuilder.jar recompiling project");
 			PROJECT_CLASS_FILE.delete();
 		};
 
