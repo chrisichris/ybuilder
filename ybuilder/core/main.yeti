@@ -116,7 +116,7 @@ else
             _ = m#invoke((), (array [pars as ~String[]]) as ~String[][]);
         done;
         //add target to retrieve all the dependencies
-        "dependencies:dependencies,":: list _argv
+        "dependencies:dependencies,":: list args
     else
         //retrieve the buildDependencies anyway
         if not 
@@ -124,7 +124,7 @@ else
             then
             build.retrieveBuildDependencies ();
         fi;
-        list _argv;
+        list args;
     fi;
     
     //now we have the compiled project.class we run it now
