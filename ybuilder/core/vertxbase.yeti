@@ -200,7 +200,8 @@ registerVertxTargets config =
 
     vertxCmd =
         target config "vertx" "cmd"
-            [Description "runs vertx with the given parameters"]
+            [Description "runs vertx with the given parameters
+            To specify a run directory use -dir directory flag"]
         do p:
             vertxTask config true (readArg "-dir" "." p.args) p.args [:] p;
         done;

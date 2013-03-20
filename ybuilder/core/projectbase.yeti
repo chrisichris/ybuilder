@@ -786,7 +786,8 @@ preparePackage =
 
 integrationTest =
     target config "livecycle" "integration-test"
-        [Depends preparePackage] \();
+        [Depends preparePackage,
+        ShortName()] \();
     
 preDoc = target config "doc" "pre-doc" [Depends initialize] \();
 
