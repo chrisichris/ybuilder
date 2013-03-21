@@ -205,7 +205,7 @@ sel struct is {_name is string} -> xmlelement =
         case field of
             "_name": _name := string value;
             "_cls": readSubEl value;
-            _ : attributes[field] := string value;
+            _ : attributes[strReplace "_" "-" field] := string value;
         esac;
     done;
 
