@@ -171,6 +171,49 @@ el name atts subelements =
             
 tel name atts text = el name atts [Text text];			
 
+sel struct is {_name is string} -> xmlelement =
+    (import yeti.lang:Struct, AList, Tag;
+    stru = struct unsafely_as ~Struct;
+    var _name = undef_str;
+    attributes = [:];
+    _subelements = array [];
+
+    readSubEl obj =
+        if (obj is ~Object) instanceof Struct then
+            push _subelements (sel (obj unsafely_as {_name is string}));
+        elif obj instanceof Tag then
+            t = obj unsafely_as ~Tag;
+            if t#name == "Text" then
+                push _subelements (Text (string t#value));
+            elif t#name == "Element" then
+                push _subelements (obj unsafely_as xmlelement);
+            else
+                failWith "This tag is not allowed in element createion \(obj)";
+            fi;
+        elif obj instanceof String then
+            push _subelements (Text (string obj));
+        elif obj instanceof AList then
+            for (obj unsafely_as list<'t>) readSubEl
+        else
+            failWith "Subelement not supported \(obj)";
+        fi;
+
+
+    for [0..(stru#count() -1)] do i:
+        field = string stru#name(i);
+        value = stru#get(i);
+        case field of
+            "_name": _name := string value;
+            "_cls": readSubEl value;
+            _ : attributes[field] := string value;
+        esac;
+    done;
+
+    Element {
+        name = _name,
+        attributes,
+        subelements = list _subelements
+    });
     
 target config group namep opts fn1 
     is 'c -> string -> string -> 'a -> 'b -> targetType = 
@@ -398,6 +441,10 @@ antTaskWithElement elem ybtProject =
 antTask name atts subelements project = 
     (_ = antTaskWithElement (el name atts subelements) project;
      ());
+
+antTaskS struct project = 
+    (_ = antTaskWithElement (sel struct) project;
+    ());
 
 antInExcludeElements patts = 
     concatMap do pat: 
@@ -954,8 +1001,10 @@ run config =
     createProject,
     el,
     tel,
+    sel,
     antTaskWithElement,
     antTask,
+    antTaskS,
     antInExcludeElements,
     antFilesetElement,
     antDirsetElement,
