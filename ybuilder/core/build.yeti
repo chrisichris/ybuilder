@@ -287,7 +287,8 @@ executeTarget target opts project is targetType -> 'a -> 'b -> 'c=
                 esac 
              done;
     if runAlways 
-       or (not (target is targetType).name in project.executedTargets) then
+       or (not (target.name in project.executedTargets
+                or target.shortName in project.executedTargets)) then
         project.executedTargets[target.name] := true;
 
 
