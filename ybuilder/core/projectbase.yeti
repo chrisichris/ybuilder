@@ -450,6 +450,9 @@ _mvnDependencyTags artifactDependencies =
                  done dep.exclusions) 
     done artifactDependencies;
 
+/**
+ * creates a hash of parts wich come into the pom
+ */
 pomParts config packaging = 
     {pomHash = 
         (ha = [
@@ -517,7 +520,9 @@ pomParts config packaging =
         
                     
         
-    
+/**
+ * creates a pom file in dir name
+ */
 writePom dir name {pomHash, pomEls,pomDeps} config p = 
     (//first see wheter file or dir
     fileName = dir^name;
@@ -529,7 +534,10 @@ writePom dir name {pomHash, pomEls,pomDeps} config p =
              ["pomRefId" : "pom", "file":fileName] [] p;
     fileName);
 
-
+/**
+ * either copies an existing (user provided) dom to dir name
+ * or creates a new pom file
+ */
 preparePom orig dir name pomParts config p =
     if (file orig)#exists() then
         fileName = dir^name;
@@ -892,7 +900,7 @@ prepareDependencies =
         done;
 
 jarArtifacts =
-    target config "package" "jar-atrifacts"
+    target config "package" "jar-artifacts"
         [Depends preparePackage, Depends doc,
         Description "Creates the source and doc jars"]
     do p:

@@ -29,7 +29,6 @@ createVertxConfig config =
          //["vertx.langs.yeti":"yeb.vertx.YetiVerticleFactory"],
         var vertxTestModuleName = "test~test~1",
         var vertxIntegrationTestModuleName = "test~integration~1",
-        var vertxArtifactId = config.artifactId ^ "-module";
     };
 
 
@@ -149,7 +148,7 @@ registerVertxTargets config =
         config.dir.target 
         ^ config.groupId
         ^ "~"
-        ^ config.vertxArtifactId 
+        ^ config.artifactId 
         ^ "~"
         ^ config.version
         ^ ".zip";
@@ -169,6 +168,21 @@ registerVertxTargets config =
                     p;
         done;
 
+    vertxJarArtifact =
+        target config "vertx" "jar-artifacts"
+            [Depends vertxZipModule,
+            Before config.projectBaseTargets.jarArtifacts,
+            Description "copys the module to the targetArtifacts directory
+                        for deployment"]
+        do p:
+            targetFile = config.dir.targetArtifacts
+                ^ config.artifactId
+                ^ "-" ^ config.version ^ ".zip";
+            antTask "copy" 
+                ["file": _modFile config,
+                "tofile" :targetFile] [] p;
+        done;
+/*
     vertxModule =
         target config "vertx" "module"
             [Depends vertxZipModule,
@@ -177,7 +191,7 @@ registerVertxTargets config =
             load ybuilder.core.projectbase;
             pp = helpers.pomParts config "zip";
             pp = pp with {pomDeps = []};
-            pp.pomHash["artifactId"] := config.vertxArtifactId;
+            pp.pomHash["artifactId"] := config.artifactId;
 
             pomfile = helpers.preparePom "modpom.xml" config.dir.target 
                                 "modpom.xml"
@@ -185,7 +199,7 @@ registerVertxTargets config =
 
             helpers.mvnInstallOrDeploy config pomfile (_modFile config) p;
         done;
-
+*/
     
     vertxMain = 
         target config "vertx" "main" 
@@ -227,7 +241,6 @@ registerVertxTargets config =
             vertxRepl,
             vertxCmd,
             vertxTest,
-            vertxModule,
         }
     });
 {
@@ -238,6 +251,6 @@ registerVertxTargets config =
         vertxRunPath,
         vertxTestPath,
     },
-    vertxMavenName config =
-     "maven:\(config.groupId):\(config.vertxArtifactId)-\(config.version).zip",
+    //vertxMavenName config =
+    // "\(config.groupId)~\(config.artifactId)~\(config.version).zip",
 }
