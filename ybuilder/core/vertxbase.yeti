@@ -124,6 +124,29 @@ registerVertxTargets config =
         config.projectBaseTargets.retrieveDependencies 
         (moduleLibsFn config);
 
+    vertxCleanMods =
+        target config "vertx" "clean-mods" 
+            [Before config.livecycleTargets.clean,
+            Description "Cleans the all downloaded modules from mods dir"]
+        do p:
+            println "cleaninng";
+            antTaskS {
+               _name = "delete", includeemptydirs="true", 
+               _cls = {
+                   _name = "fileset", dir = config.vertxModsDir,
+                   _cls = [
+                     {_name = "include", name = "**/*"},
+                     {_name = "exclude", name = "conf/**"},
+                     {_name = "exclude", 
+                        name = config.vertxMainModuleName^"/**"},
+                     {_name = "exclude", 
+                        name = config.vertxTestModuleName^"/**"},
+                     {_name = "exclude", 
+                        name= config.vertxIntegrationTestModuleName^"/**"}]
+               }
+           } p;
+        done;
+
     vertxCompile = 
         target config "vertx" "compile" 
             [Depends config.livecycleTargets.compile,
@@ -241,6 +264,9 @@ registerVertxTargets config =
             vertxRepl,
             vertxCmd,
             vertxTest,
+            vertxIntegrationTest,
+            vertxCleanMods,
+            vertxJarArtifact
         }
     });
 {
