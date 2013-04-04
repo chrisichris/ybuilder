@@ -265,6 +265,8 @@ registerBaseTargets config = (
                                     "todir": config.dir.reports ^ "tests"] 
                        [el "fileset" ["dir": config.dir.test] 
                            [el "include" ["name":"**/*Test.java"] []]]] p;
+            else
+                logInfo p "junit" "skipping junit: no JUnitTask on project path";
             fi
         done;
         
