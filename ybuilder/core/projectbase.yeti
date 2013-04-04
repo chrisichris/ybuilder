@@ -550,12 +550,48 @@ preparePom orig dir name pomParts config p =
         writePom dir name pomParts config p
     fi;
         
+//attach all the artifacts in the artifacts dir
+_attachedFilesEl config fileName project = 
+    listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
+    |> concatMap do fn:
+        if fn == fileName then
+            []
+        else
+            fna = string (file fn)#getName();
+            cut = strLastIndexOf fna "." (strLength fn);
+            if cut == -1 then
+                logInfo project "deploy" 
+                    "File \(fn) in artifacts but has no extension";
+                []
+            else
+                ext = strRight fna (cut + 1);
+                cut2 = strLastIndexOf fna "-" cut;
+                if cut2 == -1 then
+                    logInfo project "deploy"
+                        "File \(fn) in artifacts has no classifier";
+                    []
+                else
+                    classifier = strSlice fna (cut2 + 1) cut;
+                    logInfo project "deploy" "attaching \(fn)";
+                    if classifier == "noclassifier" then
+                        [el (maven "attach") ["file":fn, 
+                                         "type":ext] []] ;
+                    else   
+                        [el (maven "attach") ["file":fn, 
+                                         "type":ext,
+                                         "classifier":classifier] []] ;
+                    fi
+                fi
+            fi
+        fi;
+    done;
     
 mvnInstall config pomFile fileName project = 
     (antTask (maven "pom") ["id":"installPom", "file":pomFile][] project;
+    attachedFiles = _attachedFilesEl config fileName project;
     antTask (maven "install") 
             ["file": fileName]
-            [el "pom" ["refid":"installPom"] []]
+            (attachedFiles ++ [el "pom" ["refid":"installPom"] []])
             project);
 
     
@@ -578,36 +614,9 @@ mvnDeploy config pomFile fileName project =
                          "snapshot" else "deploy" fi)Repository url defined"
     fi;
 
-    //attach all the artifacts in the artifacts dir
-    attachedFiles = listFiles "." [Include (config.dir.targetArtifacts^"*.*")]
-        |> concatMap do fn:
-            if fn == fileName then
-                []
-            else
-                fna = string (file fn)#getName();
-                cut = strLastIndexOf fna "." (strLength fn);
-                if cut == -1 then
-                    logInfo project "deploy" 
-                        "File \(fn) in artifacts but has no extension";
-                    []
-                else
-                    ext = strRight fna (cut + 1);
-                    cut2 = strLastIndexOf fna "-" cut;
-                    if cut2 == -1 then
-                        logInfo project "deploy"
-                            "File \(fn) in artifacts has no classifier";
-                        []
-                    else
-                        classifier = strSlice fna (cut2 + 1) cut;
-                        logInfo project "deploy" "attaching \(fn)";
-                        [el (maven "attach") ["file":fn, 
-                                             "type":ext,
-                                             "classifier":classifier] []] ;
-                    fi
-                fi
-            fi;
-        done;
-    
+    //create the element with all the attached files
+    attachedFiles = _attachedFilesEl config fileName project;
+
     //load the deployProvider
     if defined? repo.providerArtifactId then
         antTask (maven "install-provider") 
@@ -655,10 +664,12 @@ mvnDeploy config pomFile fileName project =
              project);
 
 
-_mvnInstallOrDeploy config pomFile fileName project = 
+_mvnInstallOrDeploy config jarArtifacts pomFile fileName project = 
     (if contains? ":deploy" project.args then
+        executeTarget jarArtifacts [] project;
         mvnDeploy config pomFile fileName project;
     elif contains? ":install" project.args then
+        executeTarget jarArtifacts [] project;
         mvnInstall config pomFile fileName project;
     fi);
 
@@ -961,14 +972,10 @@ jar =
                  ^ config.artifactId 
                  ^ "-" ^ config.version
                  ^ ".jar";
-        //create all the artifacts
-        if contains? ":deploy" p.args then
-            executeTarget jarArtifacts [] p;
-        fi;
         //check for install or deploy
         pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
             (pomParts config "jar") config p;
-        _mvnInstallOrDeploy config pomfile destfl p;
+        _mvnInstallOrDeploy config jarArtifacts pomfile destfl p;
     done;
     
 war = 
@@ -999,7 +1006,7 @@ war =
                 p;
         pomfile = preparePom "pom.xml" config.dir.target "pom.xml" 
             (pomParts config "war") config p;
-        _ = _mvnInstallOrDeploy config pomfile destfl p;
+        _ = _mvnInstallOrDeploy config jarArtifacts pomfile destfl p;
     done;
 /*
 jetty =

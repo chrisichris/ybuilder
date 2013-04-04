@@ -125,7 +125,10 @@ jary = target config "custom" "jary"
                    "value":"ybuilder.core.Launcher"] 
                    []]] 
             p;
-    helpers.mvnInstallOrDeploy config jarFile "jar" p;  
+    helpers.mvnInstallOrDeploy 
+                    config 
+                    config.projectBaseTargets.jarArtifacts
+                    jarFile "jar" p;  
 done;
 
 _ = target config "custom" "installjar" 

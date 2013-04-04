@@ -177,7 +177,7 @@ registerVertxTargets config =
         do p:
             targetFile = config.dir.targetArtifacts
                 ^ config.artifactId
-                ^ "-" ^ config.version ^ ".zip";
+                ^ "-" ^ config.version ^ "-noclassifier.zip";
             antTask "copy" 
                 ["file": _modFile config,
                 "tofile" :targetFile] [] p;
