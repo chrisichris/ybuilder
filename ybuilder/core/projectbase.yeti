@@ -1008,11 +1008,12 @@ war =
             (pomParts config "war") config p;
         _ = _mvnInstallOrDeploy config jarArtifacts pomfile destfl p;
     done;
-/*
+
 jetty =
     target config "run" "jetty" [Depends initialize,
                     Description ("runs jetty - note the jetty libs must be" 
-                        ^"on the ybuilder path")] 
+                        ^"on the ybuilder path"),
+                    ShortName ()] 
     do project:
         import java.lang.System;
         import org.eclipse.jetty.server:Server; 
@@ -1041,7 +1042,7 @@ jetty =
         server#start();
         server#join();
     done;
-*/
+
 
 //path targets    
 initDirs = 
@@ -1098,6 +1099,7 @@ buildTargets with {
         pom,
         continuous,
         jarArtifacts,
+        jetty
     },
 
 
